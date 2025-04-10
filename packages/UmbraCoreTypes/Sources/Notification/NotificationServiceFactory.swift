@@ -38,7 +38,7 @@ private actor DefaultNotificationService: NotificationServiceProtocol {
 
   /// Post a notification
   /// - Parameter notification: The notification to post
-  public func post(notification: NotificationDTO) {
+  public nonisolated func post(notification: NotificationDTO) {
     let name = Notification.Name(notification.name)
     // Convert [String: String] to [AnyHashable: Any] for NotificationCenter
     let userInfo = notification.userInfo.reduce(into: [AnyHashable: Any]()) { result, pair in
@@ -50,11 +50,11 @@ private actor DefaultNotificationService: NotificationServiceProtocol {
   /// Post a notification with a name
   /// - Parameters:
   ///   - name: The name of the notification
-  ///   - sender: The object posting the notification
-  ///   - userInfo: Additional information about the notification
-  public func post(name: String, sender: Any? = nil, userInfo: [String: String] = [:]) {
-    let notification = NotificationDTO(name: name, sender: sender, userInfo: userInfo)
-    post(notification: notification)
+  ///   - sender: The sender of the notification (optional)
+  ///   - userInfo: User info dictionary (optional)
+  public nonisolated func post(name: String, sender: AnyHashable?, userInfo: [String: AnyHashable]?) {
+    let notificationName = Notification.Name(name)
+    notificationCenter.post(name: notificationName, object: sender, userInfo: userInfo)
   }
 
   /// Add an observer for a specific notification
@@ -63,7 +63,7 @@ private actor DefaultNotificationService: NotificationServiceProtocol {
   ///   - sender: The object posting the notification to filter by
   ///   - handler: The handler to call when the notification is received
   /// - Returns: An observer ID that can be used to remove the observer
-  public func addObserver(
+  public nonisolated func addObserver(
     for name: String,
     sender: AnyHashable?,
     handler: @escaping NotificationHandler
@@ -86,7 +86,7 @@ private actor DefaultNotificationService: NotificationServiceProtocol {
       handler(dto)
     }
 
-    // Safely send observer to actor using a detached task to avoid data races
+    // We need to store the observer for later removal
     // with the non-Sendable NSObjectProtocol observer
     let observerCopy = observer // Make a local copy of the observer
 
@@ -96,12 +96,7 @@ private actor DefaultNotificationService: NotificationServiceProtocol {
 
     // Use a @Sendable closure with nonisolated function
     Task.detached { @Sendable in
-      // Call nonisolated helper function to avoid capturing isolated state
-      await self.storeObserverWithActor(
-        nonisolatedActor,
-        observer: observerCopy,
-        forID: nonisolatedID
-      )
+      await nonisolatedActor.storeObserver(observerCopy, forID: nonisolatedID)
     }
 
     return observerID
@@ -113,7 +108,7 @@ private actor DefaultNotificationService: NotificationServiceProtocol {
   ///   - sender: The object posting the notification to filter by
   ///   - handler: The handler to call when any of the notifications is received
   /// - Returns: An observer ID that can be used to remove the observer
-  public func addObserver(
+  public nonisolated func addObserver(
     for names: [String],
     sender: AnyHashable?,
     handler: @escaping NotificationHandler
@@ -124,7 +119,7 @@ private actor DefaultNotificationService: NotificationServiceProtocol {
 
     // Create and store observers in a thread-safe manner
     for name in names {
-      // Create a unique ID for each observer to ensure proper cleanup
+      // Use a unique ID for each observer but associate it with the main ID
       let uniqueID = "\(observerID):\(name)"
 
       let notificationName = Notification.Name(name)
@@ -139,19 +134,13 @@ private actor DefaultNotificationService: NotificationServiceProtocol {
         handler(dto)
       }
 
-      // Safely store each observer with its unique ID
       // Create nonisolated copy to prevent task isolation issues in Swift 6
       let nonisolatedActor = observationActor
       let nonisolatedID = uniqueID
 
       // Use a @Sendable closure with nonisolated function
       Task { @Sendable in
-        // Call nonisolated helper function to avoid capturing isolated state
-        await self.storeObserverWithActor(
-          nonisolatedActor,
-          observer: observer,
-          forID: nonisolatedID
-        )
+        await nonisolatedActor.storeObserver(observer, forID: nonisolatedID)
       }
     }
 
@@ -160,7 +149,7 @@ private actor DefaultNotificationService: NotificationServiceProtocol {
 
   /// Remove an observer
   /// - Parameter observerID: The ID of the observer to remove
-  public func removeObserver(withID observerID: NotificationObserverID) {
+  public nonisolated func removeObserver(withID observerID: NotificationObserverID) {
     // Use a detached task to avoid data races with the non-Sendable NSObjectProtocol
     Task.detached { [weak self, observationActor, notificationCenter, observerID] in
       guard let _ = self else { return }
@@ -174,7 +163,7 @@ private actor DefaultNotificationService: NotificationServiceProtocol {
   }
 
   /// Remove all observers
-  public func removeAllObservers() {
+  public nonisolated func removeAllObservers() {
     // Use a detached task to avoid data races with the non-Sendable NSObjectProtocol
     Task.detached { [weak self, observationActor, notificationCenter] in
       guard let _ = self else { return }
@@ -187,8 +176,8 @@ private actor DefaultNotificationService: NotificationServiceProtocol {
     }
   }
 
-  /// Create a NotificationDTO from a Foundation notification
-  /// - Parameter notification: The Foundation notification
+  /// Create a notification DTO from a Foundation Notification
+  /// - Parameter notification: The Foundation notification to convert
   /// - Returns: A notification DTO properly converted for use in Alpha Dot Five architecture
   private nonisolated func createDTO(from notification: Notification) -> NotificationDTO {
     // Convert [AnyHashable: Any]? to [String: String] for Sendable compliance
@@ -217,23 +206,15 @@ private actor DefaultNotificationService: NotificationServiceProtocol {
     )
   }
 
-  /// Nonisolated helper function to store an observer with an actor
+  /// Store an observer with the observation actor
   /// - Parameters:
-  ///   - actor: The actor to store the observer with
-  ///   - observer: The observer to store
-  ///   - id: The ID to associate with the observer
-  private nonisolated func storeObserverWithActor(
-    _ actor: ObservationActor,
-    observer: Any,
+  ///   - observer: the observer to store
+  ///   - id: the ID to store it under
+  private func storeObserver(
+    observer: NSObjectProtocol,
     forID id: String
   ) async {
-    // Ensure the observer conforms to NSObjectProtocol as required by the actor
-    if let protocolObserver = observer as? NSObjectProtocol {
-      await actor.storeObserver(protocolObserver, forID: id)
-    } else {
-      // Log error if observer doesn't conform to NSObjectProtocol
-      print("Error: Observer does not conform to NSObjectProtocol")
-    }
+    await observationActor.storeObserver(observer, forID: id)
   }
 }
 

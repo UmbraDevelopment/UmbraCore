@@ -53,24 +53,21 @@ public actor FilePathService: FilePathServiceProtocol {
   /// Initialises a new file path service.
   public init() {}
 
-  public func join(_ components: String...) -> String {
+  public nonisolated func join(_ components: String...) -> String {
     let path = NSString.path(withComponents: components) as String
     return (path as NSString).standardizingPath
   }
 
-  public func normalise(_ path: String) -> String {
+  public nonisolated func normalise(_ path: String) -> String {
     (path as NSString).standardizingPath
   }
 
-  public func isPathWithinRoot(_ path: String, rootDirectory: String) -> Bool {
+  public nonisolated func isPathWithinRoot(_ path: String, rootDirectory: String) -> Bool {
     let normalizedPath = normalise(path)
     let normalizedRoot = normalise(rootDirectory)
 
-    // Ensure root ends with a path separator
-    let rootWithSeparator = normalizedRoot.hasSuffix("/") ? normalizedRoot : normalizedRoot + "/"
-
-    // Check if the normalized path starts with the normalized root
-    // This ensures that "/root/path" is contained within "/root" but "/root-other" is not
-    return normalizedPath.hasPrefix(rootWithSeparator) || normalizedPath == normalizedRoot
+    return normalizedPath.hasPrefix(normalizedRoot) &&
+      (normalizedPath.count == normalizedRoot.count ||
+       normalizedPath[normalizedPath.index(normalizedPath.startIndex, offsetBy: normalizedRoot.count)] == "/")
   }
 }

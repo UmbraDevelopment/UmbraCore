@@ -41,58 +41,48 @@ public actor InMemoryKeyStore: KeyStorage {
   public init() {}
 
   /// Store a key with an identifier
-  public func storeKey(_ key: [UInt8], identifier: String) async -> Result<Void, KeyStorageError> {
+  /// - Parameters:
+  ///   - key: The key to store as a byte array
+  ///   - identifier: The identifier for the key
+  /// - Throws: An error if storing the key fails
+  public func storeKey(_ key: [UInt8], identifier: String) async throws {
     keys[identifier] = key
-    return .success(())
   }
 
-  /// Retrieve a key by identifier
-  public func retrieveKey(identifier: String) async -> Result<[UInt8], KeyStorageError> {
-    if let key = keys[identifier] {
-      return .success(key)
-    } else {
-      return .failure(.keyNotFound(identifier: identifier))
-    }
+  /// Get a key by identifier
+  /// - Parameter identifier: The identifier for the key
+  /// - Returns: The key as a byte array or nil if not found
+  /// - Throws: An error if retrieving the key fails
+  public func getKey(identifier: String) async throws -> [UInt8]? {
+    keys[identifier]
   }
 
   /// Delete a key by identifier
-  public func deleteKey(identifier: String) async -> Result<Void, KeyStorageError> {
-    if keys[identifier] != nil {
-      keys.removeValue(forKey: identifier)
-      return .success(())
-    } else {
-      return .failure(.keyNotFound(identifier: identifier))
-    }
+  /// - Parameter identifier: The identifier for the key
+  /// - Throws: An error if deleting the key fails
+  public func deleteKey(identifier: String) async throws {
+    keys.removeValue(forKey: identifier)
   }
 
-  /// List all key identifiers
-  public func listKeyIdentifiers() async -> Result<[String], KeyStorageError> {
-    return .success(Array(keys.keys))
+  /// Check if a key exists
+  /// - Parameter identifier: The identifier for the key
+  /// - Returns: True if the key exists
+  /// - Throws: An error if checking the key fails
+  public func containsKey(identifier: String) async throws -> Bool {
+    keys.keys.contains(identifier)
   }
 
-  /// Rotates a key, generating a new key and returning both the new key and re-encrypted data
-  public func rotateKey(
-    identifier: String,
-    dataToReencrypt: [UInt8]?
-  ) async -> Result<(newKey: [UInt8], reencryptedData: [UInt8]?), KeyStorageError> {
-    // Check if the key exists
-    guard keys[identifier] != nil else {
-      return .failure(.keyNotFound(identifier: identifier))
-    }
-
-    // Generate a new key (32 bytes for AES-256)
-    var newKey = [UInt8](repeating: 0, count: 32)
-    let status = SecRandomCopyBytes(kSecRandomDefault, newKey.count, &newKey)
-    
-    guard status == errSecSuccess else {
-      return .failure(.generalError(reason: "Failed to generate secure random bytes"))
-    }
-    
-    // Store the new key, replacing the old one
-    keys[identifier] = newKey
-    
-    // In a real implementation, this would re-encrypt the data with the new key
-    // For this simple implementation, we just return the original data
-    return .success((newKey: newKey, reencryptedData: dataToReencrypt))
+  /// List all available key identifiers
+  /// - Returns: Array of key identifiers
+  /// - Throws: An error if listing keys fails
+  public func listKeyIdentifiers() async throws -> [String] {
+    Array(keys.keys)
+  }
+  
+  /// Get all key identifiers
+  /// - Returns: An array of all key identifiers
+  /// - Throws: An error if retrieving the identifiers fails
+  public func getAllIdentifiers() async throws -> [String] {
+    Array(keys.keys)
   }
 }

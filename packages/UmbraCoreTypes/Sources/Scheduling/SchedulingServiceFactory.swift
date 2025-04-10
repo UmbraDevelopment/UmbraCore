@@ -695,29 +695,26 @@ private actor DefaultSchedulingService: SchedulingServiceProtocol {
   ///   - taskID: The ID of the task to monitor
   ///   - callback: Function to call when status changes
   /// - Returns: Registration ID to use for unregistering
-  public func registerForTaskUpdates(
+  public nonisolated func registerForTaskUpdates(
     taskID: String,
     callback: @Sendable @escaping (ScheduledTaskDTO) -> Void
   ) -> String {
-    let registrationID=UUID().uuidString
-    Task {
-      let regID=await actor.registerCallback(for: taskID, callback: callback)
-
-      // If task already exists, immediately call the callback
-      if let task=await actor.getTask(withID: taskID) {
-        callback(task)
-      }
-
-      return regID
+    let registrationID = UUID().uuidString
+    
+    // Use a Task to bridge between nonisolated and isolated contexts
+    Task { 
+      await actor.registerCallback(
+        for: taskID,
+        callback: callback
+      )
     }
-
-    // Return a temporary ID until the Task completes
+    
     return registrationID
   }
 
   /// Unregister a previously registered callback
   /// - Parameter registrationID: The registration ID to remove
-  public func unregisterTaskUpdates(registrationID: String) {
+  public nonisolated func unregisterTaskUpdates(registrationID: String) {
     Task {
       await actor.unregisterCallback(registrationID: registrationID)
     }
