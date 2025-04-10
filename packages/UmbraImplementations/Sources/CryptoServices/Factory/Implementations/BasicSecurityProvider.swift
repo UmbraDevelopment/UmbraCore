@@ -57,7 +57,7 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
     let context = CryptoLogContext(
       operation: "initialize",
       algorithm: nil,
-      correlationID: nil,
+      correlationID: UUID().uuidString,
       source: "BasicSecurityProvider",
       additionalContext: metadata
     )
@@ -89,7 +89,7 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
     let context = CryptoLogContext(
       operation: "cryptoService",
       algorithm: nil,
-      correlationID: nil,
+      correlationID: UUID().uuidString,
       source: "BasicSecurityProvider",
       additionalContext: metadata
     )
@@ -119,7 +119,7 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
     let context = CryptoLogContext(
       operation: "keyManager",
       algorithm: nil,
-      correlationID: nil,
+      correlationID: UUID().uuidString,
       source: "BasicSecurityProvider",
       additionalContext: metadata
     )
@@ -146,15 +146,13 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
     var metadata = LogMetadataDTOCollection()
       .withPublic(key: "operation", value: "encrypt")
     
-    // Add any algorithm information if available
-    if let algorithm = config.algorithm {
-      metadata = metadata.withPublic(key: "algorithm", value: algorithm)
-    }
+    // Add encryption algorithm information
+    metadata = metadata.withPublic(key: "algorithm", value: config.encryptionAlgorithm.rawValue)
     
     let context = CryptoLogContext(
       operation: "encrypt",
-      algorithm: config.algorithm,
-      correlationID: config.correlationID,
+      algorithm: config.encryptionAlgorithm.rawValue,
+      correlationID: UUID().uuidString,
       source: "BasicSecurityProvider",
       additionalContext: metadata
     )
@@ -166,8 +164,8 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
     
     let errorContext = CryptoLogContext(
       operation: "encrypt",
-      algorithm: config.algorithm,
-      correlationID: config.correlationID,
+      algorithm: config.encryptionAlgorithm.rawValue,
+      correlationID: UUID().uuidString,
       source: "BasicSecurityProvider",
       additionalContext: metadata.withPublic(key: "errorDescription", value: "Operation not supported")
     )
@@ -193,15 +191,13 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
     var metadata = LogMetadataDTOCollection()
       .withPublic(key: "operation", value: "decrypt")
     
-    // Add any algorithm information if available
-    if let algorithm = config.algorithm {
-      metadata = metadata.withPublic(key: "algorithm", value: algorithm)
-    }
+    // Add encryption algorithm information
+    metadata = metadata.withPublic(key: "algorithm", value: config.encryptionAlgorithm.rawValue)
     
     let context = CryptoLogContext(
       operation: "decrypt",
-      algorithm: config.algorithm,
-      correlationID: config.correlationID,
+      algorithm: config.encryptionAlgorithm.rawValue,
+      correlationID: UUID().uuidString,
       source: "BasicSecurityProvider",
       additionalContext: metadata
     )
@@ -213,8 +209,8 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
     
     let errorContext = CryptoLogContext(
       operation: "decrypt",
-      algorithm: config.algorithm,
-      correlationID: config.correlationID,
+      algorithm: config.encryptionAlgorithm.rawValue,
+      correlationID: UUID().uuidString,
       source: "BasicSecurityProvider",
       additionalContext: metadata.withPublic(key: "errorDescription", value: "Operation not supported")
     )
@@ -240,15 +236,13 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
     var metadata = LogMetadataDTOCollection()
       .withPublic(key: "operation", value: "generateKey")
     
-    // Add any algorithm information if available
-    if let algorithm = config.algorithm {
-      metadata = metadata.withPublic(key: "algorithm", value: algorithm)
-    }
+    // Add encryption algorithm information
+    metadata = metadata.withPublic(key: "algorithm", value: config.encryptionAlgorithm.rawValue)
     
     let context = CryptoLogContext(
       operation: "generateKey",
-      algorithm: config.algorithm,
-      correlationID: config.correlationID,
+      algorithm: config.encryptionAlgorithm.rawValue,
+      correlationID: UUID().uuidString,
       source: "BasicSecurityProvider",
       additionalContext: metadata
     )
@@ -263,8 +257,8 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
     
     let successContext = CryptoLogContext(
       operation: "generateKey",
-      algorithm: config.algorithm,
-      correlationID: config.correlationID,
+      algorithm: config.encryptionAlgorithm.rawValue,
+      correlationID: UUID().uuidString,
       source: "BasicSecurityProvider",
       additionalContext: metadata.withSensitive(key: "keyIdentifier", value: mockKeyID)
     )
@@ -294,15 +288,13 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
     var metadata = LogMetadataDTOCollection()
       .withPublic(key: "operation", value: "secureStore")
     
-    // Add any algorithm information if available
-    if let algorithm = config.algorithm {
-      metadata = metadata.withPublic(key: "algorithm", value: algorithm)
-    }
+    // Add encryption algorithm information
+    metadata = metadata.withPublic(key: "algorithm", value: config.encryptionAlgorithm.rawValue)
     
     let context = CryptoLogContext(
       operation: "secureStore",
-      algorithm: config.algorithm,
-      correlationID: config.correlationID,
+      algorithm: config.encryptionAlgorithm.rawValue,
+      correlationID: UUID().uuidString,
       source: "BasicSecurityProvider",
       additionalContext: metadata
     )
@@ -314,8 +306,8 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
     
     let errorContext = CryptoLogContext(
       operation: "secureStore",
-      algorithm: config.algorithm,
-      correlationID: config.correlationID,
+      algorithm: config.encryptionAlgorithm.rawValue,
+      correlationID: UUID().uuidString,
       source: "BasicSecurityProvider",
       additionalContext: metadata.withPublic(key: "errorDescription", value: "Operation not supported")
     )
@@ -341,15 +333,13 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
     var metadata = LogMetadataDTOCollection()
       .withPublic(key: "operation", value: "secureRetrieve")
     
-    // Add any algorithm information if available
-    if let algorithm = config.algorithm {
-      metadata = metadata.withPublic(key: "algorithm", value: algorithm)
-    }
+    // Add encryption algorithm information
+    metadata = metadata.withPublic(key: "algorithm", value: config.encryptionAlgorithm.rawValue)
     
     let context = CryptoLogContext(
       operation: "secureRetrieve",
-      algorithm: config.algorithm,
-      correlationID: config.correlationID,
+      algorithm: config.encryptionAlgorithm.rawValue,
+      correlationID: UUID().uuidString,
       source: "BasicSecurityProvider",
       additionalContext: metadata
     )
@@ -361,8 +351,8 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
     
     let errorContext = CryptoLogContext(
       operation: "secureRetrieve",
-      algorithm: config.algorithm,
-      correlationID: config.correlationID,
+      algorithm: config.encryptionAlgorithm.rawValue,
+      correlationID: UUID().uuidString,
       source: "BasicSecurityProvider",
       additionalContext: metadata.withPublic(key: "errorDescription", value: "Operation not supported")
     )
@@ -388,15 +378,13 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
     var metadata = LogMetadataDTOCollection()
       .withPublic(key: "operation", value: "secureDelete")
     
-    // Add any algorithm information if available
-    if let algorithm = config.algorithm {
-      metadata = metadata.withPublic(key: "algorithm", value: algorithm)
-    }
+    // Add encryption algorithm information
+    metadata = metadata.withPublic(key: "algorithm", value: config.encryptionAlgorithm.rawValue)
     
     let context = CryptoLogContext(
       operation: "secureDelete",
-      algorithm: config.algorithm,
-      correlationID: config.correlationID,
+      algorithm: config.encryptionAlgorithm.rawValue,
+      correlationID: UUID().uuidString,
       source: "BasicSecurityProvider",
       additionalContext: metadata
     )
@@ -408,8 +396,8 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
     
     let errorContext = CryptoLogContext(
       operation: "secureDelete",
-      algorithm: config.algorithm,
-      correlationID: config.correlationID,
+      algorithm: config.encryptionAlgorithm.rawValue,
+      correlationID: UUID().uuidString,
       source: "BasicSecurityProvider",
       additionalContext: metadata.withPublic(key: "errorDescription", value: "Operation not supported")
     )
@@ -434,35 +422,34 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
     var metadata = LogMetadataDTOCollection()
       .withPublic(key: "operation", value: "createSecureConfig")
     
-    // Add any algorithm information if available
-    if let algorithm = options.algorithm {
-      metadata = metadata.withPublic(key: "algorithm", value: algorithm)
-    }
+    // Add basic information about what we're doing
+    metadata = metadata.withPublic(key: "provider", value: "BasicSecurityProvider")
     
     let context = CryptoLogContext(
       operation: "createSecureConfig",
-      algorithm: options.algorithm,
-      correlationID: nil,
+      algorithm: nil,
+      correlationID: UUID().uuidString,
       source: "BasicSecurityProvider",
       additionalContext: metadata
     )
     
     await logger?.debug(
-      "Creating secure configuration",
+      "Creating security configuration",
       context: context
     )
     
     // Create a basic configuration
     let config = SecurityConfigDTO(
-      options: options,
-      inputData: nil,
-      keyIdentifier: options.metadata?["keyIdentifier"]
+      encryptionAlgorithm: .aes256CBC,
+      hashAlgorithm: .sha256,
+      providerType: .cryptoKit,
+      options: options
     )
     
     let successContext = CryptoLogContext(
       operation: "createSecureConfig",
-      algorithm: options.algorithm,
-      correlationID: nil,
+      algorithm: nil,
+      correlationID: UUID().uuidString,
       source: "BasicSecurityProvider",
       additionalContext: metadata
     )
@@ -491,7 +478,7 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
     let context = CryptoLogContext(
       operation: "generateRandom",
       algorithm: nil,
-      correlationID: nil,
+      correlationID: UUID().uuidString,
       source: "BasicSecurityProvider",
       additionalContext: metadata.withPublic(key: "byteCount", value: "\(bytes)")
     )
@@ -507,7 +494,7 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
     let successContext = CryptoLogContext(
       operation: "generateRandom",
       algorithm: nil,
-      correlationID: nil,
+      correlationID: UUID().uuidString,
       source: "BasicSecurityProvider",
       additionalContext: metadata.withPublic(key: "bytesGenerated", value: "\(randomData.count)")
     )
@@ -537,15 +524,13 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
     var metadata = LogMetadataDTOCollection()
       .withPublic(key: "operation", value: "hash")
     
-    // Add any algorithm information if available
-    if let algorithm = config.algorithm {
-      metadata = metadata.withPublic(key: "algorithm", value: algorithm)
-    }
+    // Add encryption algorithm information
+    metadata = metadata.withPublic(key: "algorithm", value: config.encryptionAlgorithm.rawValue)
     
     let context = CryptoLogContext(
       operation: "hash",
-      algorithm: config.algorithm,
-      correlationID: config.correlationID,
+      algorithm: config.encryptionAlgorithm.rawValue,
+      correlationID: UUID().uuidString,
       source: "BasicSecurityProvider",
       additionalContext: metadata
     )
@@ -555,30 +540,13 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
       context: context
     )
     
-    guard let inputData = config.inputData else {
-      let errorContext = CryptoLogContext(
-        operation: "hash",
-        algorithm: config.algorithm,
-        correlationID: config.correlationID,
-        source: "BasicSecurityProvider",
-        additionalContext: metadata.withPublic(key: "errorDescription", value: "No input data provided")
-      )
-      
-      await logger?.error(
-        "Hash operation failed: no input data provided",
-        context: errorContext
-      )
-      
-      throw SecurityStorageError.invalidData
-    }
-    
-    // Mock hash implementation - in a real scenario, use a cryptographic hash function
-    let mockHash = Data((0..<32).map { _ in UInt8.random(in: 0...255) })
+    // For this basic provider, just return a mock hash
+    let mockHash = Data(UUID().uuidString.utf8)
     
     let successContext = CryptoLogContext(
       operation: "hash",
-      algorithm: config.algorithm,
-      correlationID: config.correlationID,
+      algorithm: config.encryptionAlgorithm.rawValue,
+      correlationID: UUID().uuidString,
       source: "BasicSecurityProvider",
       additionalContext: metadata.withHashed(key: "hashValue", value: mockHash.base64EncodedString())
     )
@@ -607,15 +575,13 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
     var metadata = LogMetadataDTOCollection()
       .withPublic(key: "operation", value: "verifyHash")
     
-    // Add any algorithm information if available
-    if let algorithm = config.algorithm {
-      metadata = metadata.withPublic(key: "algorithm", value: algorithm)
-    }
+    // Add encryption algorithm information
+    metadata = metadata.withPublic(key: "algorithm", value: config.encryptionAlgorithm.rawValue)
     
     let context = CryptoLogContext(
       operation: "verifyHash",
-      algorithm: config.algorithm,
-      correlationID: config.correlationID,
+      algorithm: config.encryptionAlgorithm.rawValue,
+      correlationID: UUID().uuidString,
       source: "BasicSecurityProvider",
       additionalContext: metadata
     )
@@ -631,8 +597,8 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
     
     let successContext = CryptoLogContext(
       operation: "verifyHash",
-      algorithm: config.algorithm,
-      correlationID: config.correlationID,
+      algorithm: config.encryptionAlgorithm.rawValue,
+      correlationID: UUID().uuidString,
       source: "BasicSecurityProvider",
       additionalContext: metadata.withPublic(key: "isValid", value: isValid ? "true" : "false")
     )
@@ -661,15 +627,13 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
     var metadata = LogMetadataDTOCollection()
       .withPublic(key: "operation", value: "sign")
     
-    // Add any algorithm information if available
-    if let algorithm = config.algorithm {
-      metadata = metadata.withPublic(key: "algorithm", value: algorithm)
-    }
+    // Add encryption algorithm information
+    metadata = metadata.withPublic(key: "algorithm", value: config.encryptionAlgorithm.rawValue)
     
     let context = CryptoLogContext(
       operation: "sign",
-      algorithm: config.algorithm,
-      correlationID: config.correlationID,
+      algorithm: config.encryptionAlgorithm.rawValue,
+      correlationID: UUID().uuidString,
       source: "BasicSecurityProvider",
       additionalContext: metadata
     )
@@ -681,17 +645,17 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
     
     // Implement signing logic here...
     // For now, just return a basic result
-    let result = CoreSecurityTypes.SecurityResultDTO(
-      status: .success,
-      result: "signed-\(UUID().uuidString)",
-      correlationID: config.correlationID
+    let result = CoreSecurityTypes.SecurityResultDTO.success(
+      resultData: Data("signed-\(UUID().uuidString)".utf8),
+      executionTimeMs: 10.0,
+      metadata: ["operation": "sign"]
     )
     
-    var successMetadata = metadata.withPublic(key: "status", value: "success")
+    let successMetadata = metadata.withPublic(key: "status", value: "success")
     let successContext = CryptoLogContext(
       operation: "sign",
-      algorithm: config.algorithm,
-      correlationID: config.correlationID,
+      algorithm: config.encryptionAlgorithm.rawValue,
+      correlationID: UUID().uuidString,
       source: "BasicSecurityProvider",
       additionalContext: successMetadata
     )
@@ -717,15 +681,13 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
     var metadata = LogMetadataDTOCollection()
       .withPublic(key: "operation", value: "verify")
     
-    // Add any algorithm information if available
-    if let algorithm = config.algorithm {
-      metadata = metadata.withPublic(key: "algorithm", value: algorithm)
-    }
+    // Add encryption algorithm information
+    metadata = metadata.withPublic(key: "algorithm", value: config.encryptionAlgorithm.rawValue)
     
     let context = CryptoLogContext(
       operation: "verify",
-      algorithm: config.algorithm,
-      correlationID: config.correlationID,
+      algorithm: config.encryptionAlgorithm.rawValue,
+      correlationID: UUID().uuidString,
       source: "BasicSecurityProvider",
       additionalContext: metadata
     )
@@ -737,17 +699,17 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
     
     // Implement verification logic here...
     // For now, just return a basic result
-    let result = CoreSecurityTypes.SecurityResultDTO(
-      status: .success,
-      result: "true",
-      correlationID: config.correlationID
+    let result = CoreSecurityTypes.SecurityResultDTO.success(
+      resultData: Data("true".utf8),
+      executionTimeMs: 5.0,
+      metadata: ["operation": "verify"]
     )
     
-    var successMetadata = metadata.withPublic(key: "status", value: "success")
+    let successMetadata = metadata.withPublic(key: "status", value: "success")
     let successContext = CryptoLogContext(
       operation: "verify",
-      algorithm: config.algorithm,
-      correlationID: config.correlationID,
+      algorithm: config.encryptionAlgorithm.rawValue,
+      correlationID: UUID().uuidString,
       source: "BasicSecurityProvider",
       additionalContext: successMetadata
     )
@@ -776,15 +738,13 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
     var metadata = LogMetadataDTOCollection()
       .withPublic(key: "operationType", value: "\(operation)")
     
-    // Add any algorithm information if available
-    if let algorithm = config.algorithm {
-      metadata = metadata.withPublic(key: "algorithm", value: algorithm)
-    }
+    // Add encryption algorithm information
+    metadata = metadata.withPublic(key: "algorithm", value: config.encryptionAlgorithm.rawValue)
     
     let context = CryptoLogContext(
       operation: "performSecureOperation",
-      algorithm: config.algorithm,
-      correlationID: config.correlationID,
+      algorithm: config.encryptionAlgorithm.rawValue,
+      correlationID: UUID().uuidString,
       source: "BasicSecurityProvider",
       additionalContext: metadata
     )
@@ -802,17 +762,17 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
       return try await verify(config: config)
     case .encrypt:
       // Implementation for encrypt
-      let result = CoreSecurityTypes.SecurityResultDTO(
-        status: .success,
-        result: "encrypted-\(UUID().uuidString)",
-        correlationID: config.correlationID
+      let result = CoreSecurityTypes.SecurityResultDTO.success(
+        resultData: Data("encrypted-\(UUID().uuidString)".utf8),
+        executionTimeMs: 15.0,
+        metadata: ["operation": "encrypt"]
       )
       
-      var successMetadata = metadata.withPublic(key: "status", value: "success")
+      let successMetadata = metadata.withPublic(key: "status", value: "success")
       let successContext = CryptoLogContext(
         operation: "encrypt",
-        algorithm: config.algorithm,
-        correlationID: config.correlationID,
+        algorithm: config.encryptionAlgorithm.rawValue,
+        correlationID: UUID().uuidString,
         source: "BasicSecurityProvider",
         additionalContext: successMetadata
       )
@@ -825,17 +785,17 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
       return result
     case .decrypt:
       // Implementation for decrypt
-      let result = CoreSecurityTypes.SecurityResultDTO(
-        status: .success,
-        result: "decrypted-\(UUID().uuidString)",
-        correlationID: config.correlationID
+      let result = CoreSecurityTypes.SecurityResultDTO.success(
+        resultData: Data("decrypted-\(UUID().uuidString)".utf8),
+        executionTimeMs: 12.0,
+        metadata: ["operation": "decrypt"]
       )
       
-      var successMetadata = metadata.withPublic(key: "status", value: "success")
+      let successMetadata = metadata.withPublic(key: "status", value: "success")
       let successContext = CryptoLogContext(
         operation: "decrypt",
-        algorithm: config.algorithm,
-        correlationID: config.correlationID,
+        algorithm: config.encryptionAlgorithm.rawValue,
+        correlationID: UUID().uuidString,
         source: "BasicSecurityProvider",
         additionalContext: successMetadata
       )
@@ -847,7 +807,7 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
       
       return result
     default:
-      throw SecurityProviderError.operationNotSupported(operation: "\(operation)")
+      throw SecurityStorageError.unsupportedOperation
     }
   }
 }

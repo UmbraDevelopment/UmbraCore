@@ -651,7 +651,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
         status: "rateLimited"
       )
       
-      await logger.warn(
+      await logger.warning(
         "Store data operation was rate limited",
         context: context
       )
@@ -759,7 +759,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
         status: "rateLimited"
       )
       
-      await logger.warn(
+      await logger.warning(
         "Retrieve data operation was rate limited",
         context: context
       )
@@ -849,7 +849,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
         status: "rateLimited"
       )
       
-      await logger.warn(
+      await logger.warning(
         "Delete data operation was rate limited",
         context: context
       )
@@ -939,7 +939,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
         status: "rateLimited"
       )
       
-      await logger.warn(
+      await logger.warning(
         "Generate key operation was rate limited",
         context: context
       )
@@ -960,7 +960,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
         context: context
       )
       
-      return .failure(.invalidInput)
+      return .failure(.invalidInput("Invalid key length"))
     }
     
     // Log the operation
@@ -1032,7 +1032,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
         status: "rateLimited"
       )
       
-      await logger.warn(
+      await logger.warning(
         "Import data operation was rate limited",
         context: context
       )
@@ -1053,10 +1053,10 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
         context: context
       )
       
-      return .failure(.invalidInput)
+      return .failure(.invalidInput("Empty data"))
     }
     
-    // Convert byte array to Data
+    // Convert byte array to Data for internal implementation
     let dataObj = Data(data)
     
     // Log the operation
@@ -1114,10 +1114,29 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
   }
   
   /**
-   Exports data from secure storage.
+   Imports data into secure storage with custom identifier.
    
-   - Parameter identifier: Identifier for the data to export
-   - Returns: Success with data or error
+   - Parameters:
+     - data: Raw data to import
+     - customIdentifier: Identifier to use for the data
+   - Returns: Success with data identifier or error
+   */
+  public func importData(
+    _ data: Data,
+    customIdentifier: String
+  ) async -> Result<String, SecurityStorageError> {
+    // Convert Data to byte array for internal implementation
+    let bytes = [UInt8](data)
+    
+    // Delegate to the other implementation
+    return await importData(bytes, customIdentifier: customIdentifier)
+  }
+  
+  /**
+   Exports data from secure storage by identifier.
+   
+   - Parameter identifier: The identifier of the data to export
+   - Returns: Success with raw data or error
    */
   public func exportData(
     identifier: String
@@ -1126,10 +1145,11 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
     if await rateLimiter.isRateLimited("exportData") {
       let context = createLogContext(
         operation: "exportData",
+        identifier: identifier,
         status: "rateLimited"
       )
       
-      await logger.warn(
+      await logger.warning(
         "Export data operation was rate limited",
         context: context
       )
@@ -1150,7 +1170,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
         context: context
       )
       
-      return .failure(.invalidInput)
+      return .failure(.invalidInput("Empty identifier"))
     }
     
     // Log the operation
@@ -1186,7 +1206,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
         )
         
         // Convert Data to [UInt8]
-        return .success([UInt8](data))
+        return .success(Array(data))
         
       case let .failure(error):
         let errorContext = createLogContext(
@@ -1226,7 +1246,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
         status: "rateLimited"
       )
       
-      await logger.warn(
+      await logger.warning(
         "Generate hash operation was rate limited",
         context: context
       )
