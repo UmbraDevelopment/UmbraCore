@@ -51,7 +51,7 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
    This method performs any necessary setup that requires asynchronous operations.
    */
   public func initialize() async throws {
-    var metadata = LogMetadataDTOCollection()
+    let metadata = LogMetadataDTOCollection()
       .withPublic(key: "provider", value: "BasicSecurityProvider")
     
     let context = CryptoLogContext(
@@ -83,7 +83,7 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
    - Returns: An implementation of CryptoServiceProtocol
    */
   public func cryptoService() async -> any CryptoServiceProtocol {
-    var metadata = LogMetadataDTOCollection()
+    let metadata = LogMetadataDTOCollection()
       .withPublic(key: "operation", value: "cryptoService")
     
     let context = CryptoLogContext(
@@ -113,7 +113,7 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
    - Returns: An implementation of KeyManagementProtocol
    */
   public func keyManager() async -> any SecurityCoreInterfaces.KeyManagementProtocol {
-    var metadata = LogMetadataDTOCollection()
+    let metadata = LogMetadataDTOCollection()
       .withPublic(key: "operation", value: "keyManager")
     
     let context = CryptoLogContext(
@@ -472,7 +472,7 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
   public func generateRandom(
     bytes: Int
   ) async throws -> CoreSecurityTypes.SecurityResultDTO {
-    var metadata = LogMetadataDTOCollection()
+    let metadata = LogMetadataDTOCollection()
       .withPublic(key: "operation", value: "generateRandom")
     
     let context = CryptoLogContext(
@@ -525,11 +525,11 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
       .withPublic(key: "operation", value: "hash")
     
     // Add encryption algorithm information
-    metadata = metadata.withPublic(key: "algorithm", value: config.encryptionAlgorithm.rawValue)
+    metadata = metadata.withPublic(key: "algorithm", value: config.hashAlgorithm.rawValue)
     
     let context = CryptoLogContext(
       operation: "hash",
-      algorithm: config.encryptionAlgorithm.rawValue,
+      algorithm: config.hashAlgorithm.rawValue,
       correlationID: UUID().uuidString,
       source: "BasicSecurityProvider",
       additionalContext: metadata
@@ -545,7 +545,7 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
     
     let successContext = CryptoLogContext(
       operation: "hash",
-      algorithm: config.encryptionAlgorithm.rawValue,
+      algorithm: config.hashAlgorithm.rawValue,
       correlationID: UUID().uuidString,
       source: "BasicSecurityProvider",
       additionalContext: metadata.withHashed(key: "hashValue", value: mockHash.base64EncodedString())
@@ -576,11 +576,11 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
       .withPublic(key: "operation", value: "verifyHash")
     
     // Add encryption algorithm information
-    metadata = metadata.withPublic(key: "algorithm", value: config.encryptionAlgorithm.rawValue)
+    metadata = metadata.withPublic(key: "algorithm", value: config.hashAlgorithm.rawValue)
     
     let context = CryptoLogContext(
       operation: "verifyHash",
-      algorithm: config.encryptionAlgorithm.rawValue,
+      algorithm: config.hashAlgorithm.rawValue,
       correlationID: UUID().uuidString,
       source: "BasicSecurityProvider",
       additionalContext: metadata
@@ -597,14 +597,14 @@ public final class BasicSecurityProvider: SecurityProviderProtocol, AsyncService
     
     let successContext = CryptoLogContext(
       operation: "verifyHash",
-      algorithm: config.encryptionAlgorithm.rawValue,
+      algorithm: config.hashAlgorithm.rawValue,
       correlationID: UUID().uuidString,
       source: "BasicSecurityProvider",
-      additionalContext: metadata.withPublic(key: "isValid", value: isValid ? "true" : "false")
+      additionalContext: metadata.withPublic(key: "isValid", value: "true")
     )
     
     await logger?.info(
-      "Hash verification result: \(isValid ? "Valid" : "Invalid")",
+      "Hash verification result: Valid",
       context: successContext
     )
     

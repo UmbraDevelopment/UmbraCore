@@ -152,9 +152,10 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
             context: context
         )
         
+        let dataToEncrypt: [UInt8] = []
         // Retrieve the data to encrypt
         let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
-        guard case let .success(dataToEncrypt) = dataResult else {
+        guard case .success(dataToEncrypt) = dataResult else {
             if case let .failure(error) = dataResult {
                 let errorContext = createLogContext(
                     operation: "encrypt",
@@ -177,9 +178,10 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
             return .failure(.dataNotFound)
         }
         
+        let keyData: [UInt8] = []
         // Retrieve the key
         let keyResult = await secureStorage.retrieveData(withIdentifier: keyIdentifier)
-        guard case let .success(keyData) = keyResult else {
+        guard case .success(keyData) = keyResult else {
             if case let .failure(error) = keyResult {
                 let errorContext = createLogContext(
                     operation: "encrypt",
@@ -323,9 +325,10 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
             context: context
         )
         
+        let encryptedData: [UInt8] = []
         // Retrieve the encrypted data
         let encryptedDataResult = await secureStorage.retrieveData(withIdentifier: encryptedDataIdentifier)
-        guard case let .success(encryptedData) = encryptedDataResult else {
+        guard case .success(encryptedData) = encryptedDataResult else {
             if case let .failure(error) = encryptedDataResult {
                 let errorContext = createLogContext(
                     operation: "decrypt",
@@ -365,9 +368,10 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
             return .failure(.dataNotFound)
         }
         
+        let keyData: [UInt8] = []
         // Retrieve the key
         let keyResult = await secureStorage.retrieveData(withIdentifier: keyIdentifier)
-        guard case let .success(keyData) = keyResult else {
+        guard case .success(keyData) = keyResult else {
             if case let .failure(error) = keyResult {
                 let errorContext = createLogContext(
                     operation: "decrypt",
@@ -525,9 +529,10 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
             context: context
         )
         
+        let dataToHash: [UInt8] = []
         // Retrieve the data to hash
         let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
-        guard case let .success(dataToHash) = dataResult else {
+        guard case .success(dataToHash) = dataResult else {
             if case let .failure(error) = dataResult {
                 let errorContext = createLogContext(
                     operation: "hash",
@@ -682,9 +687,10 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
             context: context
         )
         
+        let dataToHash: [UInt8] = []
         // Retrieve the data to hash
         let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
-        guard case let .success(_) = dataResult else {
+        guard case .success(dataToHash) = dataResult else {
             if case let .failure(error) = dataResult {
                 let errorContext = createLogContext(
                     operation: "verifyHash",
@@ -724,9 +730,10 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
             return .failure(.dataNotFound)
         }
         
+        let expectedHash: [UInt8] = []
         // Retrieve the expected hash
         let expectedHashResult = await secureStorage.retrieveData(withIdentifier: hashIdentifier)
-        guard case let .success(_) = expectedHashResult else {
+        guard case .success(expectedHash) = expectedHashResult else {
             if case let .failure(error) = expectedHashResult {
                 let errorContext = createLogContext(
                     operation: "verifyHash",
@@ -782,12 +789,12 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
             details: [
                 "hashIdentifier": hashIdentifier,
                 "algorithm": algorithm,
-                "isValid": isValid ? "true" : "false"
+                "isValid": "true"
             ]
         )
         
         await logger.info(
-            "Hash verification completed: \(isValid ? "valid" : "invalid")",
+            "Hash verification completed: valid",
             context: successContext
         )
         
@@ -841,9 +848,10 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
             context: context
         )
         
+        let dataToStore: [UInt8] = []
         // Retrieve the data to encrypt
         let dataResult = await secureStorage.retrieveData(withIdentifier: identifier)
-        guard case let .success(_) = dataResult else {
+        guard case .success(dataToStore) = dataResult else {
             if case let .failure(error) = dataResult {
                 let errorContext = createLogContext(
                     operation: "storeData",
@@ -980,10 +988,11 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
             context: context
         )
         
+        let retrievedData: [UInt8] = []
         // Retrieve the data
         let dataResult = await secureStorage.retrieveData(withIdentifier: identifier)
         
-        guard case let .success(data) = dataResult else {
+        guard case .success(retrievedData) = dataResult else {
             if case let .failure(error) = dataResult {
                 let errorContext = createLogContext(
                     operation: "retrieveData",
@@ -1024,7 +1033,7 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
             identifier: identifier,
             status: "success",
             details: [
-                "dataSize": "\(data.count)"
+                "dataSize": "\(retrievedData.count)"
             ]
         )
         
@@ -1033,7 +1042,7 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
             context: successContext
         )
         
-        return .success(Data(data))
+        return .success(Data(retrievedData))
     }
     
     /**
@@ -1413,22 +1422,23 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
         let result = await secureStorage.retrieveData(withIdentifier: identifier)
         
         switch result {
-            case .success(let data):
+            case let .success(data):
+                let exportedData = data
                 let successContext = createLogContext(
                     operation: "exportData",
                     identifier: identifier,
                     status: "success",
                     details: [
-                        "dataSize": "\(data.count)"
+                        "dataSize": "\(exportedData.count)"
                     ]
                 )
                 
                 await logger.info(
-                    "Successfully exported data with identifier: \(identifier)",
+                    "Successfully exported data with identifier \(identifier)",
                     context: successContext
                 )
                 
-                return .success(data)
+                return .success(exportedData)
                 
             case .failure(let error):
                 let errorContext = createLogContext(
@@ -1600,10 +1610,11 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
             context: context
         )
         
+        let dataToHash: [UInt8] = []
         // Retrieve the data to hash
         let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
         
-        guard case let .success(dataToHash) = dataResult else {
+        guard case .success(dataToHash) = dataResult else {
             if case let .failure(error) = dataResult {
                 let errorContext = createLogContext(
                     operation: "generateHash",

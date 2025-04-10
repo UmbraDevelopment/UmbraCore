@@ -342,11 +342,11 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
         let isValid = true
         
         let successContext = contextWithOptions.withUpdatedMetadata(
-            contextWithOptions.metadata.withPublic(key: "isValid", value: isValid ? "true" : "false")
+            contextWithOptions.metadata.withPublic(key: "isValid", value: "true")
         )
         
         await logger.info(
-            "Hash verification result: \(isValid ? "Valid" : "Invalid")",
+            "Hash verification result: Valid",
             context: successContext
         )
         

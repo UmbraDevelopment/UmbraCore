@@ -37,7 +37,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
   /// Logger for operations
   private let logger: LoggingProtocol
 
-  /// Rate limiter for operations
+  /// Rate limiter for controlling operation frequency
   private let rateLimiter: BaseRateLimiter
 
   /// Provides access to the secure storage from the wrapped implementation
@@ -100,6 +100,13 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
     )
   }
 
+  /// Helper method to safely check if an operation is rate limited
+  private func isOperationRateLimited(_ operation: String) async -> Bool {
+    // Create a local copy to prevent direct access to self.rateLimiter
+    let localRateLimiter = self.rateLimiter
+    return await localRateLimiter.isRateLimited(operation)
+  }
+
   // MARK: - Encryption Operations
 
   /**
@@ -117,7 +124,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
     options: CoreSecurityTypes.EncryptionOptions? = nil
   ) async -> Result<String, SecurityStorageError> {
     // Check rate limiter
-    if await rateLimiter.isRateLimited("encrypt") {
+    if await isOperationRateLimited("encrypt") {
       let context = createLogContext(
         operation: "encrypt",
         identifier: dataIdentifier,
@@ -251,7 +258,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
     options: CoreSecurityTypes.EncryptionOptions? = nil
   ) async -> Result<String, SecurityStorageError> {
     // Check rate limiter
-    if await rateLimiter.isRateLimited("decrypt") {
+    if await isOperationRateLimited("decrypt") {
       let context = createLogContext(
         operation: "decrypt",
         identifier: encryptedDataIdentifier,
@@ -383,7 +390,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
     options: CoreSecurityTypes.HashingOptions? = nil
   ) async -> Result<String, SecurityStorageError> {
     // Check rate limiter
-    if await rateLimiter.isRateLimited("hash") {
+    if await isOperationRateLimited("hash") {
       let context = createLogContext(
         operation: "hash",
         identifier: dataIdentifier,
@@ -495,7 +502,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
     options: CoreSecurityTypes.HashingOptions? = nil
   ) async -> Result<Bool, SecurityStorageError> {
     // Check rate limiter
-    if await rateLimiter.isRateLimited("verify") {
+    if await isOperationRateLimited("verify") {
       let context = createLogContext(
         operation: "verifyHash",
         identifier: dataIdentifier,
@@ -629,7 +636,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
     identifier: String
   ) async -> Result<Void, SecurityStorageError> {
     // Check rate limiter
-    if await rateLimiter.isRateLimited("storeData") {
+    if await isOperationRateLimited("storeData") {
       let context = createLogContext(
         operation: "storeData",
         status: "rateLimited"
@@ -737,7 +744,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
     identifier: String
   ) async -> Result<Data, SecurityStorageError> {
     // Check rate limiter
-    if await rateLimiter.isRateLimited("retrieveData") {
+    if await isOperationRateLimited("retrieveData") {
       let context = createLogContext(
         operation: "retrieveData",
         status: "rateLimited"
@@ -827,7 +834,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
     identifier: String
   ) async -> Result<Void, SecurityStorageError> {
     // Check rate limiter
-    if await rateLimiter.isRateLimited("deleteData") {
+    if await isOperationRateLimited("deleteData") {
       let context = createLogContext(
         operation: "deleteData",
         status: "rateLimited"
@@ -917,7 +924,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
     options: CoreSecurityTypes.KeyGenerationOptions? = nil
   ) async -> Result<String, SecurityStorageError> {
     // Check rate limiter
-    if await rateLimiter.isRateLimited("generateKey") {
+    if await isOperationRateLimited("generateKey") {
       let context = createLogContext(
         operation: "generateKey",
         status: "rateLimited"
@@ -1010,7 +1017,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
     customIdentifier: String?
   ) async -> Result<String, SecurityStorageError> {
     // Check rate limiter
-    if await rateLimiter.isRateLimited("importData") {
+    if await isOperationRateLimited("importData") {
       let context = createLogContext(
         operation: "importData",
         status: "rateLimited"
@@ -1126,7 +1133,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
     identifier: String
   ) async -> Result<[UInt8], SecurityStorageError> {
     // Check rate limiter
-    if await rateLimiter.isRateLimited("exportData") {
+    if await isOperationRateLimited("exportData") {
       let context = createLogContext(
         operation: "exportData",
         identifier: identifier,
@@ -1224,7 +1231,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
     options: CoreSecurityTypes.HashingOptions? = nil
   ) async -> Result<String, SecurityStorageError> {
     // Check rate limiter
-    if await rateLimiter.isRateLimited("generateHash") {
+    if await isOperationRateLimited("generateHash") {
       let context = createLogContext(
         operation: "generateHash",
         status: "rateLimited"
