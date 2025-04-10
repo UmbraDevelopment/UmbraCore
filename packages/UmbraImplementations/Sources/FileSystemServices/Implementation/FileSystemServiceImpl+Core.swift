@@ -2,6 +2,7 @@ import FileSystemInterfaces
 import FileSystemTypes
 import Foundation
 import LoggingTypes
+import CoreDTOs
 
 /**
  # Core File System Operations Extension
@@ -20,7 +21,7 @@ extension FileSystemServiceImpl {
              `FileSystemError.writeError` if the item cannot be removed
    */
   public func remove(
-    at path: FilePath,
+    at path: FilePathDTO,
     recursive: Bool=false
   ) async throws {
     guard !path.path.isEmpty else {
@@ -93,8 +94,8 @@ extension FileSystemServiceImpl {
              `FileSystemError.writeError` if the copy operation fails
    */
   public func copy(
-    from sourcePath: FilePath,
-    to destinationPath: FilePath,
+    from sourcePath: FilePathDTO,
+    to destinationPath: FilePathDTO,
     overwrite: Bool=false,
     preserveAttributes _: Bool=true
   ) async throws {
@@ -202,8 +203,8 @@ extension FileSystemServiceImpl {
              `FileSystemError.writeError` if the move operation fails
    */
   public func move(
-    from sourcePath: FilePath,
-    to destinationPath: FilePath,
+    from sourcePath: FilePathDTO,
+    to destinationPath: FilePathDTO,
     overwrite: Bool=false
   ) async throws {
     guard !sourcePath.path.isEmpty else {
@@ -309,7 +310,7 @@ extension FileSystemServiceImpl {
    - Throws: `FileSystemError` if the operation fails
    */
   public func removeItem(
-    at path: FilePath,
+    at path: FilePathDTO,
     recursive: Bool=false
   ) async throws {
     try await remove(at: path, recursive: recursive)
@@ -326,8 +327,8 @@ extension FileSystemServiceImpl {
    - Throws: `FileSystemError` if the operation fails
    */
   public func copyItem(
-    at source: FilePath,
-    to destination: FilePath,
+    at source: FilePathDTO,
+    to destination: FilePathDTO,
     overwrite: Bool=false,
     preserveAttributes: Bool=true
   ) async throws {
@@ -349,8 +350,8 @@ extension FileSystemServiceImpl {
    - Throws: `FileSystemError` if the operation fails
    */
   public func moveItem(
-    from sourcePath: FilePath,
-    to destinationPath: FilePath,
+    from sourcePath: FilePathDTO,
+    to destinationPath: FilePathDTO,
     overwrite: Bool=false
   ) async throws {
     try await move(from: sourcePath, to: destinationPath, overwrite: overwrite)

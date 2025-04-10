@@ -8,5 +8,8 @@ swift_library(
     deps = [
         "//packages/UmbraInterfaces/Sources/FileSystemInterfaces",
         "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
+        "//packages/UmbraCoreTypes/Sources/FileSystemCommonTypes",
+        "//packages/UmbraCoreTypes/Sources/CoreDTOs",
+        "//packages/UmbraCoreTypes/Sources/LoggingTypes",
     ],
 )

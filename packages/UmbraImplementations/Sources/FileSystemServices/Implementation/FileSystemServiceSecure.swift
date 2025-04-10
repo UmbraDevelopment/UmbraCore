@@ -62,7 +62,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Returns: Whether the file exists
    - Throws: FileSystemError if the existence check fails
    */
-  public func fileExists(at path: FilePath) async throws -> Bool {
+  public func fileExists(at path: FilePathDTO) async throws -> Bool {
     await logDebug("Checking if file exists at \(path.path)")
 
     guard let securePath=SecurePathAdapter.toSecurePath(path) else {
@@ -85,7 +85,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Returns: Whether the directory exists
    - Throws: FileSystemError if the existence check fails
    */
-  public func directoryExists(at path: FilePath) async throws -> Bool {
+  public func directoryExists(at path: FilePathDTO) async throws -> Bool {
     await logDebug("Checking if directory exists at \(path.path)")
 
     guard let securePath=SecurePathAdapter.toSecurePath(path) else {
@@ -110,7 +110,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Throws: FileSystemError if directory creation fails
    */
   public func createDirectory(
-    at path: FilePath,
+    at path: FilePathDTO,
     withIntermediateDirectories: Bool=true
   ) async throws {
     await logDebug("Creating directory at \(path.path)")
@@ -146,9 +146,9 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Throws: FileSystemError if directory listing fails
    */
   public func contentsOfDirectory(
-    at path: FilePath,
+    at path: FilePathDTO,
     options _: DirectoryEnumerationOptions=[]
-  ) async throws -> [FilePath] {
+  ) async throws -> [FilePathDTO] {
     await logDebug("Listing contents of directory at \(path.path)")
 
     guard let securePath=SecurePathAdapter.toSecurePath(path) else {
@@ -169,7 +169,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
           atPath: itemPath
         )[.type] as? FileAttributeType) == .typeDirectory
 
-        return FilePath(path: itemPath, isDirectory: isDirectory)
+        return FilePathDTO(path: itemPath, isDirectory: isDirectory)
       }
     } catch {
       throw FileSystemInterfaces.FileSystemError.readError(
@@ -188,7 +188,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Returns: The file contents as Data
    - Throws: FileSystemError if file reading fails
    */
-  public func readFile(at path: FilePath) async throws -> Data {
+  public func readFile(at path: FilePathDTO) async throws -> Data {
     await logDebug("Reading file at \(path.path)")
 
     guard let securePath=SecurePathAdapter.toSecurePath(path) else {
@@ -218,7 +218,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Throws: FileSystemError if file writing fails
    */
   public func writeFile(
-    at path: FilePath,
+    at path: FilePathDTO,
     data: Data,
     options _: FileWriteOptions=[]
   ) async throws {
@@ -247,7 +247,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Parameter path: The file to delete
    - Throws: FileSystemError if file deletion fails
    */
-  public func deleteFile(at path: FilePath) async throws {
+  public func deleteFile(at path: FilePathDTO) async throws {
     await logDebug("Deleting file at \(path.path)")
 
     guard let securePath=SecurePathAdapter.toSecurePath(path) else {
@@ -291,8 +291,8 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Throws: FileSystemError if the move fails
    */
   public func moveItem(
-    from sourcePath: FilePath,
-    to destinationPath: FilePath,
+    from sourcePath: FilePathDTO,
+    to destinationPath: FilePathDTO,
     options _: FileMoveOptions=[]
   ) async throws {
     await logDebug("Moving file from \(sourcePath.path) to \(destinationPath.path)")
@@ -335,8 +335,8 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Throws: FileSystemError if the copy fails
    */
   public func copyItem(
-    from sourcePath: FilePath,
-    to destinationPath: FilePath,
+    from sourcePath: FilePathDTO,
+    to destinationPath: FilePathDTO,
     options _: FileCopyOptions=[]
   ) async throws {
     await logDebug("Copying file from \(sourcePath.path) to \(destinationPath.path)")
@@ -376,7 +376,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Returns: A URL representation of the path
    - Throws: FileSystemError if the conversion fails
    */
-  public func pathToURL(_ path: FilePath) async throws -> URL {
+  public func pathToURL(_ path: FilePathDTO) async throws -> URL {
     await logDebug("Converting path to URL: \(path.path)")
 
     guard let securePath=SecurePathAdapter.toSecurePath(path) else {
@@ -398,7 +398,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    */
   public func resolveSecurityBookmark(
     _ bookmark: Data
-  ) async throws -> (FilePath, Bool) {
+  ) async throws -> (FilePathDTO, Bool) {
     await logDebug("Resolving security bookmark")
 
     do {
@@ -411,7 +411,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
       )
 
       let isDirectory=(try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
-      let path=FilePath(path: url.path, isDirectory: isDirectory)
+      let path=FilePathDTO(path: url.path, isDirectory: isDirectory)
 
       return (path, isStale)
     } catch {
@@ -430,7 +430,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Throws: FileSystemError if access cannot be started
    */
   public func startAccessingSecurityScopedResource(
-    at path: FilePath
+    at path: FilePathDTO
   ) async throws -> Bool {
     await logDebug("Starting access to security-scoped resource at \(path.path)")
 
@@ -453,7 +453,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Parameter path: The path to stop accessing
    */
   public func stopAccessingSecurityScopedResource(
-    at path: FilePath
+    at path: FilePathDTO
   ) async {
     await logDebug("Stopping access to security-scoped resource at \(path.path)")
 
@@ -474,7 +474,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Returns: The path to the created temporary file
    - Throws: FileSystemError if the file cannot be created
    */
-  public func createTemporaryFile(options: TemporaryFileOptions?) async throws -> FilePath {
+  public func createTemporaryFile(options: TemporaryFileOptions?) async throws -> FilePathDTO {
     await logDebug("Creating temporary file")
     
     // Get the temporary directory
@@ -491,7 +491,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     // Create an empty file
     _ = Foundation.FileManager.default.createFile(atPath: url.path, contents: nil, attributes: nil) as Bool
     
-    return FilePath(path: url.path, isDirectory: false)
+    return FilePathDTO(path: url.path, isDirectory: false)
   }
 
   /**
@@ -501,7 +501,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Returns: The path to the created temporary directory
    - Throws: FileSystemError if the directory cannot be created
    */
-  public func createTemporaryDirectory(options: TemporaryFileOptions?) async throws -> FilePath {
+  public func createTemporaryDirectory(options: TemporaryFileOptions?) async throws -> FilePathDTO {
     await logDebug("Creating temporary directory")
     
     // Get the temporary directory
@@ -527,7 +527,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
       )
     }
     
-    return FilePath(path: url.path, isDirectory: true)
+    return FilePathDTO(path: url.path, isDirectory: true)
   }
 
   // MARK: - Helper Methods
@@ -555,9 +555,9 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Throws: FileSystemError if the directory cannot be read
    */
   public func listDirectory(
-    at path: FilePath,
+    at path: FilePathDTO,
     includeHidden: Bool
-  ) async throws -> [FilePath] {
+  ) async throws -> [FilePathDTO] {
     await logDebug("Listing directory at \(path.path), includeHidden: \(includeHidden)")
 
     guard let securePath=SecurePathAdapter.toSecurePath(path) else {
@@ -597,7 +597,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
           atPath: itemPath
         )[.type] as? FileAttributeType) == .typeDirectory
 
-        return FilePath(path: itemPath, isDirectory: isDirectory)
+        return FilePathDTO(path: itemPath, isDirectory: isDirectory)
       }
     } catch {
       throw FileSystemInterfaces.FileSystemError.readError(
@@ -616,9 +616,9 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Throws: FileSystemError if the directory cannot be read
    */
   public func listDirectoryRecursive(
-    at path: FilePath,
+    at path: FilePathDTO,
     includeHidden: Bool
-  ) async throws -> [FilePath] {
+  ) async throws -> [FilePathDTO] {
     await logDebug("Listing directory recursively at \(path.path), includeHidden: \(includeHidden)")
 
     // Get the top-level contents
@@ -645,7 +645,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Throws: FileSystemError if the file cannot be created
    */
   public func createFile(
-    at path: FilePath,
+    at path: FilePathDTO,
     data: Data,
     overwrite: Bool
   ) async throws {
@@ -699,7 +699,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Throws: FileSystemError if the file cannot be updated
    */
   public func updateFile(
-    at path: FilePath,
+    at path: FilePathDTO,
     data: Data
   ) async throws {
     await logDebug("Updating file at \(path.path)")
@@ -744,7 +744,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Throws: FileSystemError if the metadata cannot be retrieved
    */
   public func getFileMetadata(
-    at path: FilePath,
+    at path: FilePathDTO,
     options _: FileMetadataOptions?
   ) async throws -> FileMetadata {
     await logDebug("Getting file metadata at \(path.path)")
@@ -814,7 +814,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Throws: FileSystemError if the directory cannot be created
    */
   public func createDirectory(
-    at path: FilePath,
+    at path: FilePathDTO,
     createIntermediates: Bool,
     attributes: FileAttributes?
   ) async throws {
@@ -886,7 +886,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Throws: FileSystemError if the file cannot be deleted
    */
   public func deleteFile(
-    at path: FilePath,
+    at path: FilePathDTO,
     secure: Bool
   ) async throws {
     await logDebug("Deleting file at \(path.path), secure: \(secure)")
@@ -935,7 +935,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Throws: FileSystemError if the directory cannot be deleted
    */
   public func deleteDirectory(
-    at path: FilePath,
+    at path: FilePathDTO,
     secure: Bool
   ) async throws {
     await logDebug("Deleting directory at \(path.path), secure: \(secure)")
@@ -994,7 +994,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Throws: FileSystemError if the attribute cannot be retrieved
    */
   public func getExtendedAttribute(
-    at path: FilePath,
+    at path: FilePathDTO,
     name attributeName: String
   ) async throws -> SafeAttributeValue {
     await logDebug("Getting extended attribute \(attributeName) at \(path.path)")
@@ -1029,7 +1029,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Throws: FileSystemError if the attribute cannot be set
    */
   public func setExtendedAttribute(
-    at path: FilePath,
+    at path: FilePathDTO,
     name attributeName: String,
     value _: SafeAttributeValue
   ) async throws {
@@ -1064,7 +1064,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Throws: FileSystemError if the attributes cannot be retrieved
    */
   public func listExtendedAttributes(
-    at path: FilePath
+    at path: FilePathDTO
   ) async throws -> [String] {
     await logDebug("Listing extended attributes at \(path.path)")
 
@@ -1093,7 +1093,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Throws: FileSystemError if the attribute cannot be removed
    */
   public func removeExtendedAttribute(
-    at path: FilePath,
+    at path: FilePathDTO,
     name attributeName: String
   ) async throws {
     await logDebug("Removing extended attribute \(attributeName) at \(path.path)")
@@ -1128,8 +1128,8 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Throws: FileSystemError if the move operation fails
    */
   public func moveItem(
-    from sourcePath: FilePath,
-    to destinationPath: FilePath,
+    from sourcePath: FilePathDTO,
+    to destinationPath: FilePathDTO,
     overwrite: Bool
   ) async throws {
     await logDebug(
@@ -1188,8 +1188,8 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Throws: FileSystemError if the copy operation fails
    */
   public func copyItem(
-    from sourcePath: FilePath,
-    to destinationPath: FilePath,
+    from sourcePath: FilePathDTO,
+    to destinationPath: FilePathDTO,
     overwrite: Bool
   ) async throws {
     await logDebug(
@@ -1248,7 +1248,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Throws: FileSystemError if the bookmark cannot be created
    */
   public func createSecurityBookmark(
-    for path: FilePath,
+    for path: FilePathDTO,
     readOnly: Bool
   ) async throws -> Data {
     await logDebug("Creating security bookmark for \(path.path), readOnly: \(readOnly)")
@@ -1337,10 +1337,10 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Throws: FileSystemError if the read operation fails.
    */
   public func readFile(at path: String) async throws -> Data {
-    // Convert the path to a FilePath
-    let filePath = FilePath(path: path)
+    // Convert the path to a FilePathDTO
+    let filePath = FilePathDTO(path: path)
     
-    // Call the FilePath version of this method
+    // Call the FilePathDTO version of this method
     return try await readFile(at: filePath)
   }
   
@@ -1354,8 +1354,8 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Throws: FileSystemError if the read operation fails.
    */
   public func readFileAsString(at path: String, encoding: String.Encoding) async throws -> String {
-    // Convert the path to a FilePath
-    let filePath = FilePath(path: path)
+    // Convert the path to a FilePathDTO
+    let filePath = FilePathDTO(path: path)
     
     // Read the file data
     let data = try await readFile(at: path)
@@ -1378,10 +1378,10 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Returns: True if the file exists, false otherwise.
    */
   public func fileExists(at path: String) async -> Bool {
-    // Convert the path to a FilePath
-    let filePath = FilePath(path: path)
+    // Convert the path to a FilePathDTO
+    let filePath = FilePathDTO(path: path)
     
-    // Call the FilePath version of this method
+    // Call the FilePathDTO version of this method
     do {
       return try await fileExists(at: filePath)
     } catch {
@@ -1397,8 +1397,8 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Throws: FileSystemError if the directory cannot be read.
    */
   public func listDirectory(at path: String) async throws -> [String] {
-    // Convert the path to a FilePath
-    let filePath = FilePath(path: path)
+    // Convert the path to a FilePathDTO
+    let filePath = FilePathDTO(path: path)
     
     // Call the core implementation that works with URLs
     let url = URL(fileURLWithPath: path, isDirectory: true)
@@ -1425,8 +1425,8 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Throws: FileSystemError if the directory cannot be read.
    */
   public func listDirectoryRecursively(at path: String) async throws -> [String] {
-    // Convert the path to a FilePath
-    let filePath = FilePath(path: path)
+    // Convert the path to a FilePathDTO
+    let filePath = FilePathDTO(path: path)
     
     // Implement recursive directory listing
     var allPaths: [String] = []
@@ -1459,8 +1459,8 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Throws: FileSystemError if file creation fails.
    */
   public func createFile(at path: String, options: FileCreationOptions?) async throws -> String {
-    // Convert the path to a FilePath
-    let filePath = FilePath(path: path)
+    // Convert the path to a FilePathDTO
+    let filePath = FilePathDTO(path: path)
     
     // Check if file exists and overwrite is not allowed
     if FileManager.default.fileExists(atPath: path) && options?.shouldOverwrite != true {
@@ -1499,10 +1499,10 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Throws: FileSystemError if the write operation fails.
    */
   public func writeString(_ string: String, to path: String, encoding: String.Encoding, options: FileWriteOptions?) async throws {
-    // Convert the path to a FilePath
-    let filePath = FilePath(path: path)
+    // Convert the path to a FilePathDTO
+    let filePath = FilePathDTO(path: path)
     
-    // Call the FilePath version of this method
+    // Call the FilePathDTO version of this method
     try await writeString(string, to: filePath, encoding: encoding, options: options)
   }
   
@@ -1516,8 +1516,8 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Throws: FileSystemError if directory creation fails.
    */
   public func createDirectory(at path: String, options: DirectoryCreationOptions?) async throws -> String {
-    // Convert the path to a FilePath
-    let filePath = FilePath(path: path)
+    // Convert the path to a FilePathDTO
+    let filePath = FilePathDTO(path: path)
     
     // Implement directory creation
     do {
@@ -1563,11 +1563,11 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Throws: FileSystemError if the move operation fails.
    */
   public func move(from sourcePath: String, to destinationPath: String, options: FileMoveOptions?) async throws {
-    // Convert the paths to FilePaths
-    let sourceFilePath = FilePath(path: sourcePath)
-    let destFilePath = FilePath(path: destinationPath)
+    // Convert the paths to FilePathDTO
+    let sourceFilePath = FilePathDTO(path: sourcePath)
+    let destFilePath = FilePathDTO(path: destinationPath)
     
-    // Call the FilePath version of this method
+    // Call the FilePathDTO version of this method
     try await move(from: sourceFilePath, to: destFilePath, options: options)
   }
   
@@ -1581,11 +1581,11 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Throws: FileSystemError if the copy operation fails.
    */
   public func copy(from sourcePath: String, to destinationPath: String, options: FileCopyOptions?) async throws {
-    // Convert the paths to FilePaths
-    let sourceFilePath = FilePath(path: sourcePath)
-    let destFilePath = FilePath(path: destinationPath)
+    // Convert the paths to FilePathDTO
+    let sourceFilePath = FilePathDTO(path: sourcePath)
+    let destFilePath = FilePathDTO(path: destinationPath)
     
-    // Call the FilePath version of this method
+    // Call the FilePathDTO version of this method
     try await copy(from: sourceFilePath, to: destFilePath, options: options)
   }
   
@@ -1933,7 +1933,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Parameter path: The file to overwrite
    - Throws: FileSystemError if the secure deletion fails
    */
-  private func securelyOverwriteFile(at path: FilePath) async throws {
+  private func securelyOverwriteFile(at path: FilePathDTO) async throws {
     guard let securePath=SecurePathAdapter.toSecurePath(path) else {
       throw FileSystemInterfaces.FileSystemError.invalidPath(
         path: path.path,
@@ -1981,7 +1981,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    - Parameter securePath: The secure path to check
    - Throws: FileSystemError if the parent directory cannot be created
    */
-  private func ensureParentDirectoryExists(for securePath: FilePath) async throws {
+  private func ensureParentDirectoryExists(for securePath: FilePathDTO) async throws {
     // Get the parent directory path
     let pathComponents = securePath.path.split(separator: "/")
     guard pathComponents.count > 1 else {
@@ -1994,7 +1994,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
       return
     }
     
-    let parentFilePath = FilePath(path: "/\(parentPath)", isDirectory: true)
+    let parentFilePath = FilePathDTO(path: "/\(parentPath)", isDirectory: true)
     
     // Create parent directories if needed
     let exists = await fileExists(at: parentFilePath)

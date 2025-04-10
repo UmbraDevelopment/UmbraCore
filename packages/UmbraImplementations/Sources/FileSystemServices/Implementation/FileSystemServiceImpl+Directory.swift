@@ -23,7 +23,7 @@ extension FileSystemServiceImpl {
              `FileSystemError.pathAlreadyExists` if a file already exists at the path
    */
   public func createDirectory(
-    at path: FilePath,
+    at path: FilePathDTO,
     createIntermediates: Bool=true,
     attributes: FileAttributes?=nil
   ) async throws {
@@ -228,7 +228,7 @@ extension FileSystemServiceImpl {
              `FileSystemError.invalidPath` if the path is not a directory
              `FileSystemError.readError` if the directory cannot be read
    */
-  public func isDirectoryEmpty(at path: FilePath) async throws -> Bool {
+  public func isDirectoryEmpty(at path: FilePathDTO) async throws -> Bool {
     guard !path.path.isEmpty else {
       throw FileSystemInterfaces.FileSystemError.invalidPath(
         path: path.path,
@@ -242,7 +242,7 @@ extension FileSystemServiceImpl {
     }
 
     // Check if the path is a directory
-    var isDir: ObjCBool=false
+    var isDir: ObjCBool = false
     fileManager.fileExists(atPath: path.path, isDirectory: &isDir)
 
     if !isDir.boolValue {

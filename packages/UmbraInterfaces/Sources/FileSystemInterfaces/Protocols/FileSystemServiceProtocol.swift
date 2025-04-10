@@ -1,4 +1,6 @@
 import Foundation
+import FileSystemTypes
+import CoreDTOs
 
 /**
  # File System Service Protocol
@@ -79,6 +81,57 @@ public protocol FileSystemServiceProtocol: FileReadOperationsProtocol,
      - Returns: The normalised path.
      */
     func normalisePath(_ path: String) async -> String
+    
+    /**
+     Creates a security bookmark for a file or directory.
+     
+     Security bookmarks allow access to user-selected files even after an app restarts.
+     
+     - Parameters:
+        - path: The path to create a bookmark for.
+        - readOnly: Whether the bookmark should be read-only.
+     - Returns: The bookmark data.
+     - Throws: FileSystemError if bookmark creation fails.
+     */
+    func createSecurityBookmark(for path: FilePathDTO, readOnly: Bool) async throws -> Data
+    
+    /**
+     Resolves a security bookmark to access a file or directory.
+     
+     - Parameter bookmark: The bookmark data to resolve.
+     - Returns: A tuple containing the resolved path and whether the bookmark is stale.
+     - Throws: FileSystemError if bookmark resolution fails.
+     */
+    func resolveSecurityBookmark(_ bookmark: Data) async throws -> (FilePathDTO, Bool)
+    
+    /**
+     Converts a file path to a URL.
+     
+     - Parameter path: The file path to convert.
+     - Returns: The URL corresponding to the file path.
+     - Throws: FileSystemError if the conversion fails.
+     */
+    func pathToURL(_ path: FilePathDTO) async throws -> URL
+    
+    /**
+     Starts accessing a security-scoped resource.
+     
+     Call this method before accessing a file obtained from a security bookmark.
+     
+     - Parameter path: The path to the security-scoped resource.
+     - Returns: A boolean indicating if access was successful.
+     - Throws: FileSystemError if access cannot be started.
+     */
+    func startAccessingSecurityScopedResource(at path: FilePathDTO) async throws -> Bool
+    
+    /**
+     Stops accessing a security-scoped resource.
+     
+     Call this method when finished accessing a file obtained from a security bookmark.
+     
+     - Parameter path: The path to the security-scoped resource.
+     */
+    func stopAccessingSecurityScopedResource(at path: FilePathDTO) async
     
     /**
      Creates a sandboxed file system service instance that restricts

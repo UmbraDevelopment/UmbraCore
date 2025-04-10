@@ -32,7 +32,7 @@
 
 // Re-export modules needed for CoreDTOs functionality
 // These will be uncommented during migration completion
-@_exported import FileSystemTypes
+@_exported import FileSystemCommonTypes
 @_exported import Notification
 @_exported import Scheduling
 

@@ -1,35 +1,5 @@
 import Foundation
-
-/// Represents a file path in the system
-public struct FilePath: Sendable, Equatable, Hashable {
-  /// The string representation of the path
-  public let path: String
-
-  /// Whether this path represents a directory
-  public let isDirectory: Bool
-
-  /// Security options for this path
-  public let securityOptions: SecurityOptions?
-
-  /// Creates a new file path
-  /// - Parameter path: The string representation of the path
-  public init(path: String) {
-    self.path=path
-    isDirectory=false
-    securityOptions=nil
-  }
-
-  /// Creates a new file path with directory flag and security options
-  /// - Parameters:
-  ///   - path: The string representation of the path
-  ///   - isDirectory: Whether this path represents a directory
-  ///   - securityOptions: Optional security options for this path
-  public init(path: String, isDirectory: Bool, securityOptions: SecurityOptions?=nil) {
-    self.path=path
-    self.isDirectory=isDirectory
-    self.securityOptions=securityOptions
-  }
-}
+import FileSystemCommonTypes
 
 /// Represents a file system item type
 public enum FileSystemItemType: String, Sendable, Equatable, Hashable {
@@ -46,7 +16,7 @@ public enum FileSystemItemType: String, Sendable, Equatable, Hashable {
 /// Represents metadata for a file system item
 public struct FileSystemMetadata: Sendable, Equatable, Hashable {
   /// The path of the file system item
-  public let path: FilePath
+  public let path: FilePathDTO
   /// The type of the file system item
   public let itemType: FileSystemItemType
   /// The size of the file system item in bytes
@@ -64,16 +34,16 @@ public struct FileSystemMetadata: Sendable, Equatable, Hashable {
   ///   - creationDate: The creation date of the file system item
   ///   - modificationDate: The modification date of the file system item
   public init(
-    path: FilePath,
+    path: FilePathDTO,
     itemType: FileSystemItemType,
     size: UInt64,
     creationDate: Date?,
     modificationDate: Date?
   ) {
-    self.path=path
-    self.itemType=itemType
-    self.size=size
-    self.creationDate=creationDate
-    self.modificationDate=modificationDate
+    self.path = path
+    self.itemType = itemType
+    self.size = size
+    self.creationDate = creationDate
+    self.modificationDate = modificationDate
   }
 }

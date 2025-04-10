@@ -42,6 +42,28 @@ extension FileManager {
     }
     
     /**
+     Sets a string extended attribute on a file or directory.
+     
+     - Parameters:
+        - name: The name of the extended attribute
+        - value: The string value to set (nil to remove the attribute)
+        - forItemAtPath: The path of the file or directory
+     - Throws: Error if the attribute cannot be set or removed
+     */
+    func setExtendedAttribute(_ name: String, value: String?, forItemAtPath path: String) throws {
+        if let stringValue = value {
+            // Set the attribute with string data
+            guard let data = stringValue.data(using: .utf8) else {
+                throw NSError(domain: NSPOSIXErrorDomain, code: NSFileWriteInapplicableStringEncodingError, userInfo: nil)
+            }
+            try setExtendedAttribute(data, withName: name, forItemAtPath: path)
+        } else {
+            // Remove the attribute
+            try removeExtendedAttribute(withName: name, fromItemAtPath: path)
+        }
+    }
+    
+    /**
      Gets an extended attribute from a file or directory.
      
      - Parameters:
@@ -112,4 +134,8 @@ extension FileManager {
 /**
  Extended attributes are key-value pairs that can be associated with files and
  directories in many file systems, providing a standardised way to store metadata.
+ 
+ This extension only contains helper methods for the FileManager class and does not
+ extend FileSystemServiceImpl directly to avoid conflicts with existing implementations
+ in other extension files.
  */

@@ -12,7 +12,7 @@ umbra_swift_library(
     visibility = ["//visibility:public"],
     deps = [
         # All migrated modules
-        "//packages/UmbraCoreTypes/Sources/FileSystemTypes",
+        "//packages/UmbraCoreTypes/Sources/FileSystemCommonTypes", 
         "//packages/UmbraCoreTypes/Sources/DomainSecurityTypes",
         "//packages/UmbraCoreTypes/Sources/CoreSecurityTypes",
         "//packages/UmbraCoreTypes/Sources/UmbraErrors",

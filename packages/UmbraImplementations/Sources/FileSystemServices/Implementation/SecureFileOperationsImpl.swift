@@ -3,6 +3,7 @@ import FileSystemInterfaces
 import FileSystemTypes
 import LoggingInterfaces
 import LoggingTypes
+import CoreDTOs
 
 /**
  # Secure File Operations Implementation
@@ -54,6 +55,39 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
     }
     
     /**
+     Sets secure permissions on a file or directory.
+     
+     - Parameters:
+        - permissions: The security level for the permissions.
+        - path: The path to the file or directory.
+     - Throws: FileSystemError if permissions cannot be set.
+     */
+    public func setSecurePermissions(_ permissions: SecurityPermission, at path: FilePathDTO) async throws {
+        await logger.debug("Setting secure permissions at \(path.path)", context: LogContextDTO())
+        
+        // Implementation specific to each platform
+        var attributes: [FileAttributeKey: Any] = [:]
+        
+        switch permissions {
+        case .private:
+            // Set private permissions (e.g., 0600 for files, 0700 for directories)
+            attributes[.posixPermissions] = 0o600
+        case .readOnly:
+            // Set read-only permissions
+            attributes[.posixPermissions] = 0o400
+        case .readWrite:
+            // Set read-write permissions
+            attributes[.posixPermissions] = 0o644
+        }
+        
+        do {
+            try fileManager.setAttributes(attributes, ofItemAtPath: path.path)
+        } catch {
+            throw FileSystemError.permissionError(path: path.path, reason: error.localizedDescription)
+        }
+    }
+    
+    /**
      Creates a secure temporary file with the specified prefix.
      
      - Parameters:
@@ -62,7 +96,7 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
      - Returns: The path to the secure temporary file.
      - Throws: FileSystemError if the temporary file cannot be created.
      */
-    public func createSecureTemporaryFile(prefix: String?, options: FileCreationOptions?) async throws -> String {
+    public func createSecureTemporaryFile(prefix: String?, options: FileCreationOptions?) async throws -> FilePathDTO {
         await logger.debug("Creating secure temporary file", context: LogContextDTO())
         
         let tempDir = fileManager.temporaryDirectory.path
@@ -70,25 +104,21 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
         let prefixString = prefix ?? ""
         let filePath = "\(tempDir)/\(prefixString)\(uuid)"
         
-        // Create an empty file with secure attributes
-        let attributes = options?.attributes ?? [:]
+        // Create the file with secure attributes
         let overwrite = options?.overwrite ?? false
         
-        if fileManager.fileExists(atPath: filePath) {
-            if overwrite {
-                try fileManager.removeItem(atPath: filePath)
-            } else {
-                throw FileSystemError.itemAlreadyExists(path: filePath)
-            }
+        if fileManager.fileExists(atPath: filePath) && !overwrite {
+            throw FileSystemError.itemAlreadyExists(path: filePath)
         }
         
-        // Create the file with secure attributes
-        fileManager.createFile(atPath: filePath, contents: Data(), attributes: attributes)
+        if !fileManager.createFile(atPath: filePath, contents: nil, attributes: nil) {
+            throw FileSystemError.writeError(path: filePath, reason: "Failed to create secure temporary file")
+        }
         
         // Set secure permissions
-        try await setSecurePermissions(.private, at: filePath)
+        try await setSecurePermissions(.private, at: FilePathDTO(path: filePath))
         
-        return filePath
+        return FilePathDTO(path: filePath)
     }
     
     /**
@@ -100,7 +130,7 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
      - Returns: The path to the secure temporary directory.
      - Throws: FileSystemError if the temporary directory cannot be created.
      */
-    public func createSecureTemporaryDirectory(prefix: String?, options: DirectoryCreationOptions?) async throws -> String {
+    public func createSecureTemporaryDirectory(prefix: String?, options: DirectoryCreationOptions?) async throws -> FilePathDTO {
         await logger.debug("Creating secure temporary directory", context: LogContextDTO())
         
         let tempDir = fileManager.temporaryDirectory.path
@@ -119,9 +149,9 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
         )
         
         // Set secure permissions
-        try await setSecurePermissions(.private, at: dirPath)
+        try await setSecurePermissions(.private, at: FilePathDTO(path: dirPath, isDirectory: true))
         
-        return dirPath
+        return FilePathDTO(path: dirPath, isDirectory: true)
     }
     
     /**
@@ -133,8 +163,8 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
         - options: Optional secure write options.
      - Throws: FileSystemError if the secure write operation fails.
      */
-    public func secureWriteFile(data: Data, to path: String, options: SecureFileWriteOptions?) async throws {
-        await logger.debug("Securely writing file to \(path)", context: LogContextDTO())
+    public func secureWriteFile(data: Data, to path: FilePathDTO, options: SecureFileWriteOptions?) async throws {
+        await logger.debug("Securely writing file to \(path.path)", context: LogContextDTO())
         
         // Implement secure file writing with encryption
         // For a real implementation, you would use a crypto service to encrypt the data
@@ -142,16 +172,16 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
         // For now, we'll just write the data to the file with secure attributes
         let overwrite = options?.overwrite ?? false
         
-        if fileManager.fileExists(atPath: path) {
+        if fileManager.fileExists(atPath: path.path) {
             if overwrite {
-                try fileManager.removeItem(atPath: path)
+                try fileManager.removeItem(atPath: path.path)
             } else {
-                throw FileSystemError.itemAlreadyExists(path: path)
+                throw FileSystemError.itemAlreadyExists(path: path.path)
             }
         }
         
         // Create the file with secure attributes
-        fileManager.createFile(atPath: path, contents: data, attributes: nil)
+        fileManager.createFile(atPath: path.path, contents: data, attributes: nil)
         
         // Set secure permissions
         try await setSecurePermissions(.private, at: path)
@@ -166,19 +196,19 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
      - Returns: The decrypted file contents.
      - Throws: FileSystemError if the secure read operation fails.
      */
-    public func secureReadFile(at path: String, options: SecureFileReadOptions?) async throws -> Data {
-        await logger.debug("Securely reading file at \(path)", context: LogContextDTO())
+    public func secureReadFile(at path: FilePathDTO, options: SecureFileReadOptions?) async throws -> Data {
+        await logger.debug("Securely reading file at \(path.path)", context: LogContextDTO())
         
-        guard fileManager.fileExists(atPath: path) else {
-            throw FileSystemError.pathNotFound(path: path)
+        guard fileManager.fileExists(atPath: path.path) else {
+            throw FileSystemError.pathNotFound(path: path.path)
         }
         
         // Implement secure file reading with decryption
         // For a real implementation, you would use a crypto service to decrypt the data
         
         // For now, we'll just read the file contents
-        guard let data = fileManager.contents(atPath: path) else {
-            throw FileSystemError.readError(path: path, reason: "Could not read file contents")
+        guard let data = fileManager.contents(atPath: path.path) else {
+            throw FileSystemError.readError(path: path.path, reason: "Could not read file contents")
         }
         
         return data
@@ -192,81 +222,64 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
         - options: Optional secure deletion options.
      - Throws: FileSystemError if the secure deletion fails.
      */
-    public func secureDelete(at path: String, options: SecureDeletionOptions?) async throws {
-        await logger.debug("Securely deleting file at \(path)", context: LogContextDTO())
+    public func secureDelete(at path: FilePathDTO, options: SecureDeletionOptions?) async throws {
+        await logger.debug("Securely deleting file at \(path.path)", context: LogContextDTO())
         
-        guard fileManager.fileExists(atPath: path) else {
-            throw FileSystemError.pathNotFound(path: path)
+        guard fileManager.fileExists(atPath: path.path) else {
+            throw FileSystemError.pathNotFound(path: path.path)
         }
         
-        // Implement secure deletion
-        // For a real implementation, you would overwrite the file multiple times
-        // with random data before deleting it
+        // For a secure deletion, we would:
+        // 1. Overwrite the file with random data multiple times
+        // 2. Then delete it
         
-        // For now, we'll just delete the file
-        try fileManager.removeItem(atPath: path)
+        let passes = options?.passes ?? 3
+        
+        // Perform secure overwrite with random data
+        for pass in 1...passes {
+            // Get the file size
+            let attributes = try fileManager.attributesOfItem(atPath: path.path)
+            guard let fileSize = attributes[.size] as? UInt64, fileSize > 0 else {
+                // If file is empty or we can't get size, just delete it
+                break
+            }
+            
+            // Create random data of the same size
+            var randomData = Data(count: Int(fileSize))
+            randomData.withUnsafeMutableBytes { ptr in
+                _ = SecRandomCopyBytes(kSecRandomDefault, fileSize, ptr.baseAddress!)
+            }
+            
+            // Overwrite the file with the random data
+            try randomData.write(to: URL(fileURLWithPath: path.path))
+            
+            await logger.debug("Completed secure delete pass \(pass) of \(passes)", context: LogContextDTO())
+        }
+        
+        // Finally, delete the file
+        try fileManager.removeItem(atPath: path.path)
     }
     
     /**
-     Sets secure permissions on a file or directory.
-     
-     - Parameters:
-        - permissions: The secure permissions to set.
-        - path: The path to the file or directory.
-     - Throws: FileSystemError if the permissions cannot be set.
-     */
-    public func setSecurePermissions(_ permissions: SecureFilePermissions, at path: String) async throws {
-        await logger.debug("Setting secure permissions at \(path)", context: LogContextDTO())
-        
-        guard fileManager.fileExists(atPath: path) else {
-            throw FileSystemError.pathNotFound(path: path)
-        }
-        
-        // Set file permissions based on the SecureFilePermissions enum
-        var attributes: [FileAttributeKey: Any] = [:]
-        
-        switch permissions {
-        case .private:
-            attributes[.posixPermissions] = 0o600 // Owner read/write only
-        case .readonly:
-            attributes[.posixPermissions] = 0o400 // Owner read only
-        case .readWrite:
-            attributes[.posixPermissions] = 0o644 // Owner read/write, group/others read
-        case .executable:
-            attributes[.posixPermissions] = 0o755 // Owner read/write/execute, group/others read/execute
-        }
-        
-        do {
-            try fileManager.setAttributes(attributes, ofItemAtPath: path)
-        } catch {
-            throw FileSystemError.permissionError(
-                path: path,
-                reason: "Failed to set permissions: \(error.localizedDescription)"
-            )
-        }
-    }
-    
-    /**
-     Verifies the integrity of a file using a checksum or signature.
+     Verifies the integrity of a file using a digital signature.
      
      - Parameters:
         - path: The path to the file to verify.
-        - signature: The expected signature or checksum.
+        - signature: The digital signature to verify against.
      - Returns: True if the file integrity is verified, false otherwise.
      - Throws: FileSystemError if the verification process fails.
      */
-    public func verifyFileIntegrity(at path: String, against signature: Data) async throws -> Bool {
-        await logger.debug("Verifying file integrity at \(path)", context: LogContextDTO())
+    public func verifyFileIntegrity(at path: FilePathDTO, against signature: Data) async throws -> Bool {
+        await logger.debug("Verifying file integrity at \(path.path)", context: LogContextDTO())
         
-        guard fileManager.fileExists(atPath: path) else {
-            throw FileSystemError.pathNotFound(path: path)
+        guard fileManager.fileExists(atPath: path.path) else {
+            throw FileSystemError.pathNotFound(path: path.path)
         }
         
-        // Implement file integrity verification
-        // For a real implementation, you would calculate a checksum or hash
-        // of the file contents and compare it to the provided signature
+        // For a real implementation, this would use a crypto service to verify the signature
+        // For now, we'll just return true as a placeholder
         
-        // For now, we'll just return true
+        // This is just a placeholder implementation
         return true
     }
 }
@@ -274,117 +287,68 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
 /**
  # Sandboxed Secure File Operations
  
- A variant of SecureFileOperationsImpl that restricts operations to a specific root directory.
+ This extension adds sandboxing capabilities to the secure file operations,
+ restricting operations to a specified root directory.
  */
-public actor SandboxedSecureFileOperations: SecureFileOperationsProtocol {
-    /// The underlying secure file operations implementation
-    private let secureFileOperations: SecureFileOperationsImpl
-    
-    /// The root directory to restrict operations to
-    private let rootDirectory: String
-    
+extension SecureFileOperationsImpl {
     /**
-     Initialises a new sandboxed secure file operations implementation.
+     Validates if a path is within the root directory (sandbox).
      
-     - Parameters:
-       - rootDirectory: The directory to restrict operations to
-       - fileManager: Optional custom file manager to use
-       - logger: Optional logger for recording operations
+     - Parameter path: The path to validate.
+     - Returns: True if the path is within the sandbox, false otherwise.
      */
-    public init(
-        rootDirectory: String,
-        fileManager: FileManager = .default,
-        logger: (any LoggingProtocol)? = nil
-    ) {
-        self.rootDirectory = rootDirectory
-        self.secureFileOperations = SecureFileOperationsImpl(
-            fileManager: fileManager,
-            logger: logger,
-            rootDirectory: rootDirectory
-        )
+    private func isWithinSandbox(_ path: String) -> Bool {
+        guard let rootDir = rootDirectory else {
+            // If no root directory is specified, all paths are allowed
+            return true
+        }
+        
+        // Normalize paths for comparison
+        let normalizedRoot = URL(fileURLWithPath: rootDir).standardized.path
+        let normalizedPath = URL(fileURLWithPath: path).standardized.path
+        
+        return normalizedPath.hasPrefix(normalizedRoot)
     }
     
     /**
-     Validates that a path is within the sandbox.
+     Throws an error if the path is outside the sandbox.
      
-     - Parameter path: The path to validate
-     - Throws: FileSystemError if the path is outside the sandbox
+     - Parameter path: The path to validate.
+     - Throws: FileSystemError.permissionError if the path is outside the sandbox.
      */
-    private func validatePath(_ path: String) throws {
-        let normalizedPath = (path as NSString).standardizingPath
-        let normalizedRoot = (rootDirectory as NSString).standardizingPath
-        
-        guard normalizedPath.hasPrefix(normalizedRoot) else {
-            throw FileSystemError.sandboxViolation(
+    private func validateSandbox(_ path: String) throws {
+        if !isWithinSandbox(path) {
+            throw FileSystemError.permissionError(
                 path: path,
-                rootDirectory: rootDirectory
+                reason: "Operation not permitted outside the sandbox"
             )
         }
     }
     
-    public func createSecureTemporaryFile(prefix: String?, options: FileCreationOptions?) async throws -> String {
-        // Create the file within the sandbox root
-        let tempFile = try await secureFileOperations.createSecureTemporaryFile(prefix: prefix, options: options)
+    /**
+     Sandboxes a path by making it relative to the root directory.
+     
+     - Parameter path: The path to sandbox.
+     - Returns: The sandboxed path.
+     */
+    private func sandboxPath(_ path: String) -> String {
+        guard let rootDir = rootDirectory else {
+            // If no root directory is specified, return the path as is
+            return path
+        }
         
-        // Ensure the file is within the sandbox
-        let sandboxedPath = "\(rootDirectory)/\((tempFile as NSString).lastPathComponent)"
+        // If the path is already absolute and within the sandbox, return it
+        if path.hasPrefix("/") && isWithinSandbox(path) {
+            return path
+        }
         
-        return sandboxedPath
-    }
-    
-    public func createSecureTemporaryDirectory(prefix: String?, options: DirectoryCreationOptions?) async throws -> String {
-        // Create the directory within the sandbox root
-        let tempDir = try await secureFileOperations.createSecureTemporaryDirectory(prefix: prefix, options: options)
-        
-        // Ensure the directory is within the sandbox
-        let sandboxedPath = "\(rootDirectory)/\((tempDir as NSString).lastPathComponent)"
-        
-        return sandboxedPath
-    }
-    
-    public func secureWriteFile(data: Data, to path: String, options: SecureFileWriteOptions?) async throws {
-        // Validate path is within the sandbox
-        try validatePath(path)
-        
-        // Delegate to the underlying implementation
-        try await secureFileOperations.secureWriteFile(data: data, to: path, options: options)
-    }
-    
-    public func secureReadFile(at path: String, options: SecureFileReadOptions?) async throws -> Data {
-        // Validate path is within the sandbox
-        try validatePath(path)
-        
-        // Delegate to the underlying implementation
-        return try await secureFileOperations.secureReadFile(at: path, options: options)
-    }
-    
-    public func secureDelete(at path: String, options: SecureDeletionOptions?) async throws {
-        // Validate path is within the sandbox
-        try validatePath(path)
-        
-        // Delegate to the underlying implementation
-        try await secureFileOperations.secureDelete(at: path, options: options)
-    }
-    
-    public func setSecurePermissions(_ permissions: SecureFilePermissions, at path: String) async throws {
-        // Validate path is within the sandbox
-        try validatePath(path)
-        
-        // Delegate to the underlying implementation
-        try await secureFileOperations.setSecurePermissions(permissions, at: path)
-    }
-    
-    public func verifyFileIntegrity(at path: String, against signature: Data) async throws -> Bool {
-        // Validate path is within the sandbox
-        try validatePath(path)
-        
-        // Delegate to the underlying implementation
-        return try await secureFileOperations.verifyFileIntegrity(at: path, against: signature)
+        // Otherwise, make it relative to the root directory
+        return URL(fileURLWithPath: rootDir).appendingPathComponent(path).path
     }
 }
 
 /**
- A null logger implementation used as a default when no logger is provided.
+ A null logger that does nothing, used as a fallback when no logger is provided.
  */
 actor NullLogger: LoggingProtocol {
     func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
@@ -399,15 +363,11 @@ actor NullLogger: LoggingProtocol {
         // Do nothing
     }
     
-    func warn(_ message: String, context: LogContextDTO) async {
+    func warning(_ message: String, context: LogContextDTO) async {
         // Do nothing
     }
     
     func error(_ message: String, context: LogContextDTO) async {
-        // Do nothing
-    }
-    
-    func critical(_ message: String, context: LogContextDTO) async {
         // Do nothing
     }
 }

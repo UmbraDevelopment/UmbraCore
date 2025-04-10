@@ -25,7 +25,7 @@ extension FileSystemServiceImpl {
              `FileSystemError.readError` if the file cannot be read
    */
   public func readDataInChunks(
-    at path: FilePath,
+    at path: FilePathDTO,
     chunkSize: Int,
     handler: @Sendable ([UInt8]) async throws -> Void
   ) async throws {
@@ -122,7 +122,7 @@ extension FileSystemServiceImpl {
              `FileSystemError.readError` if the file cannot be read
    */
   public func readFileInChunks(
-    at path: FilePath,
+    at path: FilePathDTO,
     chunkSize: Int=1024 * 1024 // Default 1MB
   ) async throws -> [UInt8] {
     // Use an actor to safely collect bytes in a concurrent context
@@ -163,7 +163,7 @@ extension FileSystemServiceImpl {
              `FileSystemError.writeError` if the file cannot be written
    */
   public func writeDataInChunks(
-    to path: FilePath,
+    to path: FilePathDTO,
     overwrite: Bool,
     chunkProvider: @Sendable () async throws -> [UInt8]?
   ) async throws {
@@ -272,7 +272,7 @@ extension FileSystemServiceImpl {
    */
   public func writeFileInChunks(
     bytes: [UInt8],
-    to path: FilePath,
+    to path: FilePathDTO,
     overwrite: Bool=true,
     chunkSize: Int=1024 * 1024 // Default 1MB
   ) async throws {

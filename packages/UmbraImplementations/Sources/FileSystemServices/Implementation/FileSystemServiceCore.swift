@@ -52,27 +52,27 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
   public init(
     fileManager: FileManager = .default,
     operationQueueQoS: DispatchQoS.QoSClass = .utility,
-    defaultBufferSize: Int=65536,
-    securityOptions: SecurityOptions=SecurityOptions(
+    defaultBufferSize: Int = 65536,
+    securityOptions: SecurityOptions = SecurityOptions(
       preservePermissions: true,
       enforceSandboxing: true,
       allowSymlinks: true
     ),
-    runInBackground: Bool=false,
-    logger: (any LoggingInterfaces.LoggingProtocol)?=nil
+    runInBackground: Bool = false,
+    logger: (any LoggingInterfaces.LoggingProtocol)? = nil
   ) {
-    self.fileManager=fileManager
-    self.operationQueueQoS=operationQueueQoS
-    self.defaultBufferSize=defaultBufferSize
-    self.securityOptions=securityOptions
-    self.runInBackground=runInBackground
-    operationQueue=DispatchQueue(
+    self.fileManager = fileManager
+    self.operationQueueQoS = operationQueueQoS
+    self.defaultBufferSize = defaultBufferSize
+    self.securityOptions = securityOptions
+    self.runInBackground = runInBackground
+    operationQueue = DispatchQueue(
       label: "com.umbra.filesystemservice",
       qos: DispatchQoS(qosClass: operationQueueQoS, relativePriority: 0),
       attributes: .concurrent
     )
     // Use a NullLogger if no logger is provided
-    self.logger=logger ?? NullLogger()
+    self.logger = logger ?? NullLogger()
   }
 
   /**
@@ -81,12 +81,12 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
    - Parameter path: The path to check
    - Returns: Boolean indicating whether the file exists
    */
-  public func fileExists(at path: FilePath) async -> Bool {
+  public func fileExists(at path: FilePathDTO) async -> Bool {
     guard !path.path.isEmpty else {
       return false
     }
 
-    let exists=fileManager.fileExists(atPath: path.path)
+    let exists = fileManager.fileExists(atPath: path.path)
 
     await logger.debug(
       "Checked file existence",
@@ -113,7 +113,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
    - Throws: `FileSystemError.readError` if the operation fails for reasons other than non-existence
    */
   public func getFileMetadata(
-    at path: FilePath,
+    at path: FilePathDTO,
     options: FileMetadataOptions?
   ) async throws -> FileMetadata {
     guard !path.path.isEmpty else {
@@ -121,10 +121,10 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
     }
 
     do {
-      let url=URL(fileURLWithPath: path.path)
+      let url = URL(fileURLWithPath: path.path)
 
       // Build a set of resource keys to fetch
-      var resourceKeys: Set<URLResourceKey>=[
+      var resourceKeys: Set<URLResourceKey> = [
         .isDirectoryKey,
         .fileSizeKey,
         .contentModificationDateKey,
@@ -140,41 +140,41 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       // Add any additional keys requested by the caller
       if let options {
         for key in options.resourceKeys {
-          if let urlKey=key.toURLResourceKey() {
+          if let urlKey = key.toURLResourceKey() {
             resourceKeys.insert(urlKey)
           }
         }
       }
 
       // Fetch resource values from the URL
-      let urlResourceValues=try url.resourceValues(forKeys: resourceKeys)
+      let urlResourceValues = try url.resourceValues(forKeys: resourceKeys)
 
       // Convert URLResourceValues to our safe dictionary type
-      var safeResourceValues=[FileResourceKey: SafeAttributeValue]()
+      var safeResourceValues = [FileResourceKey: SafeAttributeValue]()
 
       // Convert each resource value to our SafeAttributeValue type
       for key in resourceKeys {
         if
-          let value=urlResourceValues.allValues[key],
-          let safeValue=SafeAttributeValue(from: value)
+          let value = urlResourceValues.allValues[key],
+          let safeValue = SafeAttributeValue(from: value)
         {
-          if let fileKey=FileResourceKey(fromURLResourceKey: key) {
-            safeResourceValues[fileKey]=safeValue
+          if let fileKey = FileResourceKey(fromURLResourceKey: key) {
+            safeResourceValues[fileKey] = safeValue
           }
         }
       }
 
       // Extract basic file attributes
-      let isDirectory=urlResourceValues.isDirectory ?? false
-      let size=urlResourceValues.fileSize ?? 0
-      let modificationDate=urlResourceValues.contentModificationDate ?? Date()
-      let creationDate=urlResourceValues.creationDate ?? Date()
-      let ownerID=urlResourceValues.fileOwnerAccountID.flatMap(UInt.init) ?? 0
-      let groupID=urlResourceValues.fileGroupOwnerAccountID.flatMap(UInt.init) ?? 0
-      let permissions=urlResourceValues.filePosixPermissions ?? 0
+      let isDirectory = urlResourceValues.isDirectory ?? false
+      let size = urlResourceValues.fileSize ?? 0
+      let modificationDate = urlResourceValues.contentModificationDate ?? Date()
+      let creationDate = urlResourceValues.creationDate ?? Date()
+      let ownerID = urlResourceValues.fileOwnerAccountID.flatMap(UInt.init) ?? 0
+      let groupID = urlResourceValues.fileGroupOwnerAccountID.flatMap(UInt.init) ?? 0
+      let permissions = urlResourceValues.filePosixPermissions ?? 0
 
       // Create file attributes
-      let fileAttributes=FileAttributes(
+      let fileAttributes = FileAttributes(
         size: UInt64(size),
         creationDate: creationDate,
         modificationDate: modificationDate,
@@ -189,10 +189,10 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       )
 
       // Determine if the file exists
-      let exists=true // If we got this far, the file exists
+      let exists = true // If we got this far, the file exists
 
       // Create and return the file metadata
-      let metadata=FileMetadata(
+      let metadata = FileMetadata(
         path: path,
         attributes: fileAttributes,
         safeResourceValues: safeResourceValues,
@@ -217,7 +217,7 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
       {
 
         // Create minimal metadata for non-existent file
-        let emptyAttributes=FileAttributes(
+        let emptyAttributes = FileAttributes(
           size: 0,
           creationDate: Date(),
           modificationDate: Date(),
@@ -259,15 +259,15 @@ public actor FileSystemServiceImpl: FileSystemServiceProtocol {
 
    - Parameter path: The path to check
    - Returns: Whether the path is a directory
-   - Throws: `FileSystemError.readError` if the operation fails
+   - Throws: FileSystemError if the check fails
    */
-  public func isDirectory(at path: FilePath) async throws -> Bool {
+  public func isDirectory(at path: FilePathDTO) async throws -> Bool {
     guard !path.path.isEmpty else {
       return false
     }
 
-    var isDir: ObjCBool=false
-    let exists=fileManager.fileExists(atPath: path.path, isDirectory: &isDir)
+    var isDir: ObjCBool = false
+    let exists = fileManager.fileExists(atPath: path.path, isDirectory: &isDir)
 
     if !exists {
       await logger.warning(

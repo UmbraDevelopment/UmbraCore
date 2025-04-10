@@ -4,6 +4,7 @@ import LoggingAdapters
 import LoggingInterfaces
 import LoggingTypes
 import RepositoryInterfaces
+import CoreDTOs
 
 /// A service that manages repository registration, locking, and statistics.
 ///
@@ -187,9 +188,9 @@ public actor RepositoryServiceImpl: RepositoryServiceProtocol {
   /// - Parameter path: The file path where the repository should be created.
   /// - Returns: The newly created repository.
   /// - Throws: Repository-specific errors if creation fails.
-  public func createRepository(at path: FilePath) async throws -> any RepositoryProtocol {
+  public func createRepository(at path: FilePathDTO) async throws -> any RepositoryProtocol {
     // Create repository log context
-    let context=RepositoryLogContext(
+    let context = RepositoryLogContext(
       locationPath: path.path,
       operation: "createRepository"
     )
@@ -211,10 +212,10 @@ public actor RepositoryServiceImpl: RepositoryServiceProtocol {
   /// - Returns: The newly created repository.
   /// - Throws: Errors if creation fails.
   public func createRepository(at url: URL) async throws -> any RepositoryProtocol {
-    // Convert URL to FilePath
-    let filePath=FilePath(path: url.path)
+    // Convert URL to FilePathDTO
+    let filePathDTO = FilePathDTO(path: url.path)
 
-    // Delegate to the FilePath-based implementation
-    return try await createRepository(at: filePath)
+    // Delegate to the FilePathDTO-based implementation
+    return try await createRepository(at: filePathDTO)
   }
 }

@@ -1,11 +1,12 @@
 import FileSystemInterfaces
 import FileSystemTypes
 import Foundation
+import CoreDTOs
 
 /**
  # SecurePathAdapter
 
- Provides conversion between FilePath and SecurePath types to facilitate
+ Provides conversion between FilePathDTO and SecurePath types to facilitate
  the transition from Foundation-dependent to Foundation-independent code.
 
  This adapter follows the Alpha Dot Five architecture principles by enabling
@@ -24,37 +25,44 @@ import Foundation
  */
 public enum SecurePathAdapter {
   /**
-   Converts a FilePath to a SecurePath.
+   Converts a FilePathDTO to a SecurePath.
 
-   - Parameter filePath: The FilePath to convert
+   - Parameter filePathDTO: The FilePathDTO to convert
    - Returns: A SecurePath representation, or nil if conversion fails
    */
-  public static func toSecurePath(_ filePath: FilePath) -> SecurePath? {
+  public static func toSecurePath(_ filePathDTO: FilePathDTO) -> SecurePath? {
     SecurePath(
-      path: filePath.path,
-      isDirectory: filePath.isDirectory,
-      securityLevel: mapSecurityLevel(filePath.securityOptions)
+      path: filePathDTO.path,
+      isDirectory: filePathDTO.resourceType == .directory,
+      securityLevel: mapSecurityLevel(filePathDTO.securityOptions)
     )
   }
 
   /**
-   Converts a SecurePath to a FilePath.
+   Converts a SecurePath to a FilePathDTO.
 
    - Parameter securePath: The SecurePath to convert
-   - Returns: A FilePath representation
+   - Returns: A FilePathDTO representation
    */
-  public static func toFilePath(_ securePath: SecurePath) -> FilePath {
-    FilePath(
-      path: securePath.toString(),
-      isDirectory: securePath.isDirectory,
+  public static func toFilePathDTO(_ securePath: SecurePath) -> FilePathDTO {
+    let path = securePath.toString()
+    let directoryPath = securePath.isDirectory ? path : (URL(fileURLWithPath: path).deletingLastPathComponent().path)
+    let fileName = securePath.isDirectory ? "" : (URL(fileURLWithPath: path).lastPathComponent)
+    
+    return FilePathDTO(
+      path: path,
+      fileName: fileName,
+      directoryPath: directoryPath,
+      resourceType: securePath.isDirectory ? .directory : .file,
+      isAbsolute: path.hasPrefix("/"),
       securityOptions: mapSecurityOptions(securePath.securityLevel)
     )
   }
 
   /**
-   Maps FilePath security options to SecurePath security level.
+   Maps FilePathDTO security options to SecurePath security level.
 
-   - Parameter options: The FilePath security options
+   - Parameter options: The FilePathDTO security options
    - Returns: The corresponding SecurePath security level
    */
   private static func mapSecurityLevel(_ options: SecurityOptions?) -> PathSecurityLevel {
@@ -75,13 +83,13 @@ public enum SecurePathAdapter {
   }
 
   /**
-   Maps SecurePath security level to FilePath security options.
+   Maps SecurePath security level to FilePathDTO security options.
 
    - Parameter level: The SecurePath security level
-   - Returns: The corresponding FilePath security options
+   - Returns: The corresponding FilePathDTO security options
    */
   private static func mapSecurityOptions(_ level: PathSecurityLevel) -> SecurityOptions {
-    let securityLevel: SecurityLevel=switch level {
+    let securityLevel: SecurityLevel = switch level {
       case .standard:
         .standard
       case .elevated:

@@ -2,7 +2,7 @@ import Foundation
 import FileSystemInterfaces
 import LoggingInterfaces
 import LoggingTypes
-import System
+import CoreDTOs
 
 /**
  # File Metadata Actor
@@ -50,21 +50,21 @@ public actor FileMetadataActor: FileMetadataProtocol {
      - Returns: The canonicalised path if valid
      - Throws: FileSystemError.accessDenied if the path is outside the root directory
      */
-    private func validatePath(_ path: String) throws -> String {
+    private func validatePath(_ path: FilePathDTO) throws -> String {
         guard let rootDir = rootDirectory else {
             // No sandboxing, path is valid as-is
-            return path
+            return path.path
         }
         
         // Canonicalise paths to resolve any ../ or symlinks
-        let canonicalPath = URL(fileURLWithPath: path).standardized.path
+        let canonicalPath = URL(fileURLWithPath: path.path).standardized.path
         let canonicalRootDir = URL(fileURLWithPath: rootDir).standardized.path
         
         // Check if the path is within the root directory
         if !canonicalPath.hasPrefix(canonicalRootDir) {
             let context = FileSystemLogContext(
                 operation: "validatePath",
-                path: path,
+                path: path.path,
                 source: "FileMetadataActor",
                 isSecureOperation: true
             )
@@ -75,7 +75,7 @@ public actor FileMetadataActor: FileMetadataProtocol {
             )
             
             throw FileSystemError.accessDenied(
-                path: path,
+                path: path.path,
                 reason: "Path is outside the permitted root directory"
             )
         }
@@ -92,10 +92,10 @@ public actor FileMetadataActor: FileMetadataProtocol {
      - Returns: The file attributes.
      - Throws: FileSystemError if the attributes cannot be retrieved.
      */
-    public func getAttributes(at path: String) async throws -> FileAttributes {
+    public func getAttributes(at path: FilePathDTO) async throws -> FileAttributes {
         let context = FileSystemLogContext(
             operation: "getAttributes",
-            path: path
+            path: path.path
         )
         
         await logger.debug("Getting file attributes", context: context)
@@ -128,7 +128,7 @@ public actor FileMetadataActor: FileMetadataProtocol {
             throw error
         } catch {
             // Wrap and log other errors
-            let wrappedError = FileSystemError.wrap(error, operation: "getAttributes", path: path)
+            let wrappedError = FileSystemError.wrap(error, operation: "getAttributes", path: path.path)
             await logger.error("Failed to get file attributes: \(wrappedError.localizedDescription)", context: context)
             throw wrappedError
         }
@@ -142,10 +142,10 @@ public actor FileMetadataActor: FileMetadataProtocol {
         - path: The path to the file or directory.
      - Throws: FileSystemError if the attributes cannot be set.
      */
-    public func setAttributes(_ attributes: FileAttributes, at path: String) async throws {
+    public func setAttributes(_ attributes: FileAttributes, at path: FilePathDTO) async throws {
         let context = FileSystemLogContext(
             operation: "setAttributes",
-            path: path
+            path: path.path
         )
         
         let metadata = context.metadata.withPublic(key: "attributeCount", value: String(attributes.count))
@@ -175,7 +175,7 @@ public actor FileMetadataActor: FileMetadataProtocol {
             throw error
         } catch {
             // Wrap and log other errors
-            let wrappedError = FileSystemError.wrap(error, operation: "setAttributes", path: path)
+            let wrappedError = FileSystemError.wrap(error, operation: "setAttributes", path: path.path)
             await logger.error("Failed to set file attributes: \(wrappedError.localizedDescription)", context: enhancedContext)
             throw wrappedError
         }
@@ -188,10 +188,10 @@ public actor FileMetadataActor: FileMetadataProtocol {
      - Returns: The file size in bytes.
      - Throws: FileSystemError if the file size cannot be retrieved.
      */
-    public func getFileSize(at path: String) async throws -> UInt64 {
+    public func getFileSize(at path: FilePathDTO) async throws -> UInt64 {
         let context = FileSystemLogContext(
             operation: "getFileSize",
-            path: path
+            path: path.path
         )
         
         await logger.debug("Getting file size", context: context)
@@ -229,7 +229,7 @@ public actor FileMetadataActor: FileMetadataProtocol {
             throw error
         } catch {
             // Wrap and log other errors
-            let wrappedError = FileSystemError.wrap(error, operation: "getFileSize", path: path)
+            let wrappedError = FileSystemError.wrap(error, operation: "getFileSize", path: path.path)
             await logger.error("Failed to get file size: \(wrappedError.localizedDescription)", context: context)
             throw wrappedError
         }
@@ -242,10 +242,10 @@ public actor FileMetadataActor: FileMetadataProtocol {
      - Returns: The file creation date.
      - Throws: FileSystemError if the creation date cannot be retrieved.
      */
-    public func getCreationDate(at path: String) async throws -> Date {
+    public func getCreationDate(at path: FilePathDTO) async throws -> Date {
         let context = FileSystemLogContext(
             operation: "getCreationDate",
-            path: path
+            path: path.path
         )
         
         await logger.debug("Getting file creation date", context: context)
@@ -283,7 +283,7 @@ public actor FileMetadataActor: FileMetadataProtocol {
             throw error
         } catch {
             // Wrap and log other errors
-            let wrappedError = FileSystemError.wrap(error, operation: "getCreationDate", path: path)
+            let wrappedError = FileSystemError.wrap(error, operation: "getCreationDate", path: path.path)
             await logger.error("Failed to get file creation date: \(wrappedError.localizedDescription)", context: context)
             throw wrappedError
         }
@@ -296,10 +296,10 @@ public actor FileMetadataActor: FileMetadataProtocol {
      - Returns: The file modification date.
      - Throws: FileSystemError if the modification date cannot be retrieved.
      */
-    public func getModificationDate(at path: String) async throws -> Date {
+    public func getModificationDate(at path: FilePathDTO) async throws -> Date {
         let context = FileSystemLogContext(
             operation: "getModificationDate",
-            path: path
+            path: path.path
         )
         
         await logger.debug("Getting file modification date", context: context)
@@ -337,7 +337,7 @@ public actor FileMetadataActor: FileMetadataProtocol {
             throw error
         } catch {
             // Wrap and log other errors
-            let wrappedError = FileSystemError.wrap(error, operation: "getModificationDate", path: path)
+            let wrappedError = FileSystemError.wrap(error, operation: "getModificationDate", path: path.path)
             await logger.error("Failed to get file modification date: \(wrappedError.localizedDescription)", context: context)
             throw wrappedError
         }
@@ -354,10 +354,10 @@ public actor FileMetadataActor: FileMetadataProtocol {
      - Returns: The extended attribute data.
      - Throws: FileSystemError if the extended attribute cannot be retrieved.
      */
-    public func getExtendedAttribute(withName name: String, fromItemAtPath path: String) async throws -> Data {
+    public func getExtendedAttribute(withName name: String, fromItemAtPath path: FilePathDTO) async throws -> Data {
         let context = FileSystemLogContext(
             operation: "getExtendedAttribute",
-            path: path
+            path: path.path
         )
         
         let metadata = context.metadata.withPublic(key: "attributeName", value: name)
@@ -374,9 +374,7 @@ public actor FileMetadataActor: FileMetadataProtocol {
                 throw FileSystemError.notFound(path: validatedPath)
             }
             
-            // Use System.FilePath for extended attributes since it provides a better API
-            let filePath = FilePath(validatedPath)
-            
+            // Use the validated path directly with FileManager extended attribute methods
             do {
                 // Get the extended attribute
                 let attributeData = try FileManager.default.extendedAttribute(forName: name, atPath: validatedPath)
@@ -400,7 +398,7 @@ public actor FileMetadataActor: FileMetadataProtocol {
             throw error
         } catch {
             // Wrap and log other errors
-            let wrappedError = FileSystemError.wrap(error, operation: "getExtendedAttribute", path: path)
+            let wrappedError = FileSystemError.wrap(error, operation: "getExtendedAttribute", path: path.path)
             await logger.error("Failed to get extended attribute: \(wrappedError.localizedDescription)", context: enhancedContext)
             throw wrappedError
         }
@@ -415,10 +413,10 @@ public actor FileMetadataActor: FileMetadataProtocol {
         - path: The path to the file.
      - Throws: FileSystemError if the extended attribute cannot be set.
      */
-    public func setExtendedAttribute(_ data: Data, withName name: String, onItemAtPath path: String) async throws {
+    public func setExtendedAttribute(_ data: Data, withName name: String, onItemAtPath path: FilePathDTO) async throws {
         let context = FileSystemLogContext(
             operation: "setExtendedAttribute",
-            path: path
+            path: path.path
         )
         
         let metadata = context.metadata
@@ -437,9 +435,7 @@ public actor FileMetadataActor: FileMetadataProtocol {
                 throw FileSystemError.notFound(path: validatedPath)
             }
             
-            // Use System.FilePath for extended attributes since it provides a better API
-            let filePath = FilePath(validatedPath)
-            
+            // Use the validated path directly with FileManager extended attribute methods
             do {
                 // Set the extended attribute
                 try FileManager.default.setExtendedAttribute(data, forName: name, atPath: validatedPath)
@@ -460,7 +456,7 @@ public actor FileMetadataActor: FileMetadataProtocol {
             throw error
         } catch {
             // Wrap and log other errors
-            let wrappedError = FileSystemError.wrap(error, operation: "setExtendedAttribute", path: path)
+            let wrappedError = FileSystemError.wrap(error, operation: "setExtendedAttribute", path: path.path)
             await logger.error("Failed to set extended attribute: \(wrappedError.localizedDescription)", context: enhancedContext)
             throw wrappedError
         }
@@ -473,10 +469,10 @@ public actor FileMetadataActor: FileMetadataProtocol {
      - Returns: An array of extended attribute names.
      - Throws: FileSystemError if the extended attributes cannot be listed.
      */
-    public func listExtendedAttributes(atPath path: String) async throws -> [String] {
+    public func listExtendedAttributes(atPath path: FilePathDTO) async throws -> [String] {
         let context = FileSystemLogContext(
             operation: "listExtendedAttributes",
-            path: path
+            path: path.path
         )
         
         await logger.debug("Listing extended attributes", context: context)
@@ -490,11 +486,8 @@ public actor FileMetadataActor: FileMetadataProtocol {
                 throw FileSystemError.notFound(path: validatedPath)
             }
             
-            // Use System.FilePath for extended attributes since it provides a better API
-            let filePath = FilePath(validatedPath)
-            
+            // Use the validated path directly to list extended attributes
             do {
-                // List the extended attributes
                 let attributeNames = try FileManager.default.listExtendedAttributes(atPath: validatedPath)
                 
                 // Log successful listing
@@ -516,7 +509,7 @@ public actor FileMetadataActor: FileMetadataProtocol {
             throw error
         } catch {
             // Wrap and log other errors
-            let wrappedError = FileSystemError.wrap(error, operation: "listExtendedAttributes", path: path)
+            let wrappedError = FileSystemError.wrap(error, operation: "listExtendedAttributes", path: path.path)
             await logger.error("Failed to list extended attributes: \(wrappedError.localizedDescription)", context: context)
             throw wrappedError
         }
@@ -530,10 +523,10 @@ public actor FileMetadataActor: FileMetadataProtocol {
         - path: The path to the file.
      - Throws: FileSystemError if the extended attribute cannot be removed.
      */
-    public func removeExtendedAttribute(withName name: String, fromItemAtPath path: String) async throws {
+    public func removeExtendedAttribute(withName name: String, fromItemAtPath path: FilePathDTO) async throws {
         let context = FileSystemLogContext(
             operation: "removeExtendedAttribute",
-            path: path
+            path: path.path
         )
         
         let metadata = context.metadata.withPublic(key: "attributeName", value: name)
@@ -550,11 +543,8 @@ public actor FileMetadataActor: FileMetadataProtocol {
                 throw FileSystemError.notFound(path: validatedPath)
             }
             
-            // Use System.FilePath for extended attributes since it provides a better API
-            let filePath = FilePath(validatedPath)
-            
+            // Use the validated path directly to remove the extended attribute
             do {
-                // Remove the extended attribute
                 try FileManager.default.removeExtendedAttribute(forName: name, atPath: validatedPath)
                 
                 // Log successful removal
@@ -573,7 +563,7 @@ public actor FileMetadataActor: FileMetadataProtocol {
             throw error
         } catch {
             // Wrap and log other errors
-            let wrappedError = FileSystemError.wrap(error, operation: "removeExtendedAttribute", path: path)
+            let wrappedError = FileSystemError.wrap(error, operation: "removeExtendedAttribute", path: path.path)
             await logger.error("Failed to remove extended attribute: \(wrappedError.localizedDescription)", context: enhancedContext)
             throw wrappedError
         }

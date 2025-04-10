@@ -25,7 +25,11 @@
  let fileSystem = FileSystemServiceImpl()
 
  // Read a configuration file
- let configPath = FilePath("/path/to/config.json")
+ let configPath = FilePathDTO(
+     path: "/path/to/config.json",
+     fileName: "config.json",
+     directoryPath: "/path/to"
+ )
  let result = await fileSystem.readFile(at: configPath)
 
  switch result {

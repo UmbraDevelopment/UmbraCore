@@ -1,7 +1,7 @@
 load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
-    name = "FileSystemTypes",
+    name = "FileSystemCommonTypes",
     srcs = glob(
         [
             "*.swift",
@@ -12,6 +12,5 @@ umbra_swift_library(
     visibility = ["//visibility:public"],
     deps = [
         "//packages/UmbraCoreTypes/Sources/LoggingTypes",
-        "//packages/UmbraCoreTypes/Sources/FileSystemCommonTypes",
     ],
 )

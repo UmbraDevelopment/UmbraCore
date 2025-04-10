@@ -7,4 +7,17 @@
 @_exported import struct Foundation.Date
 @_exported import struct Foundation.URL
 
+/**
+ # File System Types Note
+ 
+ The canonical versions of the following types have been moved to the FileSystemInterfaces module:
+ - FileWriteOptions
+ - FileMoveOptions
+ - FileCopyOptions
+ - TemporaryFileOptions
+ - FileSystemError
+ 
+ Please import FileSystemInterfaces to use these types directly.
+ */
+
 // Export all Swift files in this module

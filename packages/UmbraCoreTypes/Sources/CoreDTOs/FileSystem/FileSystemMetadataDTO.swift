@@ -1,7 +1,5 @@
 import Foundation
-
-// Updated to use properly migrated module
-import FileSystemTypes
+import FileSystemCommonTypes
 
 /// A Foundation-independent representation of file system metadata.
 public struct FileSystemMetadataDTO: Sendable, Equatable {

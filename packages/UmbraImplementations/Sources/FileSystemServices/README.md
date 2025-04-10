@@ -138,7 +138,7 @@ let fileService = FileSystemServiceFactory.shared.createStandardService(
 Task {
     try await fileService.writeTextFile(
         text: "Hello, World!",
-        to: FilePath(path: "/path/to/file.txt")
+        to: FilePathDTO(path: "/path/to/file.txt", fileName: "file.txt", directoryPath: "/path/to")
     )
 }
 ```
@@ -154,7 +154,7 @@ let fileService = FileSystemServiceFactory.shared.createHighPerformanceService(
 // Use with chunked operations for large files
 Task {
     try await fileService.writeDataInChunks(
-        to: FilePath(path: "/path/to/large-file.bin"),
+        to: FilePathDTO(path: "/path/to/large-file.bin", fileName: "large-file.bin", directoryPath: "/path/to"),
         overwrite: true
     ) {
         // Return the next chunk or nil when done

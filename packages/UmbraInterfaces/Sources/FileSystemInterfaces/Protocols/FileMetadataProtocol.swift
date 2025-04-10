@@ -1,4 +1,5 @@
 import Foundation
+import CoreDTOs
 
 /**
  # File Metadata Protocol
@@ -23,7 +24,7 @@ public protocol FileMetadataProtocol: Actor, Sendable {
      - Returns: The file attributes.
      - Throws: FileSystemError if the attributes cannot be retrieved.
      */
-    func getAttributes(at path: String) async throws -> FileAttributes
+    func getAttributes(at path: FilePathDTO) async throws -> FileAttributes
     
     /**
      Sets attributes of a file or directory at the specified path.
@@ -33,7 +34,7 @@ public protocol FileMetadataProtocol: Actor, Sendable {
         - path: The path to the file or directory.
      - Throws: FileSystemError if the attributes cannot be set.
      */
-    func setAttributes(_ attributes: FileAttributes, at path: String) async throws
+    func setAttributes(_ attributes: FileAttributes, at path: FilePathDTO) async throws
     
     /**
      Gets the size of a file at the specified path.
@@ -42,7 +43,7 @@ public protocol FileMetadataProtocol: Actor, Sendable {
      - Returns: The size of the file in bytes.
      - Throws: FileSystemError if the size cannot be determined.
      */
-    func getFileSize(at path: String) async throws -> UInt64
+    func getFileSize(at path: FilePathDTO) async throws -> UInt64
     
     /**
      Gets the creation date of a file or directory at the specified path.
@@ -51,7 +52,7 @@ public protocol FileMetadataProtocol: Actor, Sendable {
      - Returns: The creation date.
      - Throws: FileSystemError if the creation date cannot be determined.
      */
-    func getCreationDate(at path: String) async throws -> Date
+    func getCreationDate(at path: FilePathDTO) async throws -> Date
     
     /**
      Gets the modification date of a file or directory at the specified path.
@@ -60,7 +61,7 @@ public protocol FileMetadataProtocol: Actor, Sendable {
      - Returns: The modification date.
      - Throws: FileSystemError if the modification date cannot be determined.
      */
-    func getModificationDate(at path: String) async throws -> Date
+    func getModificationDate(at path: FilePathDTO) async throws -> Date
     
     /**
      Gets an extended attribute from a file or directory.
@@ -71,7 +72,7 @@ public protocol FileMetadataProtocol: Actor, Sendable {
      - Returns: The extended attribute data.
      - Throws: FileSystemError if the extended attribute cannot be retrieved.
      */
-    func getExtendedAttribute(withName name: String, fromItemAtPath path: String) async throws -> Data
+    func getExtendedAttribute(withName name: String, fromItemAtPath path: FilePathDTO) async throws -> Data
     
     /**
      Sets an extended attribute on a file or directory.
@@ -82,7 +83,7 @@ public protocol FileMetadataProtocol: Actor, Sendable {
         - path: The path to the file or directory.
      - Throws: FileSystemError if the extended attribute cannot be set.
      */
-    func setExtendedAttribute(_ data: Data, withName name: String, onItemAtPath path: String) async throws
+    func setExtendedAttribute(_ data: Data, withName name: String, onItemAtPath path: FilePathDTO) async throws
     
     /**
      Lists all extended attributes on a file or directory.
@@ -91,7 +92,7 @@ public protocol FileMetadataProtocol: Actor, Sendable {
      - Returns: An array of attribute names.
      - Throws: FileSystemError if the extended attributes cannot be listed.
      */
-    func listExtendedAttributes(atPath path: String) async throws -> [String]
+    func listExtendedAttributes(atPath path: FilePathDTO) async throws -> [String]
     
     /**
      Removes an extended attribute from a file or directory.
@@ -101,5 +102,5 @@ public protocol FileMetadataProtocol: Actor, Sendable {
         - path: The path to the file or directory.
      - Throws: FileSystemError if the extended attribute cannot be removed.
      */
-    func removeExtendedAttribute(withName name: String, fromItemAtPath path: String) async throws
+    func removeExtendedAttribute(withName name: String, fromItemAtPath path: FilePathDTO) async throws
 }

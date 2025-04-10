@@ -57,7 +57,7 @@ public struct KeychainLogContext: LogContextDTO {
      - source: The source of the log (defaults to "KeychainServices")
      - domainName: The domain name for the log (defaults to "Keychain")
      - correlationID: Optional correlation ID for tracking related logs
-     - additionalContext: Additional metadata for the log entry
+     - metadata: Additional metadata for the log entry
    */
   public init(
     account: String,
@@ -66,7 +66,7 @@ public struct KeychainLogContext: LogContextDTO {
     source: String? = "KeychainServices",
     domainName: String = "Keychain",
     correlationID: String? = nil,
-    additionalContext: LogMetadataDTOCollection = LogMetadataDTOCollection()
+    metadata: LogMetadataDTOCollection = LogMetadataDTOCollection()
   ) {
     self.operation = operation
     self.account = account
@@ -77,7 +77,7 @@ public struct KeychainLogContext: LogContextDTO {
 
     // Create a new metadata collection with keychain-specific fields
     // Account is sensitive information
-    var enhancedMetadata = additionalContext
+    var enhancedMetadata = metadata
     enhancedMetadata = enhancedMetadata.withSensitive(key: "account", value: account)
     // Operation is private information
     enhancedMetadata = enhancedMetadata.withPrivate(key: "operation", value: operation)
@@ -101,7 +101,7 @@ public struct KeychainLogContext: LogContextDTO {
       source: source,
       domainName: domainName,
       correlationID: correlationID,
-      additionalContext: metadata
+      metadata: metadata
     )
   }
 
@@ -119,7 +119,7 @@ public struct KeychainLogContext: LogContextDTO {
       source: source,
       domainName: domainName,
       correlationID: correlationID,
-      additionalContext: metadata
+      metadata: metadata
     )
   }
 
@@ -169,7 +169,7 @@ public struct KeychainLogContext: LogContextDTO {
       source: source,
       domainName: domainName,
       correlationID: correlationID,
-      additionalContext: combinedMetadata
+      metadata: combinedMetadata
     )
   }
   
@@ -191,7 +191,7 @@ public struct KeychainLogContext: LogContextDTO {
       source: source,
       domainName: domainName,
       correlationID: correlationID,
-      additionalContext: updatedMetadata
+      metadata: updatedMetadata
     )
   }
   
@@ -213,7 +213,7 @@ public struct KeychainLogContext: LogContextDTO {
       source: source,
       domainName: domainName,
       correlationID: correlationID,
-      additionalContext: updatedMetadata
+      metadata: updatedMetadata
     )
   }
   
@@ -235,7 +235,7 @@ public struct KeychainLogContext: LogContextDTO {
       source: source,
       domainName: domainName,
       correlationID: correlationID,
-      additionalContext: updatedMetadata
+      metadata: updatedMetadata
     )
   }
 }

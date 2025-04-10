@@ -1,11 +1,13 @@
 import Foundation
+import CoreDTOs
+import FileSystemCommonTypes
 
 /**
  # File Read Operations Protocol
  
  Defines the core read operations that can be performed on a file system.
  
- This protocol centralizes all file read operations to ensure consistency
+ This protocol centralises all file read operations to ensure consistency
  across different file system service implementations.
  
  ## Alpha Dot Five Architecture
@@ -40,18 +42,28 @@ public protocol FileReadOperationsProtocol: Actor, Sendable {
      Checks if a file exists at the specified path.
      
      - Parameter path: The path to check.
-     - Returns: True if the file exists, false otherwise.
+     - Returns: true if the file exists, false otherwise.
      */
     func fileExists(at path: String) async -> Bool
     
     /**
-     Lists the contents of a directory at the specified path.
+     Checks if a directory exists at the specified path.
      
-     - Parameter path: The path to the directory to list.
-     - Returns: An array of file paths contained in the directory.
+     - Parameter path: The path to check.
+     - Returns: true if the directory exists, false otherwise.
+     */
+    func directoryExists(at path: String) async -> Bool
+    
+    /**
+     Lists the contents of a directory.
+     
+     - Parameters:
+        - path: The path to the directory to list.
+        - options: Optional enumeration options.
+     - Returns: An array of paths for the directory contents.
      - Throws: FileSystemError if the directory cannot be read.
      */
-    func listDirectory(at path: String) async throws -> [String]
+    func listDirectory(at path: String, options: DirectoryEnumerationOptions?) async throws -> [String]
     
     /**
      Lists the contents of a directory recursively.
@@ -61,4 +73,21 @@ public protocol FileReadOperationsProtocol: Actor, Sendable {
      - Throws: FileSystemError if the directory cannot be read.
      */
     func listDirectoryRecursively(at path: String) async throws -> [String]
+    
+    /**
+     Reads a file in chunks for memory-efficient processing of large files.
+     
+     This method uses a callback to process each chunk as it is read.
+     
+     - Parameters:
+        - path: The path to the file to read.
+        - chunkSize: The size of each chunk to read.
+        - processor: A closure that processes each chunk.
+     - Throws: FileSystemError if the read operation fails.
+     */
+    func readFileInChunks(
+        at path: String, 
+        chunkSize: Int, 
+        processor: @escaping (Data) async throws -> Void
+    ) async throws
 }

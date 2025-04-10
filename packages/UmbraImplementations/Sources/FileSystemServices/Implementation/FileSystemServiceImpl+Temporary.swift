@@ -2,6 +2,7 @@ import FileSystemInterfaces
 import FileSystemTypes
 import Foundation
 import LoggingTypes
+import CoreDTOs
 
 /**
  # Temporary File Operations Extension
@@ -30,18 +31,18 @@ extension FileSystemServiceImpl {
   public nonisolated func withTemporaryFile<T>(
     prefix: String,
     suffix: String,
-    data: [UInt8]?=nil,
-    task: (FilePath) async throws -> T
+    data: [UInt8]? = nil,
+    task: (FilePathDTO) async throws -> T
   ) async throws -> T {
-    let tempDirectory=FileManager.default.temporaryDirectory
-    let tempFileName="\(prefix)\(UUID().uuidString)\(suffix)"
-    let tempURL=tempDirectory.appendingPathComponent(tempFileName)
-    let tempPath=FilePath(path: tempURL.path)
+    let tempDirectory = FileManager.default.temporaryDirectory
+    let tempFileName = "\(prefix)\(UUID().uuidString)\(suffix)"
+    let tempURL = tempDirectory.appendingPathComponent(tempFileName)
+    let tempPath = FilePathDTO(path: tempURL.path)
 
     // Create the file and write initial data if provided
-    if let initialData=data {
+    if let initialData = data {
       do {
-        let data=Data(initialData)
+        let data = Data(initialData)
         try data.write(to: tempURL)
       } catch {
         // Convert to domain-specific error
@@ -51,21 +52,29 @@ extension FileSystemServiceImpl {
         )
       }
     } else {
-      // Create an empty file
-      FileManager.default.createFile(atPath: tempURL.path, contents: nil)
+      // Create empty file
+      if !FileManager.default.createFile(atPath: tempURL.path, contents: nil) {
+        throw FileSystemInterfaces.FileSystemError.writeError(
+          path: tempPath.path,
+          reason: "Failed to create temporary file"
+        )
+      }
     }
 
     do {
       // Perform the task with the temporary file
-      let result=try await task(tempPath)
+      let result = try await task(tempPath)
 
-      // Cleanup: attempt to delete the temporary file
+      // Clean up the temporary file
       try? FileManager.default.removeItem(at: tempURL)
 
+      // Return the task result
       return result
     } catch {
-      // Ensure cleanup even if the task fails
+      // Clean up the temporary file even if the task fails
       try? FileManager.default.removeItem(at: tempURL)
+
+      // Rethrow the original error
       throw error
     }
   }
@@ -86,77 +95,87 @@ extension FileSystemServiceImpl {
    */
   public nonisolated func withTemporaryDirectory<T>(
     prefix: String,
-    task: (FilePath) async throws -> T
+    task: (FilePathDTO) async throws -> T
   ) async throws -> T {
-    let tempParentDirectory=FileManager.default.temporaryDirectory
-    let tempDirName="\(prefix)\(UUID().uuidString)"
-    let tempDirURL=tempParentDirectory.appendingPathComponent(tempDirName)
-    let tempDirPath=FilePath(path: tempDirURL.path)
+    let tempDirectory = FileManager.default.temporaryDirectory
+    let tempDirName = "\(prefix)\(UUID().uuidString)"
+    let tempURL = tempDirectory.appendingPathComponent(tempDirName)
+    let tempPath = FilePathDTO(path: tempURL.path, isDirectory: true)
 
-    // Create the temporary directory
+    // Create the directory
     do {
-      try FileManager.default.createDirectory(
-        at: tempDirURL,
-        withIntermediateDirectories: true,
-        attributes: nil
-      )
+      try FileManager.default.createDirectory(at: tempURL, withIntermediateDirectories: true)
     } catch {
       throw FileSystemInterfaces.FileSystemError.writeError(
-        path: tempDirPath.path,
+        path: tempPath.path,
         reason: "Failed to create temporary directory: \(error.localizedDescription)"
       )
     }
 
     do {
       // Perform the task with the temporary directory
-      let result=try await task(tempDirPath)
+      let result = try await task(tempPath)
 
-      // Cleanup: attempt to delete the temporary directory and all its contents
-      try? FileManager.default.removeItem(at: tempDirURL)
+      // Clean up the temporary directory
+      try? FileManager.default.removeItem(at: tempURL)
 
+      // Return the task result
       return result
     } catch {
-      // Ensure cleanup even if the task fails
-      try? FileManager.default.removeItem(at: tempDirURL)
+      // Clean up the temporary directory even if the task fails
+      try? FileManager.default.removeItem(at: tempURL)
+
+      // Rethrow the original error
       throw error
     }
   }
 
   /**
-   Creates a temporary file with the specified prefix, suffix, and optional initial data.
-
-   Unlike `withTemporaryFile`, this method does not automatically clean up the file.
-   The caller is responsible for managing the lifecycle of the temporary file.
+   Creates a temporary file with the given options.
 
    - Parameters:
-      - prefix: Prefix for the temporary file name
-      - suffix: Suffix for the temporary file name (typically an extension)
-      - data: Optional initial data to write to the file
-   - Returns: Path to the created file
+      - options: Optional options for creating the temporary file
+   - Returns: The path to the created temporary file
    - Throws: `FileSystemError.writeError` if the temporary file couldn't be created
-             `FileSystemError.writeError` if initial data couldn't be written
    */
   public func createTemporaryFile(
-    prefix: String,
-    suffix: String,
-    data: [UInt8]?=nil
-  ) async throws -> FilePath {
-    let tempDirectory=FileManager.default.temporaryDirectory
-    let tempFileName="\(prefix)\(UUID().uuidString)\(suffix)"
-    let tempURL=tempDirectory.appendingPathComponent(tempFileName)
-    let tempPath=FilePath(path: tempURL.path)
+    options: TemporaryFileOptions?
+  ) async throws -> FilePathDTO {
+    let tempDirectory = FileManager.default.temporaryDirectory
+    let tempFileName = "\(options?.prefix ?? "tmp")\(UUID().uuidString)\(options?.suffix ?? "")"
+    let tempURL = tempDirectory.appendingPathComponent(tempFileName)
+    let tempPath = FilePathDTO(path: tempURL.path)
+
+    await logger.debug(
+      "Creating temporary file",
+      context: FileSystemLogContext(
+        operation: "createTemporaryFile",
+        path: tempPath.path,
+        source: "FileSystemService",
+        metadata: LogMetadataDTOCollection()
+          .withPublic(key: "tempFileName", value: tempFileName)
+      )
+    )
 
     // Create the file
-    if !fileManager.createFile(atPath: tempURL.path, contents: nil) {
+    if !FileManager.default.createFile(atPath: tempURL.path, contents: nil) {
+      let errorMetadata = LogMetadataDTOCollection()
+        .withPublic(key: "tempFileName", value: tempFileName)
+
+      await logger.error(
+        "Failed to create temporary file",
+        context: FileSystemLogContext(
+          operation: "createTemporaryFile",
+          path: tempPath.path,
+          source: "FileSystemService",
+          metadata: errorMetadata
+        )
+      )
+
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: tempPath.path,
         reason: "Failed to create temporary file"
       )
-    }
-
-    // Write initial data if provided
-    if let initialData=data {
-      try await writeFile(bytes: initialData, to: tempPath)
     }
 
     await logger.debug(
@@ -164,7 +183,9 @@ extension FileSystemServiceImpl {
       context: FileSystemLogContext(
         operation: "createTemporaryFile",
         path: tempPath.path,
-        source: "FileSystemService"
+        source: "FileSystemService",
+        metadata: LogMetadataDTOCollection()
+          .withPublic(key: "tempFileName", value: tempFileName)
       )
     )
 
@@ -172,45 +193,68 @@ extension FileSystemServiceImpl {
   }
 
   /**
-   Creates a temporary directory with the specified prefix.
+   Creates a temporary directory with the given options.
 
-   Unlike `withTemporaryDirectory`, this method does not automatically clean up the directory.
-   The caller is responsible for managing the lifecycle of the temporary directory.
-
-   - Parameter prefix: Prefix for the directory name
-   - Returns: Path to the created directory
+   - Parameters:
+      - options: Optional options for creating the temporary directory
+   - Returns: The path to the created temporary directory
    - Throws: `FileSystemError.writeError` if the temporary directory couldn't be created
    */
   public func createTemporaryDirectory(
-    prefix: String
-  ) async throws -> FilePath {
-    let tempParentDirectory=FileManager.default.temporaryDirectory
-    let tempDirName="\(prefix)\(UUID().uuidString)"
-    let tempDirURL=tempParentDirectory.appendingPathComponent(tempDirName)
-    let tempDirPath=FilePath(path: tempDirURL.path)
+    options: TemporaryFileOptions?
+  ) async throws -> FilePathDTO {
+    let tempDirectory = FileManager.default.temporaryDirectory
+    let tempDirName = "\(options?.prefix ?? "tmp")\(UUID().uuidString)"
+    let tempURL = tempDirectory.appendingPathComponent(tempDirName)
+    let tempPath = FilePathDTO(path: tempURL.path, isDirectory: true)
 
-    do {
-      try fileManager.createDirectory(
-        atPath: tempDirURL.path,
-        withIntermediateDirectories: true,
-        attributes: nil
+    await logger.debug(
+      "Creating temporary directory",
+      context: FileSystemLogContext(
+        operation: "createTemporaryDirectory",
+        path: tempPath.path,
+        source: "FileSystemService",
+        metadata: LogMetadataDTOCollection()
+          .withPublic(key: "tempDirName", value: tempDirName)
       )
+    )
 
-      await logger.debug(
-        "Created temporary directory",
+    // Create the directory
+    do {
+      try FileManager.default.createDirectory(at: tempURL, withIntermediateDirectories: true)
+    } catch {
+      let errorMetadata = LogMetadataDTOCollection()
+        .withPublic(key: "tempDirName", value: tempDirName)
+        .withPublic(key: "errorType", value: "\(type(of: error))")
+        .withPrivate(key: "errorMessage", value: error.localizedDescription)
+
+      await logger.error(
+        "Failed to create temporary directory",
         context: FileSystemLogContext(
           operation: "createTemporaryDirectory",
-          path: tempDirPath.path,
-          source: "FileSystemService"
+          path: tempPath.path,
+          source: "FileSystemService",
+          metadata: errorMetadata
         )
       )
 
-      return tempDirPath
-    } catch {
       throw FileSystemInterfaces.FileSystemError.writeError(
-        path: tempDirPath.path,
+        path: tempPath.path,
         reason: "Failed to create temporary directory: \(error.localizedDescription)"
       )
     }
+
+    await logger.debug(
+      "Created temporary directory",
+      context: FileSystemLogContext(
+        operation: "createTemporaryDirectory",
+        path: tempPath.path,
+        source: "FileSystemService",
+        metadata: LogMetadataDTOCollection()
+          .withPublic(key: "tempDirName", value: tempDirName)
+      )
+    )
+
+    return tempPath
   }
 }

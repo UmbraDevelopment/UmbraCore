@@ -1,11 +1,12 @@
 import Foundation
+import CoreDTOs
 
 /**
  # File Write Operations Protocol
  
  Defines the core write operations that can be performed on a file system.
  
- This protocol centralizes all file write operations to ensure consistency
+ This protocol centralises all file write operations to ensure consistency
  across different file system service implementations.
  
  ## Alpha Dot Five Architecture
@@ -25,7 +26,7 @@ public protocol FileWriteOperationsProtocol: Actor, Sendable {
      - Returns: The path to the created file.
      - Throws: FileSystemError if the file creation fails.
      */
-    func createFile(at path: String, options: FileCreationOptions?) async throws -> String
+    func createFile(at path: FilePathDTO, options: FileCreationOptions?) async throws -> FilePathDTO
     
     /**
      Writes data to a file at the specified path.
@@ -36,7 +37,7 @@ public protocol FileWriteOperationsProtocol: Actor, Sendable {
         - options: Optional file write options.
      - Throws: FileSystemError if the write operation fails.
      */
-    func writeFile(data: Data, to path: String, options: FileWriteOptions?) async throws
+    func writeFile(data: Data, to path: FilePathDTO, options: FileWriteOptions?) async throws
     
     /**
      Writes a string to a file at the specified path.
@@ -48,7 +49,7 @@ public protocol FileWriteOperationsProtocol: Actor, Sendable {
         - options: Optional file write options.
      - Throws: FileSystemError if the write operation fails.
      */
-    func writeString(_ string: String, to path: String, encoding: String.Encoding, options: FileWriteOptions?) async throws
+    func writeString(_ string: String, to path: FilePathDTO, encoding: String.Encoding, options: FileWriteOptions?) async throws
     
     /**
      Creates a directory at the specified path.
@@ -59,7 +60,7 @@ public protocol FileWriteOperationsProtocol: Actor, Sendable {
      - Returns: The path to the created directory.
      - Throws: FileSystemError if the directory creation fails.
      */
-    func createDirectory(at path: String, options: DirectoryCreationOptions?) async throws -> String
+    func createDirectory(at path: FilePathDTO, options: DirectoryCreationOptions?) async throws -> FilePathDTO
     
     /**
      Deletes a file or directory at the specified path.
@@ -67,7 +68,7 @@ public protocol FileWriteOperationsProtocol: Actor, Sendable {
      - Parameter path: The path to the file or directory to delete.
      - Throws: FileSystemError if the deletion fails.
      */
-    func delete(at path: String) async throws
+    func delete(at path: FilePathDTO) async throws
     
     /**
      Moves a file or directory from one path to another.
@@ -78,7 +79,7 @@ public protocol FileWriteOperationsProtocol: Actor, Sendable {
         - options: Optional move options.
      - Throws: FileSystemError if the move operation fails.
      */
-    func move(from sourcePath: String, to destinationPath: String, options: FileMoveOptions?) async throws
+    func move(from sourcePath: FilePathDTO, to destinationPath: FilePathDTO, options: FileMoveOptions?) async throws
     
     /**
      Copies a file or directory from one path to another.
@@ -89,5 +90,5 @@ public protocol FileWriteOperationsProtocol: Actor, Sendable {
         - options: Optional copy options.
      - Throws: FileSystemError if the copy operation fails.
      */
-    func copy(from sourcePath: String, to destinationPath: String, options: FileCopyOptions?) async throws
+    func copy(from sourcePath: FilePathDTO, to destinationPath: FilePathDTO, options: FileCopyOptions?) async throws
 }

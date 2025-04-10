@@ -1,4 +1,5 @@
 import Foundation
+import CoreDTOs
 
 /**
  # Secure File Operations Protocol
@@ -27,7 +28,7 @@ public protocol SecureFileOperationsProtocol: Actor, Sendable {
      - Returns: The path to the secure temporary file.
      - Throws: FileSystemError if the temporary file cannot be created.
      */
-    func createSecureTemporaryFile(prefix: String?, options: FileCreationOptions?) async throws -> String
+    func createSecureTemporaryFile(prefix: String?, options: FileCreationOptions?) async throws -> FilePathDTO
     
     /**
      Creates a secure temporary directory with the specified prefix.
@@ -38,7 +39,7 @@ public protocol SecureFileOperationsProtocol: Actor, Sendable {
      - Returns: The path to the secure temporary directory.
      - Throws: FileSystemError if the temporary directory cannot be created.
      */
-    func createSecureTemporaryDirectory(prefix: String?, options: DirectoryCreationOptions?) async throws -> String
+    func createSecureTemporaryDirectory(prefix: String?, options: DirectoryCreationOptions?) async throws -> FilePathDTO
     
     /**
      Securely writes data to a file with encryption.
@@ -49,28 +50,28 @@ public protocol SecureFileOperationsProtocol: Actor, Sendable {
         - options: Optional secure write options.
      - Throws: FileSystemError if the secure write operation fails.
      */
-    func secureWriteFile(data: Data, to path: String, options: SecureFileWriteOptions?) async throws
+    func secureWriteFile(data: Data, to path: FilePathDTO, options: SecureFileWriteOptions?) async throws
     
     /**
-     Securely reads data from an encrypted file.
+     Securely reads data from a file with decryption.
      
      - Parameters:
-        - path: The path to the encrypted file.
+        - path: The path to the file to read.
         - options: Optional secure read options.
-     - Returns: The decrypted file contents.
+     - Returns: The decrypted data.
      - Throws: FileSystemError if the secure read operation fails.
      */
-    func secureReadFile(at path: String, options: SecureFileReadOptions?) async throws -> Data
+    func secureReadFile(at path: FilePathDTO, options: SecureFileReadOptions?) async throws -> Data
     
     /**
-     Securely deletes a file using secure erase techniques.
+     Securely deletes a file or directory to prevent recovery.
      
      - Parameters:
-        - path: The path to the file to securely delete.
+        - path: The path to the file or directory to delete.
         - options: Optional secure deletion options.
      - Throws: FileSystemError if the secure deletion fails.
      */
-    func secureDelete(at path: String, options: SecureDeletionOptions?) async throws
+    func secureDelete(at path: FilePathDTO, options: SecureDeletionOptions?) async throws
     
     /**
      Sets secure permissions on a file or directory.
@@ -80,16 +81,16 @@ public protocol SecureFileOperationsProtocol: Actor, Sendable {
         - path: The path to the file or directory.
      - Throws: FileSystemError if the permissions cannot be set.
      */
-    func setSecurePermissions(_ permissions: SecureFilePermissions, at path: String) async throws
+    func setSecurePermissions(_ permissions: SecureFilePermissions, at path: FilePathDTO) async throws
     
     /**
-     Verifies the integrity of a file using a checksum or signature.
+     Verifies the integrity of a file using a cryptographic signature.
      
      - Parameters:
         - path: The path to the file to verify.
-        - signature: The expected signature or checksum.
-     - Returns: True if the file integrity is verified, false otherwise.
-     - Throws: FileSystemError if the verification process fails.
+        - signature: The cryptographic signature to check against.
+     - Returns: A boolean indicating whether the file's integrity is verified.
+     - Throws: FileSystemError if the verification operation fails.
      */
-    func verifyFileIntegrity(at path: String, against signature: Data) async throws -> Bool
+    func verifyFileIntegrity(at path: FilePathDTO, against signature: Data) async throws -> Bool
 }
