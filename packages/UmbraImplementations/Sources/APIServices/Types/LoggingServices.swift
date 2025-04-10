@@ -132,7 +132,7 @@ private enum LoggerFactory {
 /**
  * Basic console logger implementation for development and testing.
  */
-private class ConsoleLogger: LoggingProtocol {
+private actor ConsoleLogger: LoggingProtocol {
   private let subsystem: String
   private let category: String
 
@@ -165,7 +165,7 @@ private class ConsoleLogger: LoggingProtocol {
 /**
  * Basic wrapper around OSLog for testing and development.
  */
-private class OSLogWrapper: LoggingProtocol {
+private actor OSLogWrapper: LoggingProtocol {
   private let subsystem: String
   private let category: String
 
@@ -219,7 +219,7 @@ private class OSLogWrapper: LoggingProtocol {
 /**
  * Basic implementation of the LoggingProtocol.
  */
-private class BasicLogger: LoggingProtocol {
+private actor BasicLogger: LoggingProtocol {
   private let domain: String
   private let category: String
 

@@ -37,41 +37,21 @@ public enum KeychainSecurityFactory {
 /**
  A Keychain-based implementation of SecureStorageProtocol.
  */
-final class KeychainSecureStorage: SecureStorageProtocol {
-  // Use an actor for thread-safe access to storage
-  private actor SecureStore {
-    var storage: [String: [UInt8]]=[:]
-
-    func store(_ data: [UInt8], forKey key: String) {
-      storage[key]=data
-    }
-
-    func retrieve(forKey key: String) -> [UInt8]? {
-      storage[key]
-    }
-
-    func delete(forKey key: String) {
-      storage.removeValue(forKey: key)
-    }
-
-    func allKeys() -> [String] {
-      Array(storage.keys)
-    }
-  }
-
-  private let store=SecureStore()
+actor KeychainSecureStorage: SecureStorageProtocol {
+  // Dictionary for storing data, simulating keychain storage
+  private var storage: [String: [UInt8]] = [:]
 
   public func storeData(
     _ data: [UInt8],
     withIdentifier identifier: String
   ) async -> Result<Void, SecurityStorageError> {
-    await store.store(data, forKey: identifier)
+    storage[identifier] = data
     return .success(())
   }
 
   public func retrieveData(withIdentifier identifier: String) async
   -> Result<[UInt8], SecurityStorageError> {
-    if let data=await store.retrieve(forKey: identifier) {
+    if let data = storage[identifier] {
       .success(data)
     } else {
       .failure(.dataNotFound)
@@ -80,12 +60,12 @@ final class KeychainSecureStorage: SecureStorageProtocol {
 
   public func deleteData(withIdentifier identifier: String) async
   -> Result<Void, SecurityStorageError> {
-    await store.delete(forKey: identifier)
+    storage.removeValue(forKey: identifier)
     return .success(())
   }
 
   public func listDataIdentifiers() async -> Result<[String], SecurityStorageError> {
-    await .success(store.allKeys())
+    .success(Array(storage.keys))
   }
 }
 
@@ -95,16 +75,16 @@ final class KeychainSecureStorage: SecureStorageProtocol {
  This implementation follows the Alpha Dot Five architecture with proper
  privacy-by-design principles and actor-based concurrency.
  */
-final class BasicCryptoService: CryptoServiceProtocol {
+actor BasicCryptoService: CryptoServiceProtocol {
   // Required by protocol
-  public let secureStorage: SecureStorageProtocol
+  public nonisolated let secureStorage: SecureStorageProtocol
 
   // Logger for operations
   private let logger: LoggingProtocol
 
   init(logger: LoggingProtocol) {
-    secureStorage=KeychainSecureStorage()
-    self.logger=logger
+    secureStorage = KeychainSecureStorage()
+    self.logger = logger
   }
 
   public func encrypt(

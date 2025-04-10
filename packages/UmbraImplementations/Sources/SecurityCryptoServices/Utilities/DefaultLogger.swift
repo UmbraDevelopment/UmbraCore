@@ -12,7 +12,7 @@ import OSLog
 
  This logger uses OSLog on Apple platforms for efficient system integration.
  */
-public final class DefaultLogger: LoggingProtocol {
+public actor DefaultLogger: LoggingProtocol {
   /// OSLog instance for system logging
   private let logger: Logger
 
@@ -20,12 +20,12 @@ public final class DefaultLogger: LoggingProtocol {
   public let loggingActor: LoggingActor
 
   /// Default source identifier for log messages
-  private let defaultSource="SecurityCryptoServices"
+  private let defaultSource = "SecurityCryptoServices"
 
   /// Initialise a new logger with the default subsystem and category
   public init() {
-    logger=Logger(subsystem: "com.umbra.securitycryptoservices", category: "SecurityCryptoServices")
-    loggingActor=LoggingActor(destinations: [])
+    logger = Logger(subsystem: "com.umbra.securitycryptoservices", category: "SecurityCryptoServices")
+    loggingActor = LoggingActor(destinations: [])
   }
 
   /// Core logging method implementation
@@ -49,10 +49,10 @@ public final class DefaultLogger: LoggingProtocol {
   /// Log debug message
   public func debug(
     _ message: String,
-    metadata: LogMetadataDTOCollection?=nil,
-    source: String?=nil
+    metadata: LogMetadataDTOCollection? = nil,
+    source: String? = nil
   ) async {
-    let logContext=LogContext(
+    let logContext = LogContext(
       source: source ?? defaultSource,
       metadata: metadata?.toPrivacyMetadata()
     )
@@ -62,10 +62,10 @@ public final class DefaultLogger: LoggingProtocol {
   /// Log info message
   public func info(
     _ message: String,
-    metadata: LogMetadataDTOCollection?=nil,
-    source: String?=nil
+    metadata: LogMetadataDTOCollection? = nil,
+    source: String? = nil
   ) async {
-    let logContext=LogContext(
+    let logContext = LogContext(
       source: source ?? defaultSource,
       metadata: metadata?.toPrivacyMetadata()
     )
@@ -75,10 +75,10 @@ public final class DefaultLogger: LoggingProtocol {
   /// Log warning message
   public func warning(
     _ message: String,
-    metadata: LogMetadataDTOCollection?=nil,
-    source: String?=nil
+    metadata: LogMetadataDTOCollection? = nil,
+    source: String? = nil
   ) async {
-    let logContext=LogContext(
+    let logContext = LogContext(
       source: source ?? defaultSource,
       metadata: metadata?.toPrivacyMetadata()
     )
@@ -88,10 +88,10 @@ public final class DefaultLogger: LoggingProtocol {
   /// Log error message
   public func error(
     _ message: String,
-    metadata: LogMetadataDTOCollection?=nil,
-    source: String?=nil
+    metadata: LogMetadataDTOCollection? = nil,
+    source: String? = nil
   ) async {
-    let logContext=LogContext(
+    let logContext = LogContext(
       source: source ?? defaultSource,
       metadata: metadata?.toPrivacyMetadata()
     )

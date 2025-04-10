@@ -13,9 +13,12 @@ import SecurityInterfaces
  
  Provides AES encryption and decryption using CommonCrypto.
  */
-internal final class BasicEncryptionServiceAdapter: BaseSecurityServiceAdapter, EncryptionServiceAdapter {
+internal actor BasicEncryptionServiceAdapter: EncryptionServiceAdapter {
+    /// Logger utility for operation tracking
+    private let logger: SecurityServiceLogger
+    
     /// Secure storage for persisting data
-    let secureStorage: SecureStorageProtocol
+    private let secureStorage: SecureStorageProtocol
     
     /**
      Initialises the adapter with common dependencies.
@@ -26,22 +29,22 @@ internal final class BasicEncryptionServiceAdapter: BaseSecurityServiceAdapter, 
      */
     init(secureStorage: SecureStorageProtocol, logger: LoggingProtocol) {
         self.secureStorage = secureStorage
-        super.init(logger: logger)
+        self.logger = SecurityServiceLogger(logger: logger)
     }
     
     /**
      Encrypts data using the specified configuration.
      
      - Parameter config: Security configuration with encryption parameters
-     - Returns: Result containing encrypted data and metadata
+     - Returns: Result of the encryption operation
      - Throws: If encryption fails
      */
     public func encrypt(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
         let operationID = UUID().uuidString
         let startTime = Date()
         
-        logger.debug("Starting encryption operation",
-                     context: createLogContext(
+        await logger.logger.debug("Starting encryption operation",
+                     context: logger.createLogContext(
                        [
                          "operationID": (value: operationID, privacy: .public),
                          "algorithm": (value: config.encryptionAlgorithm.rawValue, privacy: .public)
@@ -49,47 +52,33 @@ internal final class BasicEncryptionServiceAdapter: BaseSecurityServiceAdapter, 
                        source: "BasicEncryptionService"
                      ))
         
-        // Extract data from metadata if available
-        guard let inputDataBase64 = config.options?.metadata?["inputData"],
-              let inputData = Data(base64Encoded: inputDataBase64) else {
-            throw SecurityError.encryptionFailed(reason: "Missing or invalid input data")
+        // Extract key ID and encrypted data from metadata
+        guard let metadata = config.options?.metadata,
+              let inputDataBase64 = metadata["inputData"],
+              let keyId = metadata["keyIdentifier"] else {
+            throw SecurityError.encryptionFailed(reason: "Missing required metadata")
         }
         
-        // Extract key identifier or key data
-        let keyIdentifier = config.options?.metadata?["keyIdentifier"]
-        let keyData: Data
-        
-        if let keyId = keyIdentifier {
-            // Retrieve key from secure storage
-            do {
-                keyData = try await secureStorage.retrieveData(forKey: keyId)
-            } catch {
-                throw SecurityError.keyNotFound(identifier: keyId)
-            }
-        } else if let keyBase64 = config.options?.metadata?["key"],
-                  let key = Data(base64Encoded: keyBase64) {
-            keyData = key
-        } else {
-            // Generate a random key for this operation
-            var key = Data(count: 32) // 256-bit key
-            let status = key.withUnsafeMutableBytes { 
-                SecRandomCopyBytes(kSecRandomDefault, 32, $0.baseAddress!) 
-            }
-            
-            guard status == errSecSuccess else {
-                throw SecurityError.keyGenerationFailed(reason: "Failed to generate random key")
-            }
-            
-            keyData = key
+        // Decode the input data
+        guard let inputData = Data(base64Encoded: inputDataBase64) else {
+            throw SecurityError.encryptionFailed(reason: "Invalid input data encoding")
         }
         
-        // Generate random IV
-        var iv = Data(count: 16)
-        let ivStatus = iv.withUnsafeMutableBytes { 
-            SecRandomCopyBytes(kSecRandomDefault, 16, $0.baseAddress!) 
+        // Retrieve key from secure storage
+        var keyData: Data
+        do {
+            keyData = try await secureStorage.retrieveData(forKey: keyId)
+        } catch {
+            throw SecurityError.keyNotFound(identifier: keyId)
         }
         
-        guard ivStatus == errSecSuccess else {
+        // Create initialization vector (IV)
+        var iv = Data(count: kCCBlockSizeAES128)
+        let result = iv.withUnsafeMutableBytes { ivPtr in
+            SecRandomCopyBytes(kSecRandomDefault, kCCBlockSizeAES128, ivPtr.baseAddress!)
+        }
+        
+        if result != errSecSuccess {
             throw SecurityError.encryptionFailed(reason: "Failed to generate IV")
         }
         
@@ -136,33 +125,35 @@ internal final class BasicEncryptionServiceAdapter: BaseSecurityServiceAdapter, 
             }
         }
         
-        guard cryptStatus == kCCSuccess else {
-            throw SecurityError.encryptionFailed(reason: "Encryption failed with status: \(cryptStatus)")
+        if cryptStatus != kCCSuccess {
+            throw SecurityError.encryptionFailed(reason: "Encryption failed with status \(cryptStatus)")
         }
         
-        // Resize the result to the actual bytes encrypted
-        encryptedData.count = encryptedLength
+        // Trim the encrypted data to the actual length
+        encryptedData = encryptedData.prefix(encryptedLength)
         
-        // Prepend IV to encrypted data
+        // Prepend the IV to the encrypted data for decryption later
         let resultData = iv + encryptedData
         
         let endTime = Date()
         let duration = endTime.timeIntervalSince(startTime) * 1000
         
-        logger.debug("Completed encryption operation",
-                     context: createLogContext(
+        await logger.logger.debug("Completed encryption operation",
+                     context: logger.createLogContext(
                        [
                          "operationID": (value: operationID, privacy: .public),
+                         "algorithm": (value: config.encryptionAlgorithm.rawValue, privacy: .public),
                          "duration": (value: String(format: "%.2f", duration), privacy: .public),
                          "status": (value: "success", privacy: .public)
                        ],
                        source: "BasicEncryptionService"
                      ))
         
+        // Create and return the result
         return SecurityResultDTO.success(
             resultData: resultData,
             executionTimeMs: duration,
-            metadata: ["operationID": operationID]
+            metadata: ["algorithm": config.encryptionAlgorithm.rawValue]
         )
     }
     
@@ -170,15 +161,15 @@ internal final class BasicEncryptionServiceAdapter: BaseSecurityServiceAdapter, 
      Decrypts data using the specified configuration.
      
      - Parameter config: Security configuration with decryption parameters
-     - Returns: Result containing decrypted data and metadata
+     - Returns: Result of the decryption operation
      - Throws: If decryption fails
      */
     public func decrypt(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
         let operationID = UUID().uuidString
         let startTime = Date()
         
-        logger.debug("Starting decryption operation",
-                     context: createLogContext(
+        await logger.logger.debug("Starting decryption operation",
+                     context: logger.createLogContext(
                        [
                          "operationID": (value: operationID, privacy: .public),
                          "algorithm": (value: config.encryptionAlgorithm.rawValue, privacy: .public)
@@ -186,37 +177,32 @@ internal final class BasicEncryptionServiceAdapter: BaseSecurityServiceAdapter, 
                        source: "BasicEncryptionService"
                      ))
         
-        // Extract encrypted data from metadata
-        guard let encryptedDataBase64 = config.options?.metadata?["encryptedData"],
-              let encryptedDataWithIV = Data(base64Encoded: encryptedDataBase64) else {
-            throw SecurityError.decryptionFailed(reason: "Missing or invalid encrypted data")
+        // Extract key ID and encrypted data from metadata
+        guard let metadata = config.options?.metadata,
+              let encryptedDataBase64 = metadata["inputData"],
+              let keyId = metadata["keyIdentifier"] else {
+            throw SecurityError.decryptionFailed(reason: "Missing required metadata")
         }
         
-        // Ensure data is long enough to contain IV
-        guard encryptedDataWithIV.count > 16 else {
-            throw SecurityError.decryptionFailed(reason: "Data too short to contain IV")
+        // Decode the encrypted data
+        guard let encryptedDataWithIV = Data(base64Encoded: encryptedDataBase64) else {
+            throw SecurityError.decryptionFailed(reason: "Invalid encrypted data encoding")
         }
         
-        // Extract IV from first 16 bytes
-        let iv = encryptedDataWithIV.prefix(16)
-        let encryptedData = encryptedDataWithIV.dropFirst(16)
+        // Extract IV and actual encrypted data
+        guard encryptedDataWithIV.count > kCCBlockSizeAES128 else {
+            throw SecurityError.decryptionFailed(reason: "Encrypted data too short")
+        }
         
-        // Extract key identifier or key data
-        let keyIdentifier = config.options?.metadata?["keyIdentifier"]
-        let keyData: Data
+        let iv = encryptedDataWithIV.prefix(kCCBlockSizeAES128)
+        let encryptedData = encryptedDataWithIV.dropFirst(kCCBlockSizeAES128)
         
-        if let keyId = keyIdentifier {
-            // Retrieve key from secure storage
-            do {
-                keyData = try await secureStorage.retrieveData(forKey: keyId)
-            } catch {
-                throw SecurityError.keyNotFound(identifier: keyId)
-            }
-        } else if let keyBase64 = config.options?.metadata?["key"],
-                  let key = Data(base64Encoded: keyBase64) {
-            keyData = key
-        } else {
-            throw SecurityError.decryptionFailed(reason: "No key identifier or key data provided")
+        // Retrieve key from secure storage
+        var keyData: Data
+        do {
+            keyData = try await secureStorage.retrieveData(forKey: keyId)
+        } catch {
+            throw SecurityError.keyNotFound(identifier: keyId)
         }
         
         // Perform decryption
@@ -262,33 +248,32 @@ internal final class BasicEncryptionServiceAdapter: BaseSecurityServiceAdapter, 
             }
         }
         
-        guard cryptStatus == kCCSuccess else {
-            throw SecurityError.decryptionFailed(reason: "Decryption failed with status: \(cryptStatus)")
+        if cryptStatus != kCCSuccess {
+            throw SecurityError.decryptionFailed(reason: "Decryption failed with status \(cryptStatus)")
         }
         
-        // Resize the result to the actual bytes decrypted
-        decryptedData.count = decryptedLength
+        // Trim the decrypted data to the actual length
+        decryptedData = decryptedData.prefix(decryptedLength)
         
         let endTime = Date()
         let duration = endTime.timeIntervalSince(startTime) * 1000
         
-        logger.debug("Completed decryption operation",
-                     context: createLogContext(
+        await logger.logger.debug("Completed decryption operation",
+                     context: logger.createLogContext(
                        [
                          "operationID": (value: operationID, privacy: .public),
+                         "algorithm": (value: config.encryptionAlgorithm.rawValue, privacy: .public),
                          "duration": (value: String(format: "%.2f", duration), privacy: .public),
                          "status": (value: "success", privacy: .public)
                        ],
                        source: "BasicEncryptionService"
                      ))
         
+        // Create and return the result
         return SecurityResultDTO.success(
             resultData: decryptedData,
             executionTimeMs: duration,
-            metadata: [
-                "operationID": operationID,
-                "algorithm": config.encryptionAlgorithm.rawValue
-            ]
+            metadata: ["algorithm": config.encryptionAlgorithm.rawValue]
         )
     }
 }
@@ -298,11 +283,14 @@ internal final class BasicEncryptionServiceAdapter: BaseSecurityServiceAdapter, 
 /**
  # BasicHashingServiceAdapter
  
- Provides SHA-256, SHA-384, and SHA-512 hash functions.
+ Provides cryptographic hashing operations using CommonCrypto.
  */
-internal final class BasicHashingServiceAdapter: BaseSecurityServiceAdapter, HashingServiceAdapter {
+internal actor BasicHashingServiceAdapter: HashingServiceAdapter {
+    /// Logger utility for operation tracking
+    private let logger: SecurityServiceLogger
+    
     /// Secure storage for persisting data
-    let secureStorage: SecureStorageProtocol
+    private let secureStorage: SecureStorageProtocol
     
     /**
      Initialises the adapter with common dependencies.
@@ -313,22 +301,22 @@ internal final class BasicHashingServiceAdapter: BaseSecurityServiceAdapter, Has
      */
     init(secureStorage: SecureStorageProtocol, logger: LoggingProtocol) {
         self.secureStorage = secureStorage
-        super.init(logger: logger)
+        self.logger = SecurityServiceLogger(logger: logger)
     }
     
     /**
-     Performs a hash operation on the provided data.
+     Hashes data using the specified configuration.
      
      - Parameter config: Security configuration with hashing parameters
-     - Returns: Result containing the hash and metadata
+     - Returns: Result of the hashing operation
      - Throws: If hashing fails
      */
     public func hash(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
         let operationID = UUID().uuidString
         let startTime = Date()
         
-        logger.debug("Starting hash operation",
-                     context: createLogContext(
+        await logger.logger.debug("Starting hash operation",
+                     context: logger.createLogContext(
                        [
                          "operationID": (value: operationID, privacy: .public),
                          "algorithm": (value: config.hashAlgorithm.rawValue, privacy: .public)
@@ -337,91 +325,73 @@ internal final class BasicHashingServiceAdapter: BaseSecurityServiceAdapter, Has
                      ))
         
         // Extract data from metadata
-        guard let inputDataBase64 = config.options?.metadata?["inputData"],
-              let inputData = Data(base64Encoded: inputDataBase64) else {
-            throw SecurityError.hashingFailed(reason: "Missing or invalid input data")
+        guard let metadata = config.options?.metadata,
+              let inputDataBase64 = metadata["inputData"] else {
+            throw SecurityError.hashingFailed(reason: "Missing required metadata")
         }
         
-        // Determine hash algorithm
-        let algorithm: CCHmacAlgorithm
-        var digestLength: Int
+        // Decode the input data
+        guard let inputData = Data(base64Encoded: inputDataBase64) else {
+            throw SecurityError.hashingFailed(reason: "Invalid input data encoding")
+        }
+        
+        // Perform hashing based on algorithm
+        let hashData: Data
         
         switch config.hashAlgorithm {
         case .sha256:
-            algorithm = CCHmacAlgorithm(kCCHmacAlgSHA256)
-            digestLength = Int(CC_SHA256_DIGEST_LENGTH)
-        case .sha384:
-            algorithm = CCHmacAlgorithm(kCCHmacAlgSHA384)
-            digestLength = Int(CC_SHA384_DIGEST_LENGTH)
+            var hash = [UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
+            inputData.withUnsafeBytes { dataBytes in
+                CC_SHA256(dataBytes.baseAddress, CC_LONG(inputData.count), &hash)
+            }
+            hashData = Data(hash)
+            
         case .sha512:
-            algorithm = CCHmacAlgorithm(kCCHmacAlgSHA512)
-            digestLength = Int(CC_SHA512_DIGEST_LENGTH)
-        default:
-            throw SecurityError.hashingFailed(reason: "Unsupported algorithm: \(config.hashAlgorithm.rawValue)")
-        }
-        
-        // Perform hashing
-        var hashData = Data(count: digestLength)
-        
-        switch config.hashAlgorithm {
-        case .sha256:
-            _ = hashData.withUnsafeMutableBytes { hashPtr in
-                inputData.withUnsafeBytes { dataPtr in
-                    CC_SHA256(dataPtr.baseAddress, CC_LONG(inputData.count), hashPtr.baseAddress)
-                }
+            var hash = [UInt8](repeating: 0, count: Int(CC_SHA512_DIGEST_LENGTH))
+            inputData.withUnsafeBytes { dataBytes in
+                CC_SHA512(dataBytes.baseAddress, CC_LONG(inputData.count), &hash)
             }
-        case .sha384:
-            _ = hashData.withUnsafeMutableBytes { hashPtr in
-                inputData.withUnsafeBytes { dataPtr in
-                    CC_SHA384(dataPtr.baseAddress, CC_LONG(inputData.count), hashPtr.baseAddress)
-                }
-            }
-        case .sha512:
-            _ = hashData.withUnsafeMutableBytes { hashPtr in
-                inputData.withUnsafeBytes { dataPtr in
-                    CC_SHA512(dataPtr.baseAddress, CC_LONG(inputData.count), hashPtr.baseAddress)
-                }
-            }
-        default:
-            throw SecurityError.hashingFailed(reason: "Unsupported algorithm: \(config.hashAlgorithm.rawValue)")
+            hashData = Data(hash)
+            
+        case .blake2b:
+            throw SecurityError.hashingFailed(reason: "BLAKE2b algorithm not supported in this implementation")
         }
         
         let endTime = Date()
         let duration = endTime.timeIntervalSince(startTime) * 1000
         
-        logger.debug("Completed hash operation",
-                     context: createLogContext(
+        await logger.logger.debug("Completed hash operation",
+                     context: logger.createLogContext(
                        [
                          "operationID": (value: operationID, privacy: .public),
+                         "algorithm": (value: config.hashAlgorithm.rawValue, privacy: .public),
                          "duration": (value: String(format: "%.2f", duration), privacy: .public),
                          "status": (value: "success", privacy: .public)
                        ],
                        source: "BasicHashingService"
                      ))
         
+        // Create and return the result
         return SecurityResultDTO.success(
             resultData: hashData,
             executionTimeMs: duration,
-            metadata: [
-                "operationID": operationID,
-                "algorithm": config.hashAlgorithm.rawValue
-            ]
+            metadata: ["algorithm": config.hashAlgorithm.rawValue]
         )
     }
     
     /**
      Verifies a hash against the original data.
      
-     - Parameter config: Security configuration with verification parameters
-     - Returns: Result indicating whether the hash is valid
+     - Parameter config: Security configuration with hash verification parameters
+     - Returns: Result of the verification operation
      - Throws: If verification fails
      */
     public func verifyHash(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
         let operationID = UUID().uuidString
         let startTime = Date()
         
-        logger.debug("Starting hash verification operation",
-                     context: createLogContext(
+        await logger.logger.debug("Starting hash verification operation",
+                     context: logger.createLogContext(
                        [
                          "operationID": (value: operationID, privacy: .public),
                          "algorithm": (value: config.hashAlgorithm.rawValue, privacy: .public)
@@ -429,45 +399,66 @@ internal final class BasicHashingServiceAdapter: BaseSecurityServiceAdapter, Has
                        source: "BasicHashingService"
                      ))
         
-        // Extract data and expected hash from metadata
-        guard let inputDataBase64 = config.options?.metadata?["inputData"],
-              let inputData = Data(base64Encoded: inputDataBase64) else {
-            throw SecurityError.hashingFailed(reason: "Missing or invalid input data")
+        // Extract data from metadata
+        guard let metadata = config.options?.metadata,
+              let inputDataBase64 = metadata["inputData"],
+              let expectedHashBase64 = metadata["expectedHash"] else {
+            throw SecurityError.hashingFailed(reason: "Missing required metadata")
         }
         
-        guard let expectedHashBase64 = config.options?.metadata?["expectedHash"],
+        // Decode the input data and expected hash
+        guard let inputData = Data(base64Encoded: inputDataBase64),
               let expectedHash = Data(base64Encoded: expectedHashBase64) else {
-            throw SecurityError.hashingFailed(reason: "Missing or invalid expected hash")
+            throw SecurityError.hashingFailed(reason: "Invalid data encoding")
         }
         
-        // Compute hash of input data
-        let hashResult = try await hash(config: config)
-        let computedHash = hashResult.resultData
+        // Compute the hash of the input data
+        let hashConfig = SecurityConfigDTO(
+            encryptionAlgorithm: config.encryptionAlgorithm,
+            hashAlgorithm: config.hashAlgorithm,
+            providerType: config.providerType,
+            options: SecurityConfigOptions(
+                enableDetailedLogging: config.options?.enableDetailedLogging ?? false,
+                keyDerivationIterations: config.options?.keyDerivationIterations ?? 10000,
+                memoryLimitBytes: config.options?.memoryLimitBytes ?? 65536,
+                useHardwareAcceleration: config.options?.useHardwareAcceleration ?? true,
+                operationTimeoutSeconds: config.options?.operationTimeoutSeconds ?? 30,
+                verifyOperations: config.options?.verifyOperations ?? true,
+                metadata: ["inputData": inputDataBase64]
+            )
+        )
         
-        // Compare hashes
-        let isValid = (computedHash == expectedHash)
+        // Compute hash
+        let hashResult = try await hash(config: hashConfig)
+        
+        guard let computedHash = hashResult.resultData else {
+            throw SecurityError.hashingFailed(reason: "Failed to compute hash")
+        }
+        
+        // Compare the computed hash with the expected hash
+        let hashesMatch = computedHash == expectedHash
         
         let endTime = Date()
         let duration = endTime.timeIntervalSince(startTime) * 1000
         
-        logger.debug("Completed hash verification operation",
-                     context: createLogContext(
+        await logger.logger.debug("Completed hash verification operation",
+                     context: logger.createLogContext(
                        [
                          "operationID": (value: operationID, privacy: .public),
+                         "algorithm": (value: config.hashAlgorithm.rawValue, privacy: .public),
                          "duration": (value: String(format: "%.2f", duration), privacy: .public),
-                         "status": (value: "success", privacy: .public),
-                         "isValid": (value: isValid ? "true" : "false", privacy: .public)
+                         "status": (value: hashesMatch ? "match" : "mismatch", privacy: .public)
                        ],
                        source: "BasicHashingService"
                      ))
         
+        // Create and return the result
         return SecurityResultDTO.success(
-            resultData: Data([isValid ? 1 : 0]), // 1 for valid, 0 for invalid
+            resultData: Data([UInt8(hashesMatch ? 1 : 0)]),
             executionTimeMs: duration,
             metadata: [
-                "operationID": operationID,
                 "algorithm": config.hashAlgorithm.rawValue,
-                "isValid": isValid ? "true" : "false"
+                "verified": hashesMatch ? "true" : "false"
             ]
         )
     }
@@ -478,11 +469,14 @@ internal final class BasicHashingServiceAdapter: BaseSecurityServiceAdapter, Has
 /**
  # BasicKeyGenerationServiceAdapter
  
- Generates secure random keys using SecRandomCopyBytes.
+ Provides secure key generation operations for cryptographic use.
  */
-internal final class BasicKeyGenerationServiceAdapter: BaseSecurityServiceAdapter, KeyGenerationServiceAdapter {
+internal actor BasicKeyGenerationServiceAdapter: KeyGenerationServiceAdapter {
+    /// Logger utility for operation tracking
+    private let logger: SecurityServiceLogger
+    
     /// Secure storage for persisting data
-    let secureStorage: SecureStorageProtocol
+    private let secureStorage: SecureStorageProtocol
     
     /**
      Initialises the adapter with common dependencies.
@@ -493,90 +487,75 @@ internal final class BasicKeyGenerationServiceAdapter: BaseSecurityServiceAdapte
      */
     init(secureStorage: SecureStorageProtocol, logger: LoggingProtocol) {
         self.secureStorage = secureStorage
-        super.init(logger: logger)
+        self.logger = SecurityServiceLogger(logger: logger)
     }
     
     /**
-     Generates a cryptographic key with the specified parameters.
+     Generates a cryptographic key based on the provided configuration.
      
      - Parameter config: Security configuration with key generation parameters
-     - Returns: Result containing the generated key
+     - Returns: Result containing the generated key data
      - Throws: If key generation fails
      */
     public func generateKey(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
         let operationID = UUID().uuidString
         let startTime = Date()
         
-        // Extract key size from metadata, default to 256 bits if not specified
-        let keySize = Int(config.options?.metadata?["keySize"] ?? "256") ?? 256
-        let keySizeBytes = keySize / 8
-        
-        logger.debug("Starting key generation operation",
-                     context: createLogContext(
+        await logger.logger.debug("Starting key generation operation",
+                     context: logger.createLogContext(
                        [
                          "operationID": (value: operationID, privacy: .public),
-                         "keySize": (value: String(keySize), privacy: .public)
+                         "algorithm": (value: config.encryptionAlgorithm.rawValue, privacy: .public)
                        ],
                        source: "BasicKeyGenerationService"
                      ))
         
-        // Generate random key
+        // Extract key parameters from metadata
+        guard let metadata = config.options?.metadata else {
+            throw SecurityError.keyGenerationFailed(reason: "Missing metadata")
+        }
+        
+        // Determine key size (default to 256 bits for AES-256)
+        let keySizeStr = metadata["keySize"] ?? "256"
+        guard let keySize = Int(keySizeStr), keySize > 0 else {
+            throw SecurityError.keyGenerationFailed(reason: "Invalid key size")
+        }
+        
+        // Convert bits to bytes
+        let keySizeBytes = keySize / 8
+        
+        // Generate random key data
         var keyData = Data(count: keySizeBytes)
-        let status = keyData.withUnsafeMutableBytes { 
-            SecRandomCopyBytes(kSecRandomDefault, keySizeBytes, $0.baseAddress!) 
+        let result = keyData.withUnsafeMutableBytes { keyPtr in
+            SecRandomCopyBytes(kSecRandomDefault, keySizeBytes, keyPtr.baseAddress!)
         }
         
-        guard status == errSecSuccess else {
-            throw SecurityError.keyGenerationFailed(reason: "Failed to generate random key with status: \(status)")
-        }
-        
-        // Store key if identifier provided
-        if let keyIdentifier = config.options?.metadata?["keyIdentifier"] {
-            do {
-                try await secureStorage.storeData(keyData, forKey: keyIdentifier)
-                
-                logger.debug("Stored generated key",
-                             context: createLogContext(
-                               [
-                                 "operationID": (value: operationID, privacy: .public),
-                                 "keyIdentifier": (value: keyIdentifier, privacy: .private)
-                               ],
-                               source: "BasicKeyGenerationService"
-                             ))
-            } catch {
-                logger.error("Failed to store generated key",
-                             context: createLogContext(
-                               [
-                                 "operationID": (value: operationID, privacy: .public),
-                                 "keyIdentifier": (value: keyIdentifier, privacy: .private),
-                                 "error": (value: error.localizedDescription, privacy: .public)
-                               ],
-                               source: "BasicKeyGenerationService"
-                             ))
-                
-                throw SecurityError.keyGenerationFailed(reason: "Failed to store key: \(error.localizedDescription)")
-            }
+        if result != errSecSuccess {
+            throw SecurityError.keyGenerationFailed(reason: "Failed to generate random bytes")
         }
         
         let endTime = Date()
         let duration = endTime.timeIntervalSince(startTime) * 1000
         
-        logger.debug("Completed key generation operation",
-                     context: createLogContext(
+        await logger.logger.debug("Completed key generation operation",
+                     context: logger.createLogContext(
                        [
                          "operationID": (value: operationID, privacy: .public),
+                         "algorithm": (value: config.encryptionAlgorithm.rawValue, privacy: .public),
                          "duration": (value: String(format: "%.2f", duration), privacy: .public),
-                         "status": (value: "success", privacy: .public)
+                         "status": (value: "success", privacy: .public),
+                         "keySize": (value: keySizeStr, privacy: .public)
                        ],
                        source: "BasicKeyGenerationService"
                      ))
         
+        // Create and return the result
         return SecurityResultDTO.success(
             resultData: keyData,
             executionTimeMs: duration,
             metadata: [
-                "operationID": operationID,
-                "keySize": String(keySize)
+                "algorithm": config.encryptionAlgorithm.rawValue,
+                "keySize": keySizeStr
             ]
         )
     }
@@ -587,11 +566,14 @@ internal final class BasicKeyGenerationServiceAdapter: BaseSecurityServiceAdapte
 /**
  # BasicConfigurationServiceAdapter
  
- Creates and validates security configurations.
+ Provides configuration management for security operations.
  */
-internal final class BasicConfigurationServiceAdapter: BaseSecurityServiceAdapter, ConfigurationServiceAdapter {
+internal actor BasicConfigurationServiceAdapter: ConfigurationServiceAdapter {
+    /// Logger utility for operation tracking
+    private let logger: SecurityServiceLogger
+    
     /// Secure storage for persisting data
-    let secureStorage: SecureStorageProtocol
+    private let secureStorage: SecureStorageProtocol
     
     /**
      Initialises the adapter with common dependencies.
@@ -602,27 +584,19 @@ internal final class BasicConfigurationServiceAdapter: BaseSecurityServiceAdapte
      */
     init(secureStorage: SecureStorageProtocol, logger: LoggingProtocol) {
         self.secureStorage = secureStorage
-        super.init(logger: logger)
+        self.logger = SecurityServiceLogger(logger: logger)
     }
     
     /**
      Creates a security configuration with the specified options.
      
-     - Parameter options: Security configuration options
-     - Returns: A configured SecurityConfigDTO
+     - Parameter options: The configuration options to use
+     - Returns: A security configuration DTO
      */
     public func createSecureConfig(options: SecurityConfigOptions) -> SecurityConfigDTO {
-        logger.debug("Creating security configuration",
-                     context: createLogContext(
-                       [
-                         "useHardwareAcceleration": (value: String(options.useHardwareAcceleration), privacy: .public),
-                         "keyDerivationIterations": (value: String(options.keyDerivationIterations), privacy: .public)
-                       ],
-                       source: "BasicConfigurationService"
-                     ))
-        
+        // Create a basic security configuration with sensible defaults
         return SecurityConfigDTO(
-            encryptionAlgorithm: .aes256,
+            encryptionAlgorithm: .aes256CBC,
             hashAlgorithm: .sha256,
             providerType: .basic,
             options: options
@@ -631,9 +605,9 @@ internal final class BasicConfigurationServiceAdapter: BaseSecurityServiceAdapte
 }
 
 /**
- Internal security error type for cryptographic operations.
+ Error types for security operations.
  */
-internal enum SecurityError: Error {
+enum SecurityError: Error {
     case encryptionFailed(reason: String)
     case decryptionFailed(reason: String)
     case hashingFailed(reason: String)

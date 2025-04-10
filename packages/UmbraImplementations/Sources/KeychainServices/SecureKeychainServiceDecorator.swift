@@ -15,7 +15,7 @@ import LoggingTypes
  - Automatic key rotation policies
  - Secure memory handling for sensitive operations
 
- This class follows the decorator pattern to add functionality while maintaining
+ This actor follows the decorator pattern to add functionality while maintaining
  compatibility with the base KeychainServiceProtocol interface.
 
  ## Implementation Details
@@ -26,16 +26,18 @@ import LoggingTypes
  3. Using immutable data structures where possible
  4. Providing comprehensive error handling
  */
-public final class SecureKeychainServiceDecorator: KeychainServiceProtocol {
+public actor SecureKeychainServiceDecorator: KeychainServiceProtocol {
   /// The wrapped keychain service
   private let wrappedService: KeychainServiceProtocol
 
   /// Logger for enhanced security auditing
   private let logger: LoggingProtocol
 
-  /// Service identifier for categorizing keychain items
+  /// Service identifier for categorising keychain items
   public var serviceIdentifier: String {
-    wrappedService.serviceIdentifier
+    get async {
+      await wrappedService.serviceIdentifier
+    }
   }
 
   /**
@@ -46,8 +48,8 @@ public final class SecureKeychainServiceDecorator: KeychainServiceProtocol {
       - logger: Logger for security auditing
    */
   public init(wrapping service: KeychainServiceProtocol, logger: LoggingProtocol) {
-    wrappedService=service
-    self.logger=logger
+    wrappedService = service
+    self.logger = logger
   }
 
   /**

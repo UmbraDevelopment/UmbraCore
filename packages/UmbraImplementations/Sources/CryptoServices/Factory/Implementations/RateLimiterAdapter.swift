@@ -8,7 +8,7 @@ import Foundation
  This adapter bridges the gap between the actor-based RateLimiterProtocol interface
  and the protocol-based BaseRateLimiter required by other components.
  */
-public final class RateLimiterAdapter: BaseRateLimiter {
+public actor RateLimiterAdapter: BaseRateLimiter {
   /// The wrapped actor-based rate limiter
   private let actorRateLimiter: RateLimiterProtocol
 
@@ -33,13 +33,13 @@ public final class RateLimiterAdapter: BaseRateLimiter {
   public init(
     rateLimiter: RateLimiterProtocol,
     domain: String,
-    maxOperationsPerMinute: Int=30,
-    cooldownPeriod: TimeInterval=30
+    maxOperationsPerMinute: Int = 30,
+    cooldownPeriod: TimeInterval = 30
   ) {
-    actorRateLimiter=rateLimiter
-    self.domain=domain
-    self.maxOperationsPerMinute=maxOperationsPerMinute
-    self.cooldownPeriod=cooldownPeriod
+    actorRateLimiter = rateLimiter
+    self.domain = domain
+    self.maxOperationsPerMinute = maxOperationsPerMinute
+    self.cooldownPeriod = cooldownPeriod
   }
 
   /**
@@ -80,7 +80,7 @@ public final class RateLimiterAdapter: BaseRateLimiter {
 
    - Returns: A standardised description string
    */
-  public var description: String {
+  public nonisolated var description: String {
     "RateLimiterAdapter(domain: \(domain), maxOperationsPerMinute: \(maxOperationsPerMinute))"
   }
 }

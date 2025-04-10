@@ -43,18 +43,18 @@ public protocol FilePathServiceProtocol {
 
  ## Alpha Dot Five Architecture
 
- This class follows the Alpha Dot Five architecture principles:
+ This actor follows the Alpha Dot Five architecture principles:
  - Uses immutable value types where appropriate
  - Provides clear error handling
  - Uses British spelling in documentation
  */
-public class FilePathService: FilePathServiceProtocol {
+public actor FilePathService: FilePathServiceProtocol {
 
   /// Initialises a new file path service.
   public init() {}
 
   public func join(_ components: String...) -> String {
-    let path=NSString.path(withComponents: components) as String
+    let path = NSString.path(withComponents: components) as String
     return (path as NSString).standardizingPath
   }
 
@@ -63,11 +63,11 @@ public class FilePathService: FilePathServiceProtocol {
   }
 
   public func isPathWithinRoot(_ path: String, rootDirectory: String) -> Bool {
-    let normalizedPath=normalise(path)
-    let normalizedRoot=normalise(rootDirectory)
+    let normalizedPath = normalise(path)
+    let normalizedRoot = normalise(rootDirectory)
 
     // Ensure root ends with a path separator
-    let rootWithSeparator=normalizedRoot.hasSuffix("/") ? normalizedRoot : normalizedRoot + "/"
+    let rootWithSeparator = normalizedRoot.hasSuffix("/") ? normalizedRoot : normalizedRoot + "/"
 
     // Check if the normalized path starts with the normalized root
     // This ensures that "/root/path" is contained within "/root" but "/root-other" is not

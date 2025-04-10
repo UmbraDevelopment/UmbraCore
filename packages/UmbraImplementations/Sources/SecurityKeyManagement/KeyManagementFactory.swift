@@ -317,56 +317,30 @@ private struct BaseLogContextDTO: LogContextDTO {
  Simple implementation of KeyStorage that stores keys in memory.
  This is mainly for testing and should not be used in production.
  */
-public final class SimpleInMemoryKeyStore: KeyStorage {
-  // Thread-safe storage for keys
-  private let storage=StorageActor()
-
-  // Actor to provide thread-safe access to the keys
-  private actor StorageActor {
-    // Dictionary to store keys by their identifier
-    var keys: [String: [UInt8]]=[:]
-
-    func storeKey(_ key: [UInt8], identifier: String) {
-      keys[identifier]=key
-    }
-
-    func getKey(identifier: String) -> [UInt8]? {
-      keys[identifier]
-    }
-
-    func deleteKey(identifier: String) {
-      keys.removeValue(forKey: identifier)
-    }
-
-    func containsKey(identifier: String) -> Bool {
-      keys.keys.contains(identifier)
-    }
-
-    func getAllKeys() -> [String] {
-      Array(keys.keys)
-    }
-  }
+public actor SimpleInMemoryKeyStore: KeyStorage {
+  // Dictionary to store keys by their identifier
+  private var keys: [String: [UInt8]] = [:]
 
   public init() {}
 
   public func storeKey(_ key: [UInt8], identifier: String) async throws {
-    await storage.storeKey(key, identifier: identifier)
+    keys[identifier] = key
   }
 
   public func getKey(identifier: String) async throws -> [UInt8]? {
-    await storage.getKey(identifier: identifier)
+    keys[identifier]
   }
 
   public func containsKey(identifier: String) async throws -> Bool {
-    await storage.containsKey(identifier: identifier)
+    keys.keys.contains(identifier)
   }
 
   public func deleteKey(identifier: String) async throws {
-    await storage.deleteKey(identifier: identifier)
+    keys.removeValue(forKey: identifier)
   }
 
   public func listKeyIdentifiers() async throws -> [String] {
-    await storage.getAllKeys()
+    Array(keys.keys)
   }
 }
 

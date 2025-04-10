@@ -1,6 +1,7 @@
 import CoreSecurityTypes
 import Foundation
 import LoggingInterfaces
+import LoggingTypes
 import SecurityCoreInterfaces
 import SecurityInterfaces
 
@@ -122,19 +123,72 @@ public protocol ConfigurationServiceAdapter: SecurityServiceAdapter {
 }
 
 /**
- Base adapter class that provides common functionality for security service adapters.
+ Utility class for logging in security service adapters.
+ This is a helper class, not meant to be subclassed.
  */
-internal class BaseSecurityServiceAdapter {
+struct SecurityServiceLogger {
+    /// Logger for operation tracking and auditing
+    let logger: LoggingProtocol
+    
+    /**
+     Initializes the logger utility.
+     
+     - Parameter logger: Logger instance for operation auditing
+     */
+    init(logger: LoggingProtocol) {
+        self.logger = logger
+    }
+    
+    /**
+     Creates a log context with privacy metadata.
+     
+     - Parameter metadata: Dictionary of key-value pairs with privacy levels
+     - Parameter domain: Optional domain for the log context
+     - Parameter source: Source component identifier
+     - Returns: A LogContextDTO object for logging
+     */
+    func createLogContext(
+        _ metadata: [String: (value: String, privacy: LogPrivacy)] = [:],
+        domain: String = "security",
+        source: String
+    ) -> BaseLogContextDTO {
+        var collection = LogMetadataDTOCollection()
+        
+        for (key, data) in metadata {
+            switch data.privacy {
+            case .public:
+                collection = collection.withPublic(key: key, value: data.value)
+            case .private:
+                collection = collection.withPrivate(key: key, value: data.value)
+            case .sensitive:
+                collection = collection.withSensitive(key: key, value: data.value)
+            case .auto:
+                collection = collection.withPublic(key: key, value: data.value)
+            }
+        }
+        
+        return BaseLogContextDTO(
+            domainName: domain,
+            source: source,
+            metadata: collection
+        )
+    }
+}
+
+/**
+ Base adapter actor that provides common functionality for security service adapters.
+ */
+internal actor BaseSecurityServiceAdapter {
   /// Logger for operation tracking and auditing
-  let logger: LoggingProtocol
+  let logger: SecurityServiceLogger
   
   /**
-   Initializes the adapter with a logger.
+   Initialises the adapter with a logger.
    
    - Parameter logger: Logger instance for operation auditing
    */
   init(logger: LoggingProtocol) {
-    self.logger = logger
+    self.logger = SecurityServiceLogger(logger: logger)
   }
   
   /**
@@ -150,19 +204,10 @@ internal class BaseSecurityServiceAdapter {
     domain: String = "security",
     source: String
   ) -> BaseLogContextDTO {
-    var contextMetadata: [String: LogMetadataEntry] = [:]
-    
-    for (key, value) in metadata {
-      contextMetadata[key] = LogMetadataEntry(
-        value: value.value,
-        privacyLevel: value.privacy
-      )
-    }
-    
-    return BaseLogContextDTO(
+    return logger.createLogContext(
+      metadata.mapValues { ($0.value, .auto) },
       domain: domain,
-      source: source,
-      metadata: contextMetadata
+      source: source
     )
   }
 }

@@ -130,21 +130,21 @@ private actor SchedulingActor {
 }
 
 /// Default implementation of the SchedulingServiceProtocol
-private final class DefaultSchedulingService: SchedulingServiceProtocol {
+private actor DefaultSchedulingService: SchedulingServiceProtocol {
   /// The actor that handles all data access in a thread-safe manner
   private let actor: SchedulingActor
 
   /// Initialise with the default calendar
   init() {
-    var calendar=Calendar.current
-    calendar.timeZone=TimeZone.current
-    actor=SchedulingActor(calendar: calendar)
+    var calendar = Calendar.current
+    calendar.timeZone = TimeZone.current
+    actor = SchedulingActor(calendar: calendar)
   }
 
   /// Initialise with a custom calendar
   /// - Parameter calendar: The calendar to use
   init(calendar: Calendar) {
-    actor=SchedulingActor(calendar: calendar)
+    actor = SchedulingActor(calendar: calendar)
   }
 
   // MARK: - Schedule Management

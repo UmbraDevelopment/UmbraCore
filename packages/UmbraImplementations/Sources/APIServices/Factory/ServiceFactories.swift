@@ -57,15 +57,15 @@ public actor SecurityServiceFactory {
     let securityProvider: SecurityProviderProtocol=switch providerType {
       case .platform:
         // Use the native platform security provider (Apple CryptoKit)
-        try AppleSecurityProvider(logger: securityLogger)
+        try await AppleSecurityProvider(logger: securityLogger)
 
       case .custom:
         // Use the Ring FFI security provider for cross-platform support
-        try RingSecurityProvider(logger: securityLogger)
+        try await RingSecurityProvider(logger: securityLogger)
 
       case .default:
         // Use the default implementation as a fallback
-        try DefaultSecurityProvider(logger: securityLogger)
+        try await DefaultSecurityProvider(logger: securityLogger)
     }
 
     // Create the rate limiter for high-security operations
@@ -116,7 +116,7 @@ public actor SecurityServiceFactory {
     )
 
     // Use the platform provider for maximum security
-    let securityProvider=try AppleSecurityProvider(logger: securityLogger)
+    let securityProvider=try await AppleSecurityProvider(logger: securityLogger)
 
     // Create a more restrictive rate limiter for high-security operations
     let rateLimiter=await RateLimiterFactory.shared.getHighSecurityRateLimiter(
@@ -193,15 +193,15 @@ public enum BackupServiceFactory {
     let backupProvider: BackupStorageProviderProtocol=switch storageProvider {
       case .local:
         // Use the local storage provider
-        try LocalBackupProvider(logger: backupLogger)
+        try LocalBackupStorageProvider(logger: backupLogger)
 
-      case .remote:
-        // Use the remote storage provider
-        try RemoteBackupProvider(logger: backupLogger)
+      case .cloud:
+        // Use the cloud storage provider
+        try CloudBackupStorageProvider(logger: backupLogger)
 
       case .hybrid:
         // Use the hybrid storage provider
-        try HybridBackupProvider(logger: backupLogger)
+        try HybridBackupStorageProvider(logger: backupLogger)
     }
 
     // Create the security service for encryption/decryption
@@ -211,7 +211,7 @@ public enum BackupServiceFactory {
 
     // Create and return the backup service
     return DefaultBackupServiceImpl(
-      provider: backupProvider,
+      storageProvider: backupProvider,
       securityService: securityService,
       logger: backupLogger
     )
@@ -318,65 +318,135 @@ public enum RepositoryProviderType {
  */
 
 // Security Providers
-public class AppleSecurityProvider: SecurityProviderProtocol {
+/// An actor-based security provider using Apple's CryptoKit.
+public actor AppleSecurityProvider: SecurityProviderProtocol {
+  /// Initialises the provider with an optional logger.
+  ///
+  /// - Parameter logger: The logger to use for logging security events.
+  /// - Throws: An error if the provider cannot be initialised.
   public init(logger _: (any LoggingProtocol)?) throws {}
 }
 
-public class RingSecurityProvider: SecurityProviderProtocol {
+/// An actor-based security provider using the Ring FFI.
+public actor RingSecurityProvider: SecurityProviderProtocol {
+  /// Initialises the provider with an optional logger.
+  ///
+  /// - Parameter logger: The logger to use for logging security events.
+  /// - Throws: An error if the provider cannot be initialised.
   public init(logger _: (any LoggingProtocol)?) throws {}
 }
 
-public class DefaultSecurityProvider: SecurityProviderProtocol {
+/// An actor-based default security provider.
+public actor DefaultSecurityProvider: SecurityProviderProtocol {
+  /// Initialises the provider with an optional logger.
+  ///
+  /// - Parameter logger: The logger to use for logging security events.
+  /// - Throws: An error if the provider cannot be initialised.
   public init(logger _: (any LoggingProtocol)?) throws {}
 }
 
-public class DefaultCryptoServiceWithProviderImpl: SecurityServiceProtocol {
+public actor DefaultCryptoServiceWithProviderImpl: SecurityServiceProtocol {
+  private let provider: SecurityProviderProtocol
+  private let logger: (any LoggingProtocol)?
+  private let rateLimiter: RateLimiter
+  
+  /// Initialises a default crypto service with the specified security provider.
+  ///
+  /// - Parameters:
+  ///   - provider: The security provider to use for cryptographic operations.
+  ///   - logger: The logger to use for logging security events.
+  ///   - rateLimiter: The rate limiter to use for limiting security operations.
   public init(
-    provider _: SecurityProviderProtocol,
-    logger _: (any LoggingProtocol)?,
-    rateLimiter _: RateLimiter
-  ) {}
+    provider: SecurityProviderProtocol,
+    logger: (any LoggingProtocol)?,
+    rateLimiter: RateLimiter
+  ) {
+    self.provider = provider
+    self.logger = logger
+    self.rateLimiter = rateLimiter
+  }
 }
 
 // Backup Providers
-public class LocalBackupStorageProvider: BackupStorageProviderProtocol {
+/// An actor-based local backup storage provider.
+public actor LocalBackupStorageProvider: BackupStorageProviderProtocol {
+  /// Initialises the provider with an optional logger.
+  ///
+  /// - Parameter logger: The logger to use for logging backup events.
+  /// - Throws: An error if the provider cannot be initialised.
   public init(logger _: (any LoggingProtocol)?) throws {}
 }
 
-public class CloudBackupStorageProvider: BackupStorageProviderProtocol {
+/// An actor-based cloud backup storage provider.
+public actor CloudBackupStorageProvider: BackupStorageProviderProtocol {
+  /// Initialises the provider with an optional logger.
+  ///
+  /// - Parameter logger: The logger to use for logging backup events.
+  /// - Throws: An error if the provider cannot be initialised.
   public init(logger _: (any LoggingProtocol)?) throws {}
 }
 
-public class HybridBackupStorageProvider: BackupStorageProviderProtocol {
+/// An actor-based hybrid backup storage provider.
+public actor HybridBackupStorageProvider: BackupStorageProviderProtocol {
+  /// Initialises the provider with an optional logger.
+  ///
+  /// - Parameter logger: The logger to use for logging backup events.
+  /// - Throws: An error if the provider cannot be initialised.
   public init(logger _: (any LoggingProtocol)?) throws {}
 }
 
-public class DefaultBackupServiceImpl: BackupServiceProtocol {
+public actor DefaultBackupServiceImpl: BackupServiceProtocol {
+  private let storageProvider: BackupStorageProviderProtocol
+  private let securityService: SecurityServiceProtocol
+  private let logger: (any LoggingProtocol)?
+  
   public init(
-    storageProvider _: BackupStorageProviderProtocol,
-    securityService _: SecurityServiceProtocol,
-    logger _: (any LoggingProtocol)?
-  ) {}
+    storageProvider: BackupStorageProviderProtocol,
+    securityService: SecurityServiceProtocol,
+    logger: (any LoggingProtocol)?
+  ) {
+    self.storageProvider = storageProvider
+    self.securityService = securityService
+    self.logger = logger
+  }
 }
 
 // Repository Providers
-public class StandardRepositoryProvider: RepositoryProviderProtocol {
-  public init(logger _: (any LoggingProtocol)?) throws {}
+public actor StandardRepositoryProvider: RepositoryProviderProtocol {
+  private let logger: (any LoggingProtocol)?
+  
+  public init(logger: (any LoggingProtocol)?) throws {
+    self.logger = logger
+  }
 }
 
-public class DistributedRepositoryProvider: RepositoryProviderProtocol {
-  public init(logger _: (any LoggingProtocol)?) throws {}
+public actor DistributedRepositoryProvider: RepositoryProviderProtocol {
+  private let logger: (any LoggingProtocol)?
+  
+  public init(logger: (any LoggingProtocol)?) throws {
+    self.logger = logger
+  }
 }
 
-public class LegacyRepositoryProvider: RepositoryProviderProtocol {
-  public init(logger _: (any LoggingProtocol)?) throws {}
+public actor LegacyRepositoryProvider: RepositoryProviderProtocol {
+  private let logger: (any LoggingProtocol)?
+  
+  public init(logger: (any LoggingProtocol)?) throws {
+    self.logger = logger
+  }
 }
 
-public class DefaultRepositoryServiceImpl: RepositoryServiceProtocol {
+public actor DefaultRepositoryServiceImpl: RepositoryServiceProtocol {
+  private let provider: RepositoryProviderProtocol
+  private let logger: (any LoggingProtocol)?
+  
   public init(
-    provider _: RepositoryProviderProtocol,
-    logger _: (any LoggingProtocol)?
-  ) {}
+    provider: RepositoryProviderProtocol,
+    logger: (any LoggingProtocol)?
+  ) {
+    self.provider = provider
+    self.logger = logger
+  }
 }
 
 // Protocols

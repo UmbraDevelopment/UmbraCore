@@ -84,7 +84,7 @@ actor KeyStorageManager: KeyStorage {
 }
 
 /// A secure storage mechanism for cryptographic keys
-public final class KeyStore: KeyStorage, Sendable {
+public actor KeyStore: KeyStorage {
   // MARK: - Properties
 
   /// Thread-safe key storage
@@ -94,8 +94,8 @@ public final class KeyStore: KeyStorage, Sendable {
 
   /// Initialise with a specific key storage implementation
   /// - Parameter keyStorage: The key storage to use
-  public init(keyStorage: KeyStorage=KeyStorageFactory.createKeyStorage()) {
-    self.keyStorage=keyStorage
+  public init(keyStorage: KeyStorage = KeyStorageFactory.createKeyStorage()) {
+    self.keyStorage = keyStorage
   }
 
   // MARK: - KeyStorage Protocol Implementation
@@ -113,8 +113,8 @@ public final class KeyStore: KeyStorage, Sendable {
   /// - Parameter identifier: The identifier for the key
   /// - Returns: The key as a byte array or nil if not found
   /// - Throws: An error if retrieving the key fails
-  public func getKey(identifier: String) async throws -> [UInt8]? {
-    try await keyStorage.getKey(identifier: identifier)
+  public func getKey(identifier: String) async -> [UInt8]? {
+    try? await keyStorage.getKey(identifier: identifier)
   }
 
   /// Delete a key by its identifier

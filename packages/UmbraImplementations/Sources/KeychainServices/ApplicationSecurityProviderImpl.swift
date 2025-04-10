@@ -173,29 +173,9 @@ private final class MockCryptoService: CryptoServiceProtocol {
  This implementation follows the Alpha Dot Five architecture with proper
  privacy-by-design principles and actor-based concurrency.
  */
-private final class ApplicationSecureStorage: SecureStorageProtocol {
-  // Actor for thread-safe storage operations
-  private actor StorageContainer {
-    private var dataStore: [String: [UInt8]]=[:]
-
-    func store(_ data: [UInt8], forIdentifier identifier: String) {
-      dataStore[identifier]=data
-    }
-
-    func retrieve(forIdentifier identifier: String) -> [UInt8]? {
-      dataStore[identifier]
-    }
-
-    func delete(forIdentifier identifier: String) {
-      dataStore.removeValue(forKey: identifier)
-    }
-
-    func listIdentifiers() -> [String] {
-      Array(dataStore.keys)
-    }
-  }
-
-  private let storage=StorageContainer()
+private actor ApplicationSecureStorage: SecureStorageProtocol {
+  // Dictionary for storing secure data
+  private var dataStore: [String: [UInt8]] = [:]
 
   init() {}
 
@@ -203,13 +183,13 @@ private final class ApplicationSecureStorage: SecureStorageProtocol {
     _ data: [UInt8],
     withIdentifier identifier: String
   ) async -> Result<Void, SecurityStorageError> {
-    await storage.store(data, forIdentifier: identifier)
+    dataStore[identifier] = data
     return .success(())
   }
 
   public func retrieveData(withIdentifier identifier: String) async
   -> Result<[UInt8], SecurityStorageError> {
-    if let data=await storage.retrieve(forIdentifier: identifier) {
+    if let data = dataStore[identifier] {
       .success(data)
     } else {
       .failure(.dataNotFound)
@@ -218,13 +198,12 @@ private final class ApplicationSecureStorage: SecureStorageProtocol {
 
   public func deleteData(withIdentifier identifier: String) async
   -> Result<Void, SecurityStorageError> {
-    await storage.delete(forIdentifier: identifier)
+    dataStore.removeValue(forKey: identifier)
     return .success(())
   }
 
   public func listDataIdentifiers() async -> Result<[String], SecurityStorageError> {
-    let identifiers=await storage.listIdentifiers()
-    return .success(identifiers)
+    .success(Array(dataStore.keys))
   }
 }
 
@@ -234,7 +213,7 @@ private final class ApplicationSecureStorage: SecureStorageProtocol {
  This is the main implementation of the security provider for the application.
  It provides a centralised implementation of all security operations.
  */
-public final class ApplicationSecurityProviderImpl: SecurityProviderProtocol {
+public actor ApplicationSecurityProviderImpl: SecurityProviderProtocol {
   private let logger: LoggingProtocol
   private let storageProvider: SecureStorageProtocol
 

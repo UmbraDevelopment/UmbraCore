@@ -247,7 +247,7 @@ public enum LoggerFactory {
  A simple implementation of the LoggingServiceProtocol that handles
  log entries according to their privacy classifications.
  */
-public final class DefaultLoggingService: LoggingServiceProtocol {
+public actor DefaultLoggingService: LoggingServiceProtocol {
   /// The minimum log level to display
   private let minimumLogLevel: UmbraLogLevel = .info
 
