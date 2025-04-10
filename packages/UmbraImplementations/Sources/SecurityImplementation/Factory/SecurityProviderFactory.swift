@@ -39,11 +39,11 @@ public enum SecurityProviderFactory {
     logger: LoggingInterfaces.LoggingProtocol?=nil
   ) async -> SecurityProviderProtocol {
     // Create standard crypto service
-    let cryptoService: any CryptoServiceProtocol=await CryptoServiceFactory.shared
+    let _ = await CryptoServiceFactory.shared
       .createDefault(logger: logger)
 
     // Create the key manager with appropriate logger
-    let keyManager=KeyManagementFactory.createKeyManager(
+    let _ = KeyManagementFactory.createKeyManager(
       logger: logger as? LoggingServiceProtocol
     )
 
@@ -72,9 +72,10 @@ public enum SecurityProviderFactory {
     return await SecurityServiceFactory.createWithLoggers(
       logger: actualLogger,
       secureLogger: secureLogger,
-      configuration: SecurityInterfaces.SecurityConfigurationDTO(
-        securityLevel: .standard,
-        loggingLevel: .info
+      configuration: CoreSecurityTypes.SecurityConfigDTO(
+        encryptionAlgorithm: CoreSecurityTypes.EncryptionAlgorithm.aes256GCM,
+        hashAlgorithm: CoreSecurityTypes.HashAlgorithm.sha256,
+        providerType: CoreSecurityTypes.SecurityProviderType.basic
       )
     )
   }
@@ -96,14 +97,14 @@ public enum SecurityProviderFactory {
     logger: LoggingInterfaces.LoggingProtocol?=nil
   ) async -> SecurityProviderProtocol {
     // Create high-security crypto service
-    let cryptoService: any CryptoServiceProtocol=await CryptoServiceFactory
+    let _ = await CryptoServiceFactory
       .createHighSecurityCryptoService(
         keySize: 256,
         hashAlgorithm: .sha256,
         saltSize: 16,
         iterations: 100_000
       )
-    let keyManager=KeyManagementFactory.createKeyManager(
+    let _ = KeyManagementFactory.createKeyManager(
       logger: logger as? LoggingServiceProtocol
     )
 
@@ -132,9 +133,10 @@ public enum SecurityProviderFactory {
     return await SecurityServiceFactory.createWithLoggers(
       logger: actualLogger,
       secureLogger: secureLogger,
-      configuration: SecurityInterfaces.SecurityConfigurationDTO(
-        securityLevel: .high,
-        loggingLevel: .info
+      configuration: CoreSecurityTypes.SecurityConfigDTO(
+        encryptionAlgorithm: CoreSecurityTypes.EncryptionAlgorithm.aes256GCM,
+        hashAlgorithm: CoreSecurityTypes.HashAlgorithm.sha512,
+        providerType: CoreSecurityTypes.SecurityProviderType.system
       )
     )
   }
@@ -157,7 +159,7 @@ public enum SecurityProviderFactory {
     logger: LoggingInterfaces.LoggingProtocol?=nil
   ) async -> SecurityProviderProtocol {
     // Create max-security crypto service
-    let cryptoService: any CryptoServiceProtocol=await CryptoServiceFactory
+    let _ = await CryptoServiceFactory
       .createMaxSecurityCryptoService(
         keySize: 512,
         hashAlgorithm: .sha512,
@@ -166,7 +168,7 @@ public enum SecurityProviderFactory {
         memorySize: 1024 * 1024 * 1024,
         parallelism: 4
       )
-    let keyManager=KeyManagementFactory.createKeyManager(
+    let _ = KeyManagementFactory.createKeyManager(
       logger: logger as? LoggingServiceProtocol
     )
 
@@ -195,9 +197,10 @@ public enum SecurityProviderFactory {
     return await SecurityServiceFactory.createWithLoggers(
       logger: actualLogger,
       secureLogger: secureLogger,
-      configuration: SecurityInterfaces.SecurityConfigurationDTO(
-        securityLevel: .maximum,
-        loggingLevel: .warning
+      configuration: CoreSecurityTypes.SecurityConfigDTO(
+        encryptionAlgorithm: CoreSecurityTypes.EncryptionAlgorithm.chacha20Poly1305,
+        hashAlgorithm: CoreSecurityTypes.HashAlgorithm.sha512,
+        providerType: CoreSecurityTypes.SecurityProviderType.cryptoKit
       )
     )
   }

@@ -77,16 +77,15 @@ public enum SecurityImplementation {
     } else {
       // Create a factory instance first
       let factory=LoggingServiceFactory.shared
-      let logger=await factory.createPrivacyAwareLogger(
-        subsystem: "com.umbra.security",
-        category: "SecurityProvider"
+      let loggingService = await factory.createService(
+        minimumLevel: .info
       )
-
-      // Create an adapter to convert PrivacyAwareLoggingActor to LoggingProtocol
-      let loggingAdapter=PrivacyAwareLoggingAdapter(logger: logger)
+      
+      // Wrap the logging service with a protocol adapter
+      let logger = await SecurityLoggingUtilities.createLoggingWrapper(logger: loggingService)
 
       return await SecurityServiceFactory.createStandard(
-        logger: loggingAdapter
+        logger: logger
       )
     }
   }
@@ -118,9 +117,10 @@ public enum SecurityImplementation {
     )
 
     // Create default configuration
-    let configuration=SecurityConfigurationDTO(
-      securityLevel: .standard,
-      loggingLevel: .info
+    let configuration=CoreSecurityTypes.SecurityConfigDTO(
+      encryptionAlgorithm: CoreSecurityTypes.EncryptionAlgorithm.aes256GCM,
+      hashAlgorithm: CoreSecurityTypes.HashAlgorithm.sha256,
+      providerType: CoreSecurityTypes.SecurityProviderType.cryptoKit
     )
 
     // Create the security service actor directly
@@ -160,115 +160,6 @@ public enum SecurityImplementation {
    The current version of the SecurityImplementation module.
    */
   public static let version="1.0.0"
-}
-
-/**
- Adapter to convert PrivacyAwareLoggingActor to LoggingProtocol
-
- This class provides a bridge between actor-based PrivacyAwareLoggingActor
- and the protocol-based LoggingProtocol interface, enabling seamless integration
- with components that expect the LoggingProtocol interface.
- */
-@available(*, unavailable)
-private final class PrivacyAwareLoggingAdapter: LoggingProtocol, @unchecked Sendable {
-  /// The underlying privacy-aware logger actor
-  private let logger: PrivacyAwareLoggingActor
-
-  /// The actor used for logging operations
-  public var loggingActor: LoggingActor {
-    fatalError("Direct access to underlying LoggingActor is not supported")
-  }
-
-  /// Creates a new adapter wrapping a privacy-aware logger
-  /// - Parameter logger: The privacy-aware logger to wrap
-  init(logger: PrivacyAwareLoggingActor) {
-    self.logger=logger
-  }
-
-  /// Log a debug message
-  /// - Parameters:
-  ///   - message: The message to log
-  ///   - metadata: Optional metadata for the log entry
-  func debug(_ message: String, metadata: LogMetadataDTOCollection?) {
-    Task {
-      await logger.debug(
-        message,
-        context: SimpleLogContext(metadata: metadata ?? LogMetadataDTOCollection())
-      )
-    }
-  }
-
-  /// Log an info message
-  /// - Parameters:
-  ///   - message: The message to log
-  ///   - metadata: Optional metadata for the log entry
-  func info(_ message: String, metadata: LogMetadataDTOCollection?) {
-    Task {
-      await logger.info(
-        message,
-        context: SimpleLogContext(metadata: metadata ?? LogMetadataDTOCollection())
-      )
-    }
-  }
-
-  /// Log a warning message
-  /// - Parameters:
-  ///   - message: The message to log
-  ///   - metadata: Optional metadata for the log entry
-  func warning(_ message: String, metadata: LogMetadataDTOCollection?) {
-    Task {
-      await logger.warning(
-        message,
-        context: SimpleLogContext(metadata: metadata ?? LogMetadataDTOCollection())
-      )
-    }
-  }
-
-  /// Log an error message
-  /// - Parameters:
-  ///   - message: The message to log
-  ///   - metadata: Optional metadata for the log entry
-  func error(_ message: String, metadata: LogMetadataDTOCollection?) {
-    Task {
-      await logger.error(
-        message,
-        context: SimpleLogContext(metadata: metadata ?? LogMetadataDTOCollection())
-      )
-    }
-  }
-
-  /// Log a critical message
-  /// - Parameters:
-  ///   - message: The message to log
-  ///   - metadata: Optional metadata for the log entry
-  func critical(_ message: String, metadata: LogMetadataDTOCollection?) {
-    Task {
-      await logger.critical(
-        message,
-        context: SimpleLogContext(metadata: metadata ?? LogMetadataDTOCollection())
-      )
-    }
-  }
-
-  /// Log a message with the specified level
-  /// - Parameters:
-  ///   - level: The log level
-  ///   - message: The message to log
-  ///   - context: The log context
-  func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
-    switch level {
-      case .debug:
-        await logger.debug(message, context: context)
-      case .info:
-        await logger.info(message, context: context)
-      case .warning:
-        await logger.warning(message, context: context)
-      case .error:
-        await logger.error(message, context: context)
-      case .critical:
-        await logger.critical(message, context: context)
-    }
-  }
 }
 
 /**

@@ -45,26 +45,34 @@ extension SecurityProviderService {
      - source: The source of the log entry (default: "SecurityProvider")
    */
   func logOperationStart(
-    operation: SecurityOperation,
+    operation: CoreSecurityTypes.SecurityOperation,
     config: SecurityConfigDTO,
     source: String="SecurityProvider"
   ) async {
     // Create a safe version of config - don't log auth data
-    let safeConfig="Algorithm: \(config.encryptionAlgorithm), Mode: \(config.options?["mode"] ?? "none")"
+    let safeConfig = "Algorithm: \(config.encryptionAlgorithm.rawValue), Hash: \(config.hashAlgorithm.rawValue)"
 
-    var metadata=LogMetadataDTOCollection()
-    metadata=metadata.withPublic(key: "operation", value: operation.rawValue)
-    metadata=metadata.withPublic(key: "status", value: "started")
-    metadata=metadata.withPublic(key: "config", value: safeConfig)
+    var metadata = LogMetadataDTOCollection()
+    metadata = metadata.withPublic(key: "operation", value: operation.rawValue)
+    metadata = metadata.withPublic(key: "status", value: "started")
+    metadata = metadata.withPublic(key: "config", value: safeConfig)
 
-    if let operationID=config.operationID {
-      metadata=metadata.withPublic(key: "operationId", value: operationID)
+    // Operation ID may be in the options
+    if let options = config.options, let optionsMetadata = options.metadata, let operationID = optionsMetadata["operationID"] {
+      // Cannot modify the options.metadata directly, so we update our collection instead
+      metadata = metadata.withPublic(key: "operationId", value: operationID)
     }
 
+    // Create a context for logging
+    let context = LoggingTypes.BaseLogContextDTO(
+      domainName: "SecurityImplementation",
+      source: source,
+      metadata: metadata
+    )
+    
     await logger.info(
-      "Security operation started: \(operation.description)",
-      metadata: metadata,
-      source: source
+      "Security operation started: \(operation.rawValue)",
+      context: context
     )
   }
 
@@ -77,7 +85,7 @@ extension SecurityProviderService {
      - source: The source of the log entry (default: "SecurityProvider")
    */
   func logOperationSuccess(
-    operation: SecurityOperation,
+    operation: CoreSecurityTypes.SecurityOperation,
     durationMs: Double,
     source: String="SecurityProvider"
   ) async {
@@ -86,10 +94,16 @@ extension SecurityProviderService {
     metadata=metadata.withPublic(key: "status", value: "success")
     metadata=metadata.withPublic(key: "durationMs", value: String(format: "%.2f", durationMs))
 
+    // Create a context for logging
+    let context = LoggingTypes.BaseLogContextDTO(
+      domainName: "SecurityImplementation",
+      source: source,
+      metadata: metadata
+    )
+    
     await logger.info(
-      "Security operation completed successfully: \(operation.description)",
-      metadata: metadata,
-      source: source
+      "Security operation completed successfully: \(operation.rawValue)",
+      context: context
     )
   }
 
@@ -103,7 +117,7 @@ extension SecurityProviderService {
      - source: The source of the log entry (default: "SecurityProvider")
    */
   func logOperationFailure(
-    operation: SecurityOperation,
+    operation: CoreSecurityTypes.SecurityOperation,
     error: Error,
     durationMs: Double,
     source: String="SecurityProvider"
@@ -125,10 +139,16 @@ extension SecurityProviderService {
       metadata=metadata.withPrivate(key: "errorMessage", value: error.localizedDescription)
     }
 
+    // Create a context for logging
+    let context = LoggingTypes.BaseLogContextDTO(
+      domainName: "SecurityImplementation",
+      source: source,
+      metadata: metadata
+    )
+    
     await logger.error(
-      "Security operation failed: \(operation.description)",
-      metadata: metadata,
-      source: source
+      "Security operation failed: \(operation.rawValue)",
+      context: context
     )
   }
 
@@ -149,10 +169,16 @@ extension SecurityProviderService {
     metadata=metadata.withPublic(key: "operation", value: operation)
     metadata=metadata.withPublic(key: "keyType", value: keyType)
 
+    // Create a context for logging
+    let context = LoggingTypes.BaseLogContextDTO(
+      domainName: "SecurityImplementation",
+      source: source,
+      metadata: metadata
+    )
+    
     await logger.info(
       "Key management operation: \(operation) for \(keyType)",
-      metadata: metadata,
-      source: source
+      context: context
     )
   }
 
@@ -173,10 +199,16 @@ extension SecurityProviderService {
     metadata=metadata.withPublic(key: "policy", value: policyName)
     metadata=metadata.withPublic(key: "result", value: result ? "pass" : "fail")
 
+    // Create a context for logging
+    let context = LoggingTypes.BaseLogContextDTO(
+      domainName: "SecurityImplementation",
+      source: source,
+      metadata: metadata
+    )
+    
     await logger.info(
       "Security policy check: \(policyName) - \(result ? "Passed" : "Failed")",
-      metadata: metadata,
-      source: source
+      context: context
     )
   }
 
@@ -200,19 +232,26 @@ extension SecurityProviderService {
   ) async {
     let metadataCollection=createMetadataCollection(metadata)
 
+    // Create a context for logging
+    let context = LoggingTypes.BaseLogContextDTO(
+      domainName: "SecurityImplementation",
+      source: source,
+      metadata: metadataCollection
+    )
+    
     switch level {
       case .debug:
-        await logger.debug(event, metadata: metadataCollection, source: source)
+        await logger.debug(event, context: context)
       case .info:
-        await logger.info(event, metadata: metadataCollection, source: source)
-      case .notice:
-        await logger.notice(event, metadata: metadataCollection, source: source)
+        await logger.info(event, context: context)
       case .warning:
-        await logger.warning(event, metadata: metadataCollection, source: source)
+        await logger.warning(event, context: context)
       case .error:
-        await logger.error(event, metadata: metadataCollection, source: source)
+        await logger.error(event, context: context)
       case .critical:
-        await logger.critical(event, metadata: metadataCollection, source: source)
+        await logger.critical(event, context: context)
+      case .trace:
+        await logger.debug(event, context: context) // Map trace to debug as a fallback
     }
   }
 }

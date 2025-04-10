@@ -85,55 +85,121 @@ public enum RandomDataServiceFactory {
 }
 
 /// Adapter to convert PrivacyAwareLoggingActor to LoggingProtocol
-private class PrivacyAwareLoggingAdapter: LoggingProtocol {
+private final actor PrivacyAwareLoggingAdapter: LoggingProtocol {
+  /// The underlying logger actor instance
   private let logger: PrivacyAwareLoggingActor
-
+  
+  /// Required by LoggingProtocol - access to the underlying logging actor
+  nonisolated var loggingActor: LoggingActor {
+    fatalError("Direct LoggingActor access not supported in this adapter")
+  }
+  
   init(logger: PrivacyAwareLoggingActor) {
-    self.logger=logger
+    self.logger = logger
+  }
+  
+  /// Core protocol requirement for the LoggingProtocol
+  func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
+    await logger.log(level, message, context: context)
+  }
+  
+  func debug(_ message: String, metadata: LogMetadataDTOCollection?) async {
+    await logger.debug(
+      message,
+      context: LoggingTypes.BaseLogContextDTO(
+        domainName: "SecurityImplementation",
+        metadata: metadata ?? LogMetadataDTOCollection()
+      )
+    )
   }
 
-  func debug(_ message: String, metadata: LogMetadataDTOCollection?) {
-    Task {
-      await logger.debug(
-        message,
-        context: LogContextDTO(metadata: metadata ?? LogMetadataDTOCollection())
+  func info(_ message: String, metadata: LogMetadataDTOCollection?) async {
+    await logger.info(
+      message,
+      context: LoggingTypes.BaseLogContextDTO(
+        domainName: "SecurityImplementation",
+        metadata: metadata ?? LogMetadataDTOCollection()
       )
-    }
+    )
+  }
+  
+  @available(*, deprecated, message: "Use info(_:context:) instead")
+  func info(_ message: String, metadata: PrivacyMetadata?, source: String) async {
+    // Create a simple metadata collection instead of trying to convert
+    let logMetadata = LogMetadataDTOCollection()
+      .withPublic(key: "operation", value: "info")
+      .withPublic(key: "source", value: source)
+    
+    await logger.info(
+      message, 
+      context: LoggingTypes.BaseLogContextDTO(
+        domainName: "SecurityImplementation",
+        source: source,
+        metadata: logMetadata
+      )
+    )
   }
 
-  func info(_ message: String, metadata: LogMetadataDTOCollection?) {
-    Task {
-      await logger.info(
-        message,
-        context: LogContextDTO(metadata: metadata ?? LogMetadataDTOCollection())
+  func warning(_ message: String, metadata: LogMetadataDTOCollection?) async {
+    await logger.warning(
+      message,
+      context: LoggingTypes.BaseLogContextDTO(
+        domainName: "SecurityImplementation", 
+        metadata: metadata ?? LogMetadataDTOCollection()
       )
-    }
+    )
   }
 
-  func warning(_ message: String, metadata: LogMetadataDTOCollection?) {
-    Task {
-      await logger.warning(
-        message,
-        context: LogContextDTO(metadata: metadata ?? LogMetadataDTOCollection())
+  func error(_ message: String, metadata: LogMetadataDTOCollection?) async {
+    await logger.error(
+      message,
+      context: LoggingTypes.BaseLogContextDTO(
+        domainName: "SecurityImplementation",
+        metadata: metadata ?? LogMetadataDTOCollection()
       )
-    }
+    )
   }
-
-  func error(_ message: String, metadata: LogMetadataDTOCollection?) {
-    Task {
-      await logger.error(
-        message,
-        context: LogContextDTO(metadata: metadata ?? LogMetadataDTOCollection())
+  
+  @available(*, deprecated, message: "Use error(_:context:) instead")
+  func error(_ message: String, metadata: PrivacyMetadata?, source: String) async {
+    // Create a simple metadata collection instead of trying to convert
+    let logMetadata = LogMetadataDTOCollection()
+      .withPublic(key: "operation", value: "error")
+      .withPublic(key: "source", value: source)
+    
+    await logger.error(
+      message, 
+      context: LoggingTypes.BaseLogContextDTO(
+        domainName: "SecurityImplementation",
+        source: source,
+        metadata: logMetadata
       )
-    }
+    )
   }
-
-  func critical(_ message: String, metadata: LogMetadataDTOCollection?) {
-    Task {
-      await logger.critical(
-        message,
-        context: LogContextDTO(metadata: metadata ?? LogMetadataDTOCollection())
+  
+  func critical(_ message: String, metadata: LogMetadataDTOCollection?) async {
+    await logger.critical(
+      message,
+      context: LoggingTypes.BaseLogContextDTO(
+        domainName: "SecurityImplementation",
+        metadata: metadata ?? LogMetadataDTOCollection()
       )
-    }
+    )
+  }
+  
+  func info(_ message: String, context: LogContextDTO) async {
+    await logger.info(message, context: context)
+  }
+  
+  func notice(_ message: String, context: LogContextDTO) async {
+    await logger.notice(message, context: context)
+  }
+  
+  func error(_ message: String, context: LogContextDTO) async {
+    await logger.error(message, context: context)
+  }
+  
+  func critical(_ message: String, context: LogContextDTO) async {
+    await logger.critical(message, context: context)
   }
 }

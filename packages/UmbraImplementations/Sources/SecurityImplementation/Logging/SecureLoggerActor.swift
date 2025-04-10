@@ -70,7 +70,8 @@ public actor SecureLoggerActor {
       metadata=metadata.with(
         key: key,
         value: taggedValue.value.stringValue,
-        privacyLevel: taggedValue.privacyLevel
+        privacyLevel: taggedValue.privacyLevel == .public ? .public : 
+                     (taggedValue.privacyLevel == .private ? .private : .sensitive)
       )
     }
 
@@ -235,7 +236,7 @@ public struct PrivacyTaggedValue: Sendable, Equatable {
   public let value: PrivacyMetadataValue
 
   /// The privacy level for this value
-  public let privacyLevel: PrivacyMetadataLevel
+  public let privacyLevel: LoggingTypes.LogPrivacy
 
   /**
    Creates a new privacy-tagged value.
@@ -244,14 +245,14 @@ public struct PrivacyTaggedValue: Sendable, Equatable {
      - value: The value to tag
      - privacyLevel: The privacy level for this value
    */
-  public init(value: PrivacyMetadataValue, privacyLevel: PrivacyMetadataLevel) {
-    self.value=value
-    self.privacyLevel=privacyLevel
+  public init(value: PrivacyMetadataValue, privacyLevel: LoggingTypes.LogPrivacy) {
+    self.value = value
+    self.privacyLevel = privacyLevel
   }
 
   /// Equatable conformance
   public static func == (lhs: PrivacyTaggedValue, rhs: PrivacyTaggedValue) -> Bool {
-    lhs.value == rhs.value && lhs.privacyLevel == rhs.privacyLevel
+    return lhs.value == rhs.value && lhs.privacyLevel == rhs.privacyLevel
   }
 }
 

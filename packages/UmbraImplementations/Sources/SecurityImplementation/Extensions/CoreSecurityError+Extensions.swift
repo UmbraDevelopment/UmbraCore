@@ -22,6 +22,13 @@ extension CoreSecurityError {
   public static func decryptionFailed(reason: String) -> CoreSecurityError {
     .cryptoError("Decryption failed: \(reason)")
   }
+  
+  /// Creates an encryption failed error with the specified reason
+  /// - Parameter reason: The reason for the error
+  /// - Returns: A CoreSecurityError with the appropriate error code
+  public static func encryptionFailed(reason: String) -> CoreSecurityError {
+    .cryptoError("Encryption failed: \(reason)")
+  }
 
   /// Creates an invalid operation error with the specified reason
   /// - Parameter reason: The reason for the error

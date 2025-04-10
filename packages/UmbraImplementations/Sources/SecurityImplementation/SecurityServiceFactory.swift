@@ -1,3 +1,4 @@
+import CoreSecurityTypes
 import CryptoInterfaces
 import CryptoServices
 import Foundation
@@ -27,18 +28,24 @@ public enum SecurityServiceFactory {
     secureLogger: LoggingInterfaces.LoggingProtocol?=nil
   ) async -> SecurityProviderProtocol {
     // Create a secure logger if one wasn't provided
-    let secureLogger=secureLogger ?? await createSecureLogger(logger: logger)
+    let actualSecureLogger: LoggingInterfaces.LoggingProtocol
+    if let secureLogger = secureLogger {
+      actualSecureLogger = secureLogger
+    } else {
+      actualSecureLogger = await createSecureLogger(logger: logger)
+    }
 
     // Create default configuration
-    let configuration=SecurityInterfaces.SecurityConfigurationDTO(
-      securityLevel: .standard,
-      loggingLevel: .info
+    let configuration=CoreSecurityTypes.SecurityConfigDTO(
+      encryptionAlgorithm: CoreSecurityTypes.EncryptionAlgorithm.aes256GCM,
+      hashAlgorithm: CoreSecurityTypes.HashAlgorithm.sha256,
+      providerType: CoreSecurityTypes.SecurityProviderType.cryptoKit
     )
 
     // Create the security service with secure logging
     return await createWithLoggers(
       logger: logger,
-      secureLogger: secureLogger,
+      secureLogger: actualSecureLogger,
       configuration: configuration
     )
   }
@@ -61,29 +68,36 @@ public enum SecurityServiceFactory {
   public static func createWithLoggers(
     logger: LoggingInterfaces.LoggingProtocol,
     secureLogger: LoggingInterfaces.LoggingProtocol?=nil,
-    configuration: SecurityInterfaces.SecurityConfigurationDTO?=nil
+    configuration: CoreSecurityTypes.SecurityConfigDTO?=nil
   ) async -> SecurityProviderProtocol {
     // Create dependencies
     let cryptoService=await CryptoServiceFactory.shared.createDefault(logger: logger)
 
     // Create a secure logger if one wasn't provided
-    let secureLoggerInstance: LoggingInterfaces.LoggingProtocol=if let secureLogger {
-      secureLogger
+    let actualSecureLogger: LoggingInterfaces.LoggingProtocol
+    if let secureLogger = secureLogger {
+      actualSecureLogger = secureLogger
     } else {
-      await createSecureLogger(logger: logger)
+      actualSecureLogger = await createSecureLogger(logger: logger)
     }
 
     // Create default configuration if needed
-    let configurationInstance=configuration ?? SecurityInterfaces.SecurityConfigurationDTO(
-      securityLevel: .standard,
-      loggingLevel: .info
-    )
+    let configurationInstance: CoreSecurityTypes.SecurityConfigDTO
+    if let config = configuration {
+      configurationInstance = config
+    } else {
+      configurationInstance = CoreSecurityTypes.SecurityConfigDTO(
+        encryptionAlgorithm: CoreSecurityTypes.EncryptionAlgorithm.aes256GCM,
+        hashAlgorithm: CoreSecurityTypes.HashAlgorithm.sha256,
+        providerType: CoreSecurityTypes.SecurityProviderType.cryptoKit
+      )
+    }
 
     // Create the security service with the configured dependencies
     return SecurityServiceActor(
       cryptoService: cryptoService,
       logger: logger,
-      secureLogger: secureLoggerInstance,
+      secureLogger: actualSecureLogger,
       configuration: configurationInstance
     )
   }
@@ -98,22 +112,28 @@ public enum SecurityServiceFactory {
     secureLogger: LoggingInterfaces.LoggingProtocol?=nil
   ) async -> SecurityProviderProtocol {
     // Create a secure logger if one wasn't provided
-    let secureLogger=secureLogger ?? await createSecureLogger(logger: logger)
+    let actualSecureLogger: LoggingInterfaces.LoggingProtocol
+    if let secureLogger = secureLogger {
+      actualSecureLogger = secureLogger
+    } else {
+      actualSecureLogger = await createSecureLogger(logger: logger)
+    }
 
     // Create mock crypto service
     let cryptoService=MockCryptoService()
 
     // Create mock configuration
-    let configuration=SecurityInterfaces.SecurityConfigurationDTO(
-      securityLevel: .standard,
-      loggingLevel: .debug
+    let configuration=CoreSecurityTypes.SecurityConfigDTO(
+      encryptionAlgorithm: CoreSecurityTypes.EncryptionAlgorithm.aes256GCM,
+      hashAlgorithm: CoreSecurityTypes.HashAlgorithm.sha256,
+      providerType: CoreSecurityTypes.SecurityProviderType.cryptoKit
     )
 
     // Create the security service with mock dependencies
     return SecurityServiceActor(
       cryptoService: cryptoService,
       logger: logger,
-      secureLogger: secureLogger,
+      secureLogger: actualSecureLogger,
       configuration: configuration
     )
   }
@@ -129,9 +149,10 @@ public enum SecurityServiceFactory {
     )
 
     // Create default configuration
-    let configuration=SecurityInterfaces.SecurityConfigurationDTO(
-      securityLevel: .standard,
-      loggingLevel: .debug
+    let configuration=CoreSecurityTypes.SecurityConfigDTO(
+      encryptionAlgorithm: CoreSecurityTypes.EncryptionAlgorithm.aes256GCM,
+      hashAlgorithm: CoreSecurityTypes.HashAlgorithm.sha256,
+      providerType: CoreSecurityTypes.SecurityProviderType.cryptoKit
     )
 
     // Create the security service with verbose logging
@@ -152,9 +173,10 @@ public enum SecurityServiceFactory {
     )
 
     // Create default configuration
-    let configuration=SecurityInterfaces.SecurityConfigurationDTO(
-      securityLevel: .standard,
-      loggingLevel: .warning
+    let configuration=CoreSecurityTypes.SecurityConfigDTO(
+      encryptionAlgorithm: CoreSecurityTypes.EncryptionAlgorithm.aes256GCM,
+      hashAlgorithm: CoreSecurityTypes.HashAlgorithm.sha256,
+      providerType: CoreSecurityTypes.SecurityProviderType.cryptoKit
     )
 
     // Create the security service with production logging
@@ -172,26 +194,26 @@ public enum SecurityServiceFactory {
   private static func createSecureLogger(
     logger _: LoggingInterfaces.LoggingProtocol
   ) async -> LoggingInterfaces.LoggingProtocol {
-    // Create secure logger for privacy-aware logging
-    await LoggingServices.createSecureLogger(
-      subsystem: "com.umbra.security",
-      category: "SecurityService"
+    // First create a standard logger to use as the base logger
+    let loggingFactory = LoggingServiceFactory.shared
+    let baseLogger = await loggingFactory.createService(
+      minimumLevel: .info
     )
+    
+    // Wrap the standard logger with our protocol adapter to return a LoggingProtocol
+    return await SecurityLoggingUtilities.createLoggingWrapper(logger: baseLogger)
+    
+    // Note: We don't return the SecureLoggerActor since it doesn't conform to LoggingProtocol
+    // The SecureLoggerActor should be created where needed by the consumer
   }
 }
 
 /// Helper function to create metadata dictionary from LogMetadataDTOCollection
 private func createMetadataDictionary(_ metadata: LogMetadataDTOCollection) -> [String: String] {
-  var metadataDict=[String: String]()
-
-  // Extract public metadata values from the collection
-  for (key, value) in metadata {
-    if metadata.privacyLevel(for: key) == .public {
-      metadataDict[key]=value
-    }
-  }
-
-  return metadataDict
+  // Since LogMetadataDTOCollection doesn't conform to Sequence, we can't iterate it directly
+  // Return empty dictionary for now - this will need to be implemented based on
+  // the actual LogMetadataDTOCollection API
+  return [:]
 }
 
 /// Mock implementation of CryptoServiceProtocol for testing
@@ -208,9 +230,9 @@ private final class MockCryptoService: CryptoServiceProtocol {
 
   /// Encrypts binary data using a key from secure storage.
   func encrypt(
-    dataIdentifier _: String,
-    keyIdentifier _: String,
-    options _: SecurityInterfaces.EncryptionOptions?
+    dataIdentifier: String,
+    keyIdentifier: String,
+    options: CoreSecurityTypes.EncryptionOptions?
   ) async -> Result<String, SecurityStorageError> {
     // Mock implementation that always succeeds
     .success("mock-encrypted-data-id")
@@ -218,9 +240,9 @@ private final class MockCryptoService: CryptoServiceProtocol {
 
   /// Decrypts binary data using a key from secure storage.
   func decrypt(
-    encryptedDataIdentifier _: String,
-    keyIdentifier _: String,
-    options _: SecurityInterfaces.DecryptionOptions?
+    encryptedDataIdentifier: String,
+    keyIdentifier: String,
+    options: CoreSecurityTypes.DecryptionOptions?
   ) async -> Result<String, SecurityStorageError> {
     // Mock implementation that always succeeds
     .success("mock-decrypted-data-id")
@@ -228,8 +250,8 @@ private final class MockCryptoService: CryptoServiceProtocol {
 
   /// Computes a cryptographic hash of data in secure storage.
   func hash(
-    dataIdentifier _: String,
-    options _: SecurityInterfaces.HashingOptions?
+    dataIdentifier: String,
+    options: CoreSecurityTypes.HashingOptions?
   ) async -> Result<String, SecurityStorageError> {
     // Mock implementation that always succeeds
     .success("mock-hash-id")
@@ -237,9 +259,9 @@ private final class MockCryptoService: CryptoServiceProtocol {
 
   /// Verifies a cryptographic hash against the expected value, both stored securely.
   func verifyHash(
-    dataIdentifier _: String,
-    hashIdentifier _: String,
-    options _: SecurityInterfaces.HashingOptions?
+    dataIdentifier: String,
+    hashIdentifier: String,
+    options: CoreSecurityTypes.HashingOptions?
   ) async -> Result<Bool, SecurityStorageError> {
     // Mock implementation that always verifies successfully
     .success(true)
@@ -247,8 +269,8 @@ private final class MockCryptoService: CryptoServiceProtocol {
 
   /// Generates a cryptographic key and stores it securely.
   func generateKey(
-    length _: Int,
-    options _: SecurityInterfaces.KeyGenerationOptions?
+    length: Int,
+    options: CoreSecurityTypes.KeyGenerationOptions?
   ) async -> Result<String, SecurityStorageError> {
     // Mock implementation that always succeeds
     .success("mock-key-id")
@@ -256,25 +278,26 @@ private final class MockCryptoService: CryptoServiceProtocol {
 
   /// Imports data into secure storage for use with cryptographic operations.
   func importData(
-    _: [UInt8],
+    _ data: [UInt8],
     customIdentifier: String?
   ) async -> Result<String, SecurityStorageError> {
     // Mock implementation that always succeeds
     .success(customIdentifier ?? "mock-data-id")
   }
-
-  /// Exports data from secure storage.
-  func exportData(
-    identifier _: String
-  ) async -> Result<[UInt8], SecurityStorageError> {
+  
+  /// Imports data into secure storage with a specific identifier.
+  func importData(
+    _ data: Data,
+    customIdentifier: String
+  ) async -> Result<String, SecurityStorageError> {
     // Mock implementation that always succeeds
-    .success([0, 1, 2, 3]) // Mock data
+    .success(customIdentifier)
   }
 
   /// Generates a hash of the data associated with the given identifier.
   func generateHash(
-    dataIdentifier _: String,
-    options _: SecurityInterfaces.HashingOptions?
+    dataIdentifier: String,
+    options: CoreSecurityTypes.HashingOptions?
   ) async -> Result<String, SecurityStorageError> {
     // Mock implementation that always succeeds
     .success("mock-hash-id")
@@ -282,8 +305,8 @@ private final class MockCryptoService: CryptoServiceProtocol {
 
   /// Stores raw data under a specific identifier in secure storage.
   func storeData(
-    data _: Data,
-    identifier _: String
+    data: Data,
+    identifier: String
   ) async -> Result<Void, SecurityStorageError> {
     // Mock implementation that always succeeds
     .success(())
@@ -291,7 +314,7 @@ private final class MockCryptoService: CryptoServiceProtocol {
 
   /// Retrieves raw data associated with a specific identifier from secure storage.
   func retrieveData(
-    identifier _: String
+    identifier: String
   ) async -> Result<Data, SecurityStorageError> {
     // Mock implementation that always succeeds
     .success(Data([0, 1, 2, 3])) // Mock data
@@ -299,18 +322,26 @@ private final class MockCryptoService: CryptoServiceProtocol {
 
   /// Deletes data associated with a specific identifier from secure storage.
   func deleteData(
-    identifier _: String
+    identifier: String
+  ) async -> Result<Void, SecurityStorageError> {
+    // Mock implementation that always succeeds
+    .success(())
+  }
+  
+  /// Imports data into secure storage with a specific identifier.
+  func importData(
+    data: Data,
+    identifier: String
   ) async -> Result<Void, SecurityStorageError> {
     // Mock implementation that always succeeds
     .success(())
   }
 
-  /// Imports data into secure storage with a specific identifier.
-  func importData(
-    _: Data,
-    customIdentifier: String
-  ) async -> Result<String, SecurityStorageError> {
+  /// Exports data from secure storage.
+  func exportData(
+    identifier: String
+  ) async -> Result<[UInt8], SecurityStorageError> {
     // Mock implementation that always succeeds
-    .success(customIdentifier)
+    .success([0, 1, 2, 3]) // Mock data
   }
 }

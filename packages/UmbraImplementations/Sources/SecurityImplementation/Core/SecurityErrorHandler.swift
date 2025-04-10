@@ -54,7 +54,7 @@ public struct SecurityErrorHandler {
    */
   public func handleError(
     _ error: Error,
-    operation: SecurityOperation,
+    operation: CoreSecurityTypes.SecurityOperation,
     source: String="SecurityErrorHandler"
   ) async -> SecurityError {
     // Map the error to a SecurityError
@@ -70,8 +70,11 @@ public struct SecurityErrorHandler {
     // Log the error with appropriate privacy level
     await logger.error(
       "Security operation failed: \(securityError.message)",
-      metadata: metadata,
-      source: source
+      context: LoggingTypes.BaseLogContextDTO(
+        domainName: "SecurityErrorHandler",
+        source: source,
+        metadata: metadata
+      )
     )
 
     return securityError
@@ -85,7 +88,7 @@ public struct SecurityErrorHandler {
      - operation: The security operation that was being performed
    - Returns: A SecurityError
    */
-  private static func mapError(_ error: Error, operation: SecurityOperation) -> SecurityError {
+  private static func mapError(_ error: Error, operation: CoreSecurityTypes.SecurityOperation) -> SecurityError {
     // If it's already a SecurityError, return it
     if let securityError=error as? SecurityError {
       return securityError
@@ -97,7 +100,7 @@ public struct SecurityErrorHandler {
     }
 
     // If it's an NSError, map it to a SecurityError
-    if let nsError=error as NSError {
+    if let nsError = error as? NSError {
       return mapSecurityFrameworkError(nsError)
     }
 
@@ -118,7 +121,7 @@ public struct SecurityErrorHandler {
    */
   private static func mapCoreSecurityError(
     _ error: CoreSecurityError,
-    operation: SecurityOperation
+    operation: CoreSecurityTypes.SecurityOperation
   ) -> SecurityError {
     // Create a SecurityError with appropriate code and message
     SecurityError(

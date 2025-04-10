@@ -113,7 +113,7 @@ public struct SecurityEventDTO: Sendable, Equatable {
 /// security level, key identifier, and cryptographic options.
 public struct SecurityContextDTO: Sendable, Equatable {
   /// The operation type
-  public let operationType: SecurityOperationTypeDTO
+  public let operationType: CoreSecurityTypes.SecurityOperation
 
   /// The security level
   public let securityLevel: CoreSecurityTypes.SecurityLevelDTO
@@ -135,7 +135,7 @@ public struct SecurityContextDTO: Sendable, Equatable {
   ///   - cryptoOptions: Cryptographic options
   ///   - metadata: Additional metadata
   public init(
-    operationType: SecurityOperationTypeDTO,
+    operationType: CoreSecurityTypes.SecurityOperation,
     securityLevel: CoreSecurityTypes.SecurityLevelDTO = .standard,
     keyIdentifier: String,
     cryptoOptions: [String: String]=[:],

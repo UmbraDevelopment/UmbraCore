@@ -48,13 +48,14 @@ protocol SecurityServiceBase {
        - operationID: Unique identifier for the operation
        - operation: The type of operation being performed
        - config: Configuration for the operation
-   - Returns: A metadata dictionary for logging
+   - Returns: A metadata collection for logging
    */
   func createOperationMetadata(
     operationID: String,
-    operation: SecurityOperation,
+    operation: CoreSecurityTypes.SecurityOperation,
     config: SecurityConfigDTO
-  ) -> LoggingInterfaces.LogMetadata
+  ) -> LoggingTypes.LogMetadataDTOCollection
+
 }
 
 /**
@@ -68,19 +69,18 @@ extension SecurityServiceBase {
        - operationID: Unique identifier for the operation
        - operation: The type of operation being performed
        - config: Configuration for the operation
-   - Returns: A metadata dictionary for logging
+   - Returns: A metadata collection for logging
    */
   func createOperationMetadata(
     operationID: String,
-    operation: SecurityOperation,
+    operation: CoreSecurityTypes.SecurityOperation,
     config: SecurityConfigDTO
-  ) -> LoggingInterfaces.LogMetadata {
-    createPrivacyMetadata([
-      "operationId": operationID,
-      "operation": String(describing: operation),
-      "algorithm": config.algorithm,
-      "timestamp": "\(Date())"
-    ])
+  ) -> LoggingTypes.LogMetadataDTOCollection {
+    LogMetadataDTOCollection()
+      .withPublic(key: "operationId", value: operationID)
+      .withPublic(key: "operation", value: operation.rawValue)
+      .withPublic(key: "algorithm", value: config.encryptionAlgorithm.rawValue)
+      .withPublic(key: "timestamp", value: "\(Date())")
   }
 }
 

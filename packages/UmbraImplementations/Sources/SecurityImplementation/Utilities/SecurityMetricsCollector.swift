@@ -85,11 +85,11 @@ final class SecurityMetricsCollector {
     additionalMetadata: [String: String]=[:]
   ) async {
     // Update performance history
-    updatePerformanceHistory(operation: operation.description, duration: durationMs)
+    updatePerformanceHistory(operation: operation.rawValue, duration: durationMs)
 
     // Check for performance anomalies
     if
-      let avgDuration=averagePerformance(for: operation.description),
+      let avgDuration=averagePerformance(for: operation.rawValue),
       durationMs > avgDuration * (1 + anomalyThresholdPercent / 100)
     {
       await logPerformanceAnomaly(
@@ -101,7 +101,7 @@ final class SecurityMetricsCollector {
 
     // Create context for logging
     let context=SecurityMetricsContext(
-      operation: operation.description,
+      operation: operation.rawValue,
       durationMs: String(format: "%.2f", durationMs),
       success: success ? "true" : "false"
     )
@@ -113,7 +113,7 @@ final class SecurityMetricsCollector {
     }
 
     // Add historical performance if available
-    if let avgDuration=averagePerformance(for: operation.description) {
+    if let avgDuration=averagePerformance(for: operation.rawValue) {
       enhancedContext=enhancedContext.adding(
         key: "avgDurationMs",
         value: String(format: "%.2f", avgDuration),
@@ -124,12 +124,12 @@ final class SecurityMetricsCollector {
     // Log the metrics with appropriate level based on success
     if success {
       await logger.info(
-        "Security operation metrics: \(operation.description)",
+        "Security operation metrics: \(operation.rawValue)",
         context: enhancedContext
       )
     } else {
       await logger.warning(
-        "Failed security operation metrics: \(operation.description)",
+        "Failed security operation metrics: \(operation.rawValue)",
         context: enhancedContext
       )
     }
@@ -137,11 +137,11 @@ final class SecurityMetricsCollector {
     // Also log to secure logger with privacy tags
     await secureLogger.securityEvent(
       action: "MetricsCollection",
-      status: success ? .success : .failed,
+      status: success ? .success : .failure,
       subject: nil,
       resource: nil,
       additionalMetadata: [
-        "operation": PrivacyTaggedValue(value: .string(operation.description),
+        "operation": PrivacyTaggedValue(value: .string(operation.rawValue),
                                         privacyLevel: .public),
         "durationMs": PrivacyTaggedValue(value: .number(String(format: "%.2f", durationMs)),
                                          privacyLevel: .public),
@@ -211,7 +211,7 @@ final class SecurityMetricsCollector {
 
     // Create context for anomaly logging
     let anomalyContext=SecurityMetricsContext(
-      operation: operation.description,
+      operation: operation.rawValue,
       durationMs: String(format: "%.2f", duration),
       percentAboveAverage: String(format: "%.1f", percentAboveAvg),
       averageDurationMs: String(format: "%.2f", average)
@@ -219,18 +219,18 @@ final class SecurityMetricsCollector {
 
     // Log the anomaly
     await logger.warning(
-      "Performance anomaly detected in \(operation.description)",
+      "Performance anomaly detected in \(operation.rawValue)",
       context: anomalyContext
     )
 
     // Prepare privacy-tagged metadata for secure logger
     await secureLogger.securityEvent(
       action: "PerformanceAnomaly",
-      status: .warning,
+      status: .attempted,
       subject: nil,
       resource: nil,
       additionalMetadata: [
-        "operation": PrivacyTaggedValue(value: .string(operation.description),
+        "operation": PrivacyTaggedValue(value: .string(operation.rawValue),
                                         privacyLevel: .public),
         "durationMs": PrivacyTaggedValue(value: .number(String(format: "%.2f", duration)),
                                          privacyLevel: .public),

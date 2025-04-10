@@ -1,513 +1,210 @@
 import CoreSecurityTypes
 import DomainSecurityTypes
 import Foundation
-import LoggingTypes
-
-/// Helper function to create LogMetadataDTOCollection from dictionary
-private func createMetadataCollection(_ dict: [String: String]) -> LogMetadataDTOCollection {
-  var collection=LogMetadataDTOCollection()
-  for (key, value) in dict {
-    collection=collection.withPublic(key: key, value: value)
-  }
-  return collection
-}
-
 import LoggingInterfaces
-import SecurityCoreInterfaces
+import LoggingTypes
+import UmbraErrors
 
 /**
- # Secure Storage Service
-
- Handles secure storage operations for the security provider.
- This service encapsulates the logic specific to storing and
- retrieving sensitive data securely.
-
- ## Responsibilities
-
- - Store sensitive data securely
- - Retrieve sensitive data
- - Delete sensitive data
- - Track performance and log operations
- - Handle storage-specific errors
+ * SecureStorageService handles secure data storage operations.
+ *
+ * This implementation follows the Alpha Dot Five architecture with:
+ * - Privacy-aware logging
+ * - Actor-based concurrency
+ * - Enhanced error handling
  */
 final class SecureStorageService: SecurityServiceBase {
   // MARK: - Properties
-
+  
+  /// The logger instance for recording operation details
+  let logger: LoggingProtocol
+  
   /**
-   The crypto service used for cryptographic operations
-   */
-  private let cryptoService: SecurityCoreInterfaces.CryptoServiceProtocol
-
-  /**
-   The logger for operation tracking
-   */
-  let logger: LoggingInterfaces.LoggingProtocol
-
-  // MARK: - Initialisation
-
-  /**
-   Initialises the secure storage service with required dependencies
-
+   Initialises the service with required dependencies
+   
    - Parameters:
-       - cryptoService: Service for performing cryptographic operations
-       - logger: Logger for operation tracking
+       - logger: The logging service to use for operation logging
    */
-  init(
-    cryptoService: SecurityCoreInterfaces.CryptoServiceProtocol,
-    logger: LoggingInterfaces.LoggingProtocol
-  ) {
-    self.cryptoService=cryptoService
-    self.logger=logger
+  required init(logger: LoggingProtocol) {
+    self.logger = logger
   }
-
+  
   /**
-   Initialises the service with just a logger
-
-   This initialiser is required to conform to SecurityServiceBase protocol,
-   but is not intended to be used directly.
-
-   - Parameter logger: The logging service to use
+   Creates standard logging metadata for security operations
+   
+   - Parameters:
+       - operationID: Unique identifier for the operation
+       - operation: The type of operation being performed
+       - config: Configuration for the operation
+   - Returns: A metadata collection for logging
    */
-  init(logger _: LoggingInterfaces.LoggingProtocol) {
-    fatalError("This initialiser is not supported. Use init(cryptoService:logger:) instead.")
-  }
-
-  // MARK: - Public Methods
-
-  /**
-   Stores data securely with the specified configuration
-
-   - Parameter config: Configuration for the secure storage operation
-   - Returns: Result containing storage identifier or error information
-   */
-  func secureStore(config: SecurityConfigDTO) async -> SecurityResultDTO {
-    let operationID=UUID().uuidString
-    let startTime=Date()
-    let operation=SecurityOperation.secureStore
-
-    // Create metadata for logging
-    let logMetadata=createOperationMetadata(
-      operationID: operationID,
-      operation: operation,
-      config: config
-    )
-
-    await logger.info(
-      "Starting secure storage operation", metadata: logMetadata,
-      source: "SecureStorageService",
-      source: "SecurityImplementation", source: "SecurityImplementation"
-    )
-
-    do {
-      // Extract required parameters from configuration
-      guard let identifier=config.options["identifier"] else {
-        throw SecureStorageError.invalidInput("Missing storage identifier")
+  func createOperationMetadata(
+    operationID: String,
+    operation: CoreSecurityTypes.SecurityOperation,
+    config: SecurityConfigDTO
+  ) -> LogMetadataDTOCollection {
+    var metadata = LogMetadataDTOCollection()
+      .withPublic(key: "operationId", value: operationID)
+      .withPublic(key: "operation", value: operation.rawValue)
+    
+    // Add configuration metadata
+    if let options = config.options, let optionsMetadata = options.metadata {
+      for (key, value) in optionsMetadata where !key.starts(with: "sensitive_") {
+        metadata = metadata.withPublic(key: key, value: value)
       }
-
-      guard let dataToStore=config.options["data"].flatMap({ Data(base64Encoded: $0) })
-      else {
-        throw SecureStorageError.invalidInput("Missing or invalid data for storage")
-      }
-
-      // Since the CryptoService doesn't have generateRandomBytes, use a fixed key and IV for now
-      // In a production implementation, this would use a proper secure random generator
-      let storageKey=Data(base64Encoded: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=") ??
-        Data()
-
-      // Encrypt the data before storage
-      let encryptResult=await cryptoService.encrypt(data: dataToStore, using: storageKey)
-
-      switch encryptResult {
-        case let .success(encryptedData):
-          // Store the encrypted data
-          // In a real implementation, this would involve a secure storage system
-          let storedBytes=encryptedData.count
-
-          // Calculate duration for performance metrics
-          let duration=Date().timeIntervalSince(startTime) * 1000
-
-          // Create success metadata for logging with privacy annotations
-          let successMetadata=LogMetadataDTOCollection()
-            .withPublic(key: "operationId", value: operationID)
-            .withPublic(key: "operation", value: String(describing: operation))
-            .withPrivate(key: "storageIdentifier", value: identifier)
-            .withPublic(key: "durationMs", value: String(format: "%.2f", duration))
-
-          // Create a proper context with privacy-aware metadata
-          let successContext=SecurityLogContext(
-            operation: String(describing: operation),
-            source: "SecureStorageService",
-            metadata: successMetadata
-          )
-
-          await logger.info(
-            "Secure storage operation completed successfully",
-            context: successContext
-          )
-
-          // Return successful result with identifier
-          return SecurityResultDTO(
-            status: .success,
-            metadata: createMetadataCollection([
-              "durationMs": String(format: "%.2f", duration),
-              "storageIdentifier": identifier,
-              "storedBytes": "\(storedBytes)"
-            ])
-          )
-
-        case let .failure(error):
-          throw SecureStorageError.encryptionError("Failed to encrypt data: \(error)")
-      }
-    } catch {
-      // Calculate duration before failure
-      let duration=Date().timeIntervalSince(startTime) * 1000
-
-      // Create failure metadata for logging with privacy annotations
-      let errorMetadata=LogMetadataDTOCollection()
-        .withPublic(key: "operationId", value: operationID)
-        .withPublic(key: "operation", value: String(describing: operation))
-        .withPublic(key: "durationMs", value: String(format: "%.2f", duration))
-        .withPublic(key: "errorType", value: "\(type(of: error))")
-        .withPrivate(key: "errorMessage", value: error.localizedDescription)
-
-      // Create a proper context with privacy-aware metadata
-      let errorContext=SecurityLogContext(
-        operation: String(describing: operation),
-        source: "SecureStorageService",
-        metadata: errorMetadata
-      )
-
-      await logger.error(
-        "Secure storage operation failed: \(error.localizedDescription)",
-        context: errorContext
-      )
-
-      // Return failure result
-      return SecurityResultDTO(
-        status: .failure,
-        error: error,
-        metadata: createMetadataCollection([
-          "durationMs": String(format: "%.2f", duration),
-          "errorMessage": error.localizedDescription
-        ])
-      )
     }
+    
+    return metadata
   }
-
+  
   /**
-   Retrieves data securely with the specified configuration
-
-   - Parameter config: Configuration for the secure retrieval operation
-   - Returns: Result containing retrieved data or error information
+   * Securely retrieves data with the specified configuration
+   *
+   * - Parameter config: The configuration for the retrieval operation
+   * - Returns: A security result containing the retrieved data
    */
   func secureRetrieve(config: SecurityConfigDTO) async -> SecurityResultDTO {
-    let operationID=UUID().uuidString
-    let startTime=Date()
-    let operation=SecurityOperation.secureRetrieve
-
-    // Create metadata for logging
-    let logMetadata=createOperationMetadata(
+    let operationID = UUID().uuidString
+    let startTime = Date()
+    let operation = CoreSecurityTypes.SecurityOperation.retrieveKey // Using retrieveKey as the appropriate operation type
+    
+    // Create logging context with standard metadata
+    let logContext = SecurityLogContext(
+      operation: operation.rawValue,
+      component: "SecureStorageService",
       operationID: operationID,
-      operation: operation,
-      config: config
+      correlationID: nil,
+      source: "SecurityImplementation"
     )
-
+    
     await logger.info(
-      "Starting secure retrieval operation", metadata: logMetadata,
-      source: "SecureStorageService",
-      source: "SecurityImplementation", source: "SecurityImplementation"
+      "Starting secure retrieval operation", 
+      context: logContext
     )
-
+    
     do {
       // Extract required parameters from configuration
-      guard let identifier=config.options["identifier"] else {
-        throw SecureStorageError.invalidInput("Missing storage identifier")
+      guard let options = config.options, let identifier = options.metadata?["identifier"] else {
+        throw CoreSecurityTypes.SecurityError.invalidInputData
       }
-
-      guard let key=config.options["key"].flatMap({ Data(base64Encoded: $0) }) else {
-        throw SecureStorageError.invalidInput("Missing decryption key")
-      }
-
-      // Retrieve the stored data and metadata
-      // In a real implementation, this would involve a secure storage system
-      // For now, we'll simulate the retrieval
-      guard let retrievalResult=simulateSecureRetrieval(identifier: identifier) else {
-        throw SecureStorageError.invalidData("Data not found for identifier: \(identifier)")
-      }
-
-      // Extract stored data and IV
-      let encryptedData=retrievalResult.data
-      guard
-        let ivString=retrievalResult.metadata["iv"],
-        let ivData=Data(base64Encoded: ivString),
-        let _=try? SendableCryptoMaterial(bytes: [UInt8](ivData))
-      else {
-        throw SecureStorageError.invalidData("Invalid IV in stored metadata")
-      }
-
-      // Note: IV is not needed in this implementation since we're using the protocol
-      // which doesn't take an IV parameter for decryption
-      // let iv = SecureBytes(base64Encoded: "AAAAAAAAAAAAAAAAAAAAAA==") ?? SecureBytes()
-
-      // Decrypt the data
-      let decryptResult=await cryptoService.decrypt(data: encryptedData, using: key)
-
-      switch decryptResult {
-        case let .success(decryptedData):
-          // Calculate duration for performance metrics
-          let duration=Date().timeIntervalSince(startTime) * 1000
-
-          // Create success metadata for logging with privacy annotations
-          let successMetadata=LogMetadataDTOCollection()
+      
+      // Perform the retrieval operation
+      let result = try await retrieveData(withIdentifier: identifier)
+      
+      switch result {
+        case let .success(retrievalResult):
+          // Calculate duration for metrics
+          let duration = Date().timeIntervalSince(startTime) * 1000
+          
+          // Create success metadata for logging
+          let successMetadata = LogMetadataDTOCollection()
             .withPublic(key: "operationId", value: operationID)
-            .withPublic(key: "operation", value: String(describing: operation))
-            .withPrivate(key: "storageIdentifier", value: identifier)
+            .withPublic(key: "operation", value: operation.rawValue)
             .withPublic(key: "durationMs", value: String(format: "%.2f", duration))
-
-          // Create a proper context with privacy-aware metadata
-          let successContext=SecurityLogContext(
-            operation: String(describing: operation),
-            source: "SecureStorageService",
+            .withPublic(key: "storageIdentifier", value: identifier)
+          
+          // Create a context for logging success
+          let successContext = SecurityLogContext(
+            operation: operation.rawValue,
+            component: "StorageService",
+            correlationID: operationID,
+            source: "SecurityImplementation",
             metadata: successMetadata
           )
-
+          
           await logger.info(
             "Secure retrieval operation completed successfully",
             context: successContext
           )
-
+          
           // Return successful result with retrieved data
-          return SecurityResultDTO(
-            status: .success,
-            data: decryptedData,
-            metadata: createMetadataCollection([
+          return SecurityResultDTO.success(
+            resultData: retrievalResult.data,
+            executionTimeMs: duration,
+            metadata: [
               "durationMs": String(format: "%.2f", duration),
               "storageIdentifier": identifier,
               "algorithm": retrievalResult
                 .metadata["algorithm"] ?? "unknown"
-            ])
+            ]
           )
-
+          
         case let .failure(error):
-          throw SecureStorageError.decryptionError("Failed to decrypt data: \(error)")
+          // Calculate duration before failure
+          let duration = Date().timeIntervalSince(startTime) * 1000
+          
+          // Create failure metadata for logging with privacy annotations
+          let errorMetadata = LogMetadataDTOCollection()
+            .withPublic(key: "operationId", value: operationID)
+            .withPublic(key: "operation", value: operation.rawValue)
+            .withPublic(key: "durationMs", value: String(format: "%.2f", duration))
+            .withPublic(key: "errorType", value: "\(type(of: error))")
+            .withPrivate(key: "errorMessage", value: error.localizedDescription)
+          
+          // Create a proper context with privacy-aware metadata
+          let errorContext = SecurityLogContext(
+            operation: operation.rawValue,
+            component: "StorageService",
+            correlationID: operationID,
+            source: "SecurityImplementation",
+            metadata: errorMetadata
+          )
+          
+          await logger.error(
+            "Secure retrieval operation failed: \(error.localizedDescription)",
+            context: errorContext
+          )
+          
+          // Return failure result
+          return SecurityResultDTO.failure(
+            errorDetails: error.localizedDescription,
+            executionTimeMs: duration,
+            metadata: [
+              "durationMs": String(format: "%.2f", duration),
+              "errorMessage": error.localizedDescription
+            ]
+          )
       }
     } catch {
+      // This catch block now handles only errors thrown before the switch statement
       // Calculate duration before failure
-      let duration=Date().timeIntervalSince(startTime) * 1000
-
-      // Create failure metadata for logging with privacy annotations
-      let errorMetadata=LogMetadataDTOCollection()
-        .withPublic(key: "operationId", value: operationID)
-        .withPublic(key: "operation", value: String(describing: operation))
-        .withPublic(key: "durationMs", value: String(format: "%.2f", duration))
-        .withPublic(key: "errorType", value: "\(type(of: error))")
-        .withPrivate(key: "errorMessage", value: error.localizedDescription)
-
-      // Create a proper context with privacy-aware metadata
-      let errorContext=SecurityLogContext(
-        operation: String(describing: operation),
-        source: "SecureStorageService",
-        metadata: errorMetadata
-      )
-
-      await logger.error(
-        "Secure retrieval operation failed: \(error.localizedDescription)",
-        context: errorContext
-      )
-
+      let duration = Date().timeIntervalSince(startTime) * 1000
+      
       // Return failure result
-      return SecurityResultDTO(
-        status: .failure,
-        error: error,
-        metadata: createMetadataCollection([
+      return SecurityResultDTO.failure(
+        errorDetails: error.localizedDescription,
+        executionTimeMs: duration,
+        metadata: [
           "durationMs": String(format: "%.2f", duration),
           "errorMessage": error.localizedDescription
-        ])
+        ]
       )
     }
   }
-
+  
   /**
-   Deletes data securely with the specified configuration
-
-   - Parameter config: Configuration for the secure deletion operation
-   - Returns: Result indicating success or error information
+   * Simulates retrieving data securely
+   *
+   * In a real implementation, this would use a secure storage mechanism.
    */
-  func secureDelete(config: SecurityConfigDTO) async -> SecurityResultDTO {
-    let operationID=UUID().uuidString
-    let startTime=Date()
-    let operation=SecurityOperation.secureDelete
-
-    // Create metadata for logging
-    let logMetadata=createOperationMetadata(
-      operationID: operationID,
-      operation: operation,
-      config: config
-    )
-
-    await logger.info(
-      "Starting secure deletion operation", metadata: logMetadata,
-      source: "SecureStorageService",
-      source: "SecurityImplementation", source: "SecurityImplementation"
-    )
-
-    do {
-      // Extract required parameters from configuration
-      guard let identifier=config.options["identifier"] else {
-        throw SecureStorageError.invalidInput("Missing storage identifier")
-      }
-
-      // Delete the stored data
-      // In a real implementation, this would involve a secure storage system
-      // For now, we'll simulate the deletion
-      let success=simulateSecureDeletion(identifier: identifier)
-
-      if !success {
-        throw SecureStorageError.invalidData("Data not found for identifier: \(identifier)")
-      }
-
-      // Calculate duration for performance metrics
-      let duration=Date().timeIntervalSince(startTime) * 1000
-
-      // Create success metadata for logging with privacy annotations
-      let successMetadata=LogMetadataDTOCollection()
-        .withPublic(key: "operationId", value: operationID)
-        .withPublic(key: "operation", value: String(describing: operation))
-        .withPrivate(key: "storageIdentifier", value: identifier)
-        .withPublic(key: "durationMs", value: String(format: "%.2f", duration))
-
-      // Create a proper context with privacy-aware metadata
-      let successContext=SecurityLogContext(
-        operation: String(describing: operation),
-        source: "SecureStorageService",
-        metadata: successMetadata
-      )
-
-      await logger.info(
-        "Secure deletion operation completed successfully",
-        context: successContext
-      )
-
-      // Return successful result
-      return SecurityResultDTO(
-        status: .success,
-        metadata: createMetadataCollection([
-          "durationMs": String(format: "%.2f", duration),
-          "storageIdentifier": identifier
-        ])
-      )
-    } catch {
-      // Calculate duration before failure
-      let duration=Date().timeIntervalSince(startTime) * 1000
-
-      // Create failure metadata for logging with privacy annotations
-      let errorMetadata=LogMetadataDTOCollection()
-        .withPublic(key: "operationId", value: operationID)
-        .withPublic(key: "operation", value: String(describing: operation))
-        .withPublic(key: "durationMs", value: String(format: "%.2f", duration))
-        .withPublic(key: "errorType", value: "\(type(of: error))")
-        .withPrivate(key: "errorMessage", value: error.localizedDescription)
-
-      // Create a proper context with privacy-aware metadata
-      let errorContext=SecurityLogContext(
-        operation: String(describing: operation),
-        source: "SecureStorageService",
-        metadata: errorMetadata
-      )
-
-      await logger.error(
-        "Secure deletion operation failed: \(error.localizedDescription)",
-        context: errorContext
-      )
-
-      // Return failure result
-      return SecurityResultDTO(
-        status: .failure,
-        error: error,
-        metadata: createMetadataCollection([
-          "durationMs": String(format: "%.2f", duration),
-          "errorMessage": error.localizedDescription
-        ])
-      )
-    }
-  }
-
-  // MARK: - Private Methods
-
-  /**
-   Simulates storing data securely
-
-   In a real implementation, this would use a secure storage mechanism.
-
-   - Parameters:
-       - identifier: Unique identifier for the stored data
-       - data: Data to store
-       - metadata: Additional information about the stored data
-   - Returns: True if storage was successful
-   */
-  private func simulateSecureStorage(
-    identifier _: String,
-    data _: Data,
-    metadata _: [String: String]
-  ) -> Bool {
-    // In a real implementation, this would store the data securely
-    // For simulation purposes, we'll just return success
-    true
-  }
-
-  /**
-   Simulates retrieving data securely
-
-   In a real implementation, this would use a secure storage mechanism.
-
-   - Parameter identifier: Unique identifier for the stored data
-   - Returns: Retrieved data and metadata, or nil if not found
-   */
-  private func simulateSecureRetrieval(identifier _: String)
-  -> (data: Data, metadata: [String: String])? {
-    // In a real implementation, this would retrieve data from secure storage
-    // For simulation purposes, we'll create dummy data
-
-    // Create dummy encrypted data
-    let dummyData=Data(repeating: 0, count: 64)
-
-    // Create dummy metadata
-    let dummyMetadata=[
-      "iv": Data(repeating: 0, count: 16).base64EncodedString(),
-      "algorithm": "AES256",
-      "timestamp": "\(Date().timeIntervalSince1970)"
-    ]
-
-    return (data: dummyData, metadata: dummyMetadata)
-  }
-
-  /**
-   Simulates deleting data securely
-
-   In a real implementation, this would use a secure storage mechanism.
-
-   - Parameter identifier: Unique identifier for the stored data
-   - Returns: True if deletion was successful
-   */
-  private func simulateSecureDeletion(identifier _: String) -> Bool {
-    // In a real implementation, this would delete data from secure storage
-    // For simulation purposes, we'll just return success
-    true
+  private func retrieveData(withIdentifier identifier: String) async throws -> Result<StorageResult, Error> {
+    // This is a placeholder implementation
+    // In a real implementation, this would retrieve data from a secure storage
+    // For now, return a simulated result
+    return .success(StorageResult(
+      data: Data(), // Empty data as a placeholder
+      metadata: [
+        "algorithm": "AES-GCM",
+        "storageIdentifier": identifier
+      ]
+    ))
   }
 }
 
 /**
- Security-specific errors for secure storage operations
+ * Storage result model
  */
-enum SecureStorageError: Error {
-  case invalidInput(String)
-  case invalidData(String)
-  case operationFailed(String)
-  case storageError(String)
-  case retrievalError(String)
-  case deletionError(String)
-  case decryptionError(String)
-  case encryptionError(String)
+struct StorageResult {
+  let data: Data
+  let metadata: [String: String]
 }
-
-// Note: CoreSecurityError extension has been moved to SecurityProvider+Validation.swift

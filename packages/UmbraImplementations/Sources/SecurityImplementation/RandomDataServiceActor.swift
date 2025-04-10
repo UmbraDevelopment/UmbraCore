@@ -88,6 +88,7 @@ public actor RandomDataServiceActor: RandomDataServiceProtocol {
             context: context
           )
           self.entropySource = .system
+          return
         }
     }
 

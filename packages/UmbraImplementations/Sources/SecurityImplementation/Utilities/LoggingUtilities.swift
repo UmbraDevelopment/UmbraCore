@@ -19,7 +19,17 @@ public enum SecurityLoggingUtilities {
   public static func createLoggingWrapper(logger: LoggingServiceActor) async -> LoggingProtocol {
     // Create a basic logger that wraps the logging service actor
     StandardLogger(source: "Security") { message, level, metadata in
-      await logger.log(message: message, level: level, metadata: metadata)
+      // Convert LogLevel to UmbraLogLevel and use the correct parameter labels
+      let umbraLevel: LoggingTypes.UmbraLogLevel = level == .debug ? .debug : 
+                                                   level == .info ? .info :
+                                                   level == .warning ? .warning :
+                                                   level == .error ? .error : .critical
+      
+      await logger.log(
+        level: umbraLevel,
+        message: message,
+        metadata: metadata == nil ? nil : LogMetadataDTOCollection()
+      )
     }
   }
 
@@ -36,11 +46,12 @@ public enum SecurityLoggingUtilities {
     category: String
   ) async -> LoggingProtocol {
     // Create a privacy-aware logger with production settings
-    await LoggerFactory.createPrivacyAwareLogger(
-      source: "\(subsystem).\(category)",
-      minimumLogLevel: .info,
-      privacyFilterEnabled: true
+    let logger = await LoggingServiceFactory.shared.createService(
+      minimumLevel: .info
     )
+    
+    // Wrap it in our protocol adapter
+    return await createLoggingWrapper(logger: logger)
   }
 }
 
@@ -51,10 +62,35 @@ public enum SecurityLoggingUtilities {
 private actor StandardLogger: LoggingProtocol {
   private let source: String
   private let logHandler: (String, LogLevel, PrivacyMetadata?) async -> Void
+  
+  // Add the required loggingActor property
+  public var loggingActor: LoggingActor {
+    // Create a basic implementation with empty destinations
+    LoggingActor(destinations: [], minimumLogLevel: .info)
+  }
+  
+  // Add the required log method that uses LogContextDTO
+  public func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
+    // Simply forward to the appropriate log level methods with the raw message
+    switch level {
+    case .debug:
+      await logHandler(message, .debug, nil)
+    case .info:
+      await logHandler(message, .info, nil)
+    case .warning:
+      await logHandler(message, .warning, nil)
+    case .error:
+      await logHandler(message, .error, nil)
+    case .critical:
+      await logHandler(message, .critical, nil)
+    case .trace:
+      await logHandler(message, .debug, nil) // Map trace to debug as a fallback
+    }
+  }
 
   init(source: String, logHandler: @escaping (String, LogLevel, PrivacyMetadata?) async -> Void) {
-    self.source=source
-    self.logHandler=logHandler
+    self.source = source
+    self.logHandler = logHandler
   }
 
   public func debug(_ message: String, metadata: PrivacyMetadata?, source _: String) async {

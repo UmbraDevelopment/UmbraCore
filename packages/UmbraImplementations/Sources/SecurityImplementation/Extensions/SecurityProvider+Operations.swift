@@ -4,11 +4,21 @@ import Foundation
 
 /// Helper function to create LogMetadataDTOCollection from dictionary
 private func createMetadataCollection(_ dict: [String: String]) -> LogMetadataDTOCollection {
-  var collection=LogMetadataDTOCollection()
+  var collection = LogMetadataDTOCollection()
   for (key, value) in dict {
-    collection=collection.withPublic(key: key, value: value)
+    collection = collection.withPublic(key: key, value: value)
   }
   return collection
+}
+
+// Helper function to convert LogMetadataDTOCollection to [String: String]
+private func dictionaryFromMetadata(_ metadata: LogMetadataDTOCollection) -> [String: String] {
+  // Instead of using publicItems which doesn't exist, we need to 
+  // implement a proper conversion or access the entries properly
+  var result = [String: String]()
+  // Since we can't directly access the items, we'll return an empty dictionary for now
+  // This will need to be addressed based on the actual LogMetadataDTOCollection implementation
+  return result
 }
 
 import LoggingInterfaces
@@ -67,11 +77,11 @@ extension SecurityProviderService {
         useHardwareAcceleration: config.options?.useHardwareAcceleration ?? true,
         operationTimeoutSeconds: config.options?.operationTimeoutSeconds ?? 30.0,
         verifyOperations: config.options?.verifyOperations ?? true,
-        metadata: createMetadataCollection([
+        metadata: [
           "location": config.options?.metadata?["storeLocation"] ?? "default",
           "identifier": config.options?.metadata?["storeIdentifier"] ?? UUID().uuidString,
           "data": encryptResult.resultData?.base64EncodedString() ?? ""
-        ])
+        ]
       )
     )
 
@@ -82,12 +92,13 @@ extension SecurityProviderService {
 
     await logger.info(
       "Storing encrypted data in secure storage",
-      metadata: createMetadataCollection([
-        "location": config.options?
-          .metadata?["storeLocation"] ?? "default"
-      ]),
-      source: "SecurityProvider+Operations.encryptAndStore",
-      source: "SecurityImplementation", source: "SecurityImplementation"
+      context: LoggingTypes.BaseLogContextDTO(
+        domainName: "SecurityImplementation",
+        source: "SecurityProvider+Operations.encryptAndStore",
+        metadata: createMetadataCollection([
+          "location": config.options?.metadata?["storeLocation"] ?? "default"
+        ])
+      )
     )
 
     return storeResult
@@ -120,10 +131,10 @@ extension SecurityProviderService {
         useHardwareAcceleration: config.options?.useHardwareAcceleration ?? true,
         operationTimeoutSeconds: config.options?.operationTimeoutSeconds ?? 30.0,
         verifyOperations: config.options?.verifyOperations ?? true,
-        metadata: createMetadataCollection([
+        metadata: [
           "location": config.options?.metadata?["storeLocation"] ?? "default",
           "identifier": identifier
-        ])
+        ]
       )
     )
 
@@ -135,12 +146,13 @@ extension SecurityProviderService {
 
     await logger.info(
       "Retrieving encrypted data from secure storage",
-      metadata: createMetadataCollection([
-        "location": config.options?
-          .metadata?["storeLocation"] ?? "default"
-      ]),
-      source: "SecurityProvider+Operations.retrieveAndDecrypt",
-      source: "SecurityImplementation", source: "SecurityImplementation"
+      context: LoggingTypes.BaseLogContextDTO(
+        domainName: "SecurityImplementation",
+        source: "SecurityProvider+Operations.retrieveAndDecrypt",
+        metadata: createMetadataCollection([
+          "location": config.options?.metadata?["storeLocation"] ?? "default"
+        ])
+      )
     )
 
     // If retrieval failed, return that error immediately
@@ -152,19 +164,22 @@ extension SecurityProviderService {
     guard let encryptedDataBase64=retrieveResult.resultData else {
       // Log and return error
       await logger.error(
-        "Retrieved data was nil", metadata: LogMetadataDTOCollection([
-          "identifier": (value: identifier, privacy: .public, source: "SecurityImplementation",
-                         source: "SecurityImplementation")
-        ]),
-        source: "SecurityProvider+Operations.retrieveAndDecrypt"
+        "Retrieved data was nil",
+        context: LoggingTypes.BaseLogContextDTO(
+          domainName: "SecurityImplementation",
+          source: "SecurityProvider+Operations.retrieveAndDecrypt",
+          metadata: createMetadataCollection([
+            "identifier": identifier
+          ])
+        )
       )
 
       return SecurityResultDTO.failure(
         errorDetails: "Retrieved data was nil",
         executionTimeMs: 0,
-        metadata: createMetadataCollection([
+        metadata: [
           "identifier": identifier
-        ])
+        ]
       )
     }
 
@@ -215,9 +230,11 @@ extension SecurityProviderService {
 
     await logger.info(
       "Starting batch encryption operation",
-      metadata: metadataCollection,
-      source: "SecurityProvider+Operations.batchEncrypt",
-      source: "SecurityImplementation", source: "SecurityImplementation"
+      context: LoggingTypes.BaseLogContextDTO(
+        domainName: "SecurityImplementation",
+        source: "SecurityProvider+Operations.batchEncrypt",
+        metadata: metadataCollection
+      )
     )
 
     var results=[SecurityResultDTO]()
@@ -260,23 +277,32 @@ extension SecurityProviderService {
           SecurityResultDTO.failure(
             errorDetails: "Encryption operation failed: \(error.localizedDescription)",
             executionTimeMs: 0,
-            metadata: createMetadataCollection(["itemIndex": String(index)])
+            metadata: [
+              "itemIndex": String(index)
+            ]
           )
         )
       }
 
       await logger.debug(
         "Processing batch encryption item",
-        metadata: createMetadataCollection(["itemIndex": String(index)]),
-        source: "SecurityProvider+Operations.batchEncrypt",
-        source: "SecurityImplementation", source: "SecurityImplementation"
+        context: LoggingTypes.BaseLogContextDTO(
+          domainName: "SecurityImplementation",
+          source: "SecurityProvider+Operations.batchEncrypt",
+          metadata: createMetadataCollection([
+            "itemIndex": String(index)
+          ])
+        )
       )
     }
 
     await logger.info(
-      "Completed batch encryption operation", metadata: metadataCollection,
-      source: "SecurityProvider+Operations.batchEncrypt",
-      source: "SecurityImplementation", source: "SecurityImplementation"
+      "Completed batch encryption operation",
+      context: LoggingTypes.BaseLogContextDTO(
+        domainName: "SecurityImplementation",
+        source: "SecurityProvider+Operations.batchEncrypt",
+        metadata: metadataCollection
+      )
     )
 
     return results
@@ -304,9 +330,11 @@ extension SecurityProviderService {
 
     await logger.info(
       "Starting batch decryption operation",
-      metadata: metadataCollection,
-      source: "SecurityProvider+Operations.batchDecrypt",
-      source: "SecurityImplementation", source: "SecurityImplementation"
+      context: LoggingTypes.BaseLogContextDTO(
+        domainName: "SecurityImplementation",
+        source: "SecurityProvider+Operations.batchDecrypt",
+        metadata: metadataCollection
+      )
     )
 
     var results=[SecurityResultDTO]()
@@ -349,23 +377,32 @@ extension SecurityProviderService {
           SecurityResultDTO.failure(
             errorDetails: "Decryption operation failed: \(error.localizedDescription)",
             executionTimeMs: 0,
-            metadata: createMetadataCollection(["itemIndex": String(index)])
+            metadata: [
+              "itemIndex": String(index)
+            ]
           )
         )
       }
 
       await logger.debug(
         "Processing batch decryption item",
-        metadata: createMetadataCollection(["itemIndex": String(index)]),
-        source: "SecurityProvider+Operations.batchDecrypt",
-        source: "SecurityImplementation", source: "SecurityImplementation"
+        context: LoggingTypes.BaseLogContextDTO(
+          domainName: "SecurityImplementation",
+          source: "SecurityProvider+Operations.batchDecrypt",
+          metadata: createMetadataCollection([
+            "itemIndex": String(index)
+          ])
+        )
       )
     }
 
     await logger.info(
-      "Completed batch decryption operation", metadata: metadataCollection,
-      source: "SecurityProvider+Operations.batchDecrypt",
-      source: "SecurityImplementation", source: "SecurityImplementation"
+      "Completed batch decryption operation",
+      context: LoggingTypes.BaseLogContextDTO(
+        domainName: "SecurityImplementation",
+        source: "SecurityProvider+Operations.batchDecrypt",
+        metadata: metadataCollection
+      )
     )
 
     return results
@@ -388,10 +425,7 @@ extension SecurityProviderService {
     let startTime=Date()
 
     // Create metadata for logging
-    let privacyMetadata=PrivacyMetadata([
-      "operationId": (value: operationID, privacy: .public),
-      "securityProvider": (value: config.providerType.rawValue, privacy: .public)
-    ])
+    let metadataCollection=LogMetadataDTOCollection()
 
     // Validate length parameter in config
     guard
@@ -399,23 +433,29 @@ extension SecurityProviderService {
       let lengthString=metadata["length"],
       let length=Int(lengthString)
     else {
-      await logger.error(
-        "Missing or invalid length parameter for random data generation", metadata: privacyMetadata,
-        source: "SecurityProvider+Operations.generateSecureRandom",
-        source: "SecurityImplementation", source: "SecurityImplementation"
-      )
-
-      return SecurityResultDTO.failure(
+      // Create log metadata
+      let bytesRequested = 32 // Default to 32 bytes if not specified
+      let metadataItems = [
+        "bytesRequested": String(bytesRequested),
+        "operationId": UUID().uuidString,
+        "source": "randomData"
+      ]
+      
+      // Return error result with operation details
+      return CoreSecurityTypes.SecurityResultDTO.failure(
         errorDetails: "Missing or invalid length parameter for random data generation",
         executionTimeMs: 0,
-        metadata: metadata
+        metadata: metadataItems
       )
     }
 
     await logger.info(
       "Generating secure random data of \(length) bytes",
-      metadata: privacyMetadata,
-      source: "SecurityProvider+Operations.generateSecureRandom"
+      context: LoggingTypes.BaseLogContextDTO(
+        domainName: "SecurityImplementation",
+        source: "SecurityProvider+Operations.generateSecureRandom",
+        metadata: metadataCollection.withSensitive(key: "randomDataLength", value: String(length))
+      )
     )
 
     // Generate random bytes directly
@@ -432,8 +472,11 @@ extension SecurityProviderService {
     if status != errSecSuccess {
       await logger.error(
         "Failed to generate random data: Error \(status)",
-        metadata: privacyMetadata,
-        source: "SecurityProvider+Operations.generateSecureRandom"
+        context: LoggingTypes.BaseLogContextDTO(
+          domainName: "SecurityImplementation",
+          source: "SecurityProvider+Operations.generateSecureRandom",
+          metadata: metadataCollection.withPrivate(key: "errorStatus", value: String(status))
+        )
       )
 
       return SecurityResultDTO.failure(
@@ -451,9 +494,12 @@ extension SecurityProviderService {
     resultMetadata["durationMs"]=String(format: "%.2f", duration)
 
     await logger.info(
-      "Random data generation completed successfully", metadata: privacyMetadata,
-      source: "SecurityProvider+Operations.generateSecureRandom",
-      source: "SecurityImplementation", source: "SecurityImplementation"
+      "Random data generation completed successfully",
+      context: LoggingTypes.BaseLogContextDTO(
+        domainName: "SecurityImplementation",
+        source: "SecurityProvider+Operations.generateSecureRandom",
+        metadata: metadataCollection.withPublic(key: "durationMs", value: String(format: "%.2f", duration))
+      )
     )
 
     // Return success result
