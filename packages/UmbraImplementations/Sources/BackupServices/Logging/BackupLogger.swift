@@ -87,18 +87,18 @@ public actor BackupLogger: DomainLoggerProtocol {
    *   - message: Optional custom message
    */
   public func logError(
-    _ error: Error, 
-    context: BackupLogContext, 
-    additionalContext: LogMetadataDTOCollection? = nil,
-    message: String? = nil
+    _ error: Error,
+    context: BackupLogContext,
+    additionalContext: LogMetadataDTOCollection?=nil,
+    message: String?=nil
   ) async {
     // Create the final context by merging the additional context if provided
-    let finalContext = if let additionalContext {
+    let finalContext=if let additionalContext {
       context.withUpdatedMetadata(context.metadata.merging(with: additionalContext))
     } else {
       context
     }
-    
+
     if let loggableError=error as? LoggableErrorProtocol {
       // Handle loggable errors with enriched metadata
       let errorMetadata=loggableError.createMetadataCollection()
@@ -109,7 +109,10 @@ public actor BackupLogger: DomainLoggerProtocol {
       if let backupContext=finalContext as? BackupLogContextImpl {
         // Update the context with error information
         let updatedContext=backupContext.withUpdatedMetadata(
-          backupContext.metadata.merging(with: errorMetadata).withPrivate(key: "error", value: error.localizedDescription)
+          backupContext.metadata.merging(with: errorMetadata).withPrivate(
+            key: "error",
+            value: error.localizedDescription
+          )
         )
         await log(.error, formattedMessage, context: updatedContext)
       } else {
@@ -145,16 +148,16 @@ public actor BackupLogger: DomainLoggerProtocol {
   public func log(
     level: LogLevel,
     context: BackupLogContext,
-    additionalContext: LogMetadataDTOCollection? = nil,
+    additionalContext: LogMetadataDTOCollection?=nil,
     message: String
   ) async {
     // Create the final context by merging the additional context if provided
-    let finalContext = if let additionalContext {
+    let finalContext=if let additionalContext {
       context.withUpdatedMetadata(context.metadata.merging(with: additionalContext))
     } else {
       context
     }
-    
+
     let enhancedContext=enhanceContext(finalContext)
 
     await loggingService.log(
@@ -186,84 +189,84 @@ public actor BackupLogger: DomainLoggerProtocol {
 
   /// Log a message with trace level and context
   public func trace(
-    _ message: String, 
+    _ message: String,
     context: BackupLogContext,
-    additionalContext: LogMetadataDTOCollection? = nil
+    additionalContext: LogMetadataDTOCollection?=nil
   ) async {
     await log(
-      level: .trace, 
-      context: context, 
-      additionalContext: additionalContext, 
+      level: .trace,
+      context: context,
+      additionalContext: additionalContext,
       message: message
     )
   }
 
   /// Log a message with debug level and context
   public func debug(
-    _ message: String, 
+    _ message: String,
     context: BackupLogContext,
-    additionalContext: LogMetadataDTOCollection? = nil
+    additionalContext: LogMetadataDTOCollection?=nil
   ) async {
     await log(
-      level: .debug, 
-      context: context, 
-      additionalContext: additionalContext, 
+      level: .debug,
+      context: context,
+      additionalContext: additionalContext,
       message: message
     )
   }
 
   /// Log a message with info level and context
   public func info(
-    _ message: String, 
+    _ message: String,
     context: BackupLogContext,
-    additionalContext: LogMetadataDTOCollection? = nil
+    additionalContext: LogMetadataDTOCollection?=nil
   ) async {
     await log(
-      level: .info, 
-      context: context, 
-      additionalContext: additionalContext, 
+      level: .info,
+      context: context,
+      additionalContext: additionalContext,
       message: message
     )
   }
 
   /// Log a message with warning level and context
   public func warning(
-    _ message: String, 
+    _ message: String,
     context: BackupLogContext,
-    additionalContext: LogMetadataDTOCollection? = nil
+    additionalContext: LogMetadataDTOCollection?=nil
   ) async {
     await log(
-      level: .warning, 
-      context: context, 
-      additionalContext: additionalContext, 
+      level: .warning,
+      context: context,
+      additionalContext: additionalContext,
       message: message
     )
   }
 
   /// Log a message with error level and context
   public func error(
-    _ message: String, 
+    _ message: String,
     context: BackupLogContext,
-    additionalContext: LogMetadataDTOCollection? = nil
+    additionalContext: LogMetadataDTOCollection?=nil
   ) async {
     await log(
-      level: .error, 
-      context: context, 
-      additionalContext: additionalContext, 
+      level: .error,
+      context: context,
+      additionalContext: additionalContext,
       message: message
     )
   }
 
   /// Log a message with critical level and context
   public func critical(
-    _ message: String, 
+    _ message: String,
     context: BackupLogContext,
-    additionalContext: LogMetadataDTOCollection? = nil
+    additionalContext: LogMetadataDTOCollection?=nil
   ) async {
     await log(
-      level: .critical, 
-      context: context, 
-      additionalContext: additionalContext, 
+      level: .critical,
+      context: context,
+      additionalContext: additionalContext,
       message: message
     )
   }
@@ -312,13 +315,13 @@ public actor BackupLogger: DomainLoggerProtocol {
    */
   public func logOperationStart(
     context: BackupLogContext,
-    additionalContext: LogMetadataDTOCollection? = nil,
-    message: String? = nil
+    additionalContext: LogMetadataDTOCollection?=nil,
+    message: String?=nil
   ) async {
     let defaultMessage="Starting backup operation"
     await info(
-      message ?? defaultMessage, 
-      context: context, 
+      message ?? defaultMessage,
+      context: context,
       additionalContext: additionalContext
     )
   }
@@ -334,17 +337,17 @@ public actor BackupLogger: DomainLoggerProtocol {
    */
   public func logOperationSuccess(
     context: BackupLogContext,
-    additionalContext: LogMetadataDTOCollection? = nil,
-    result: (some Sendable)? = nil,
-    message: String? = nil
+    additionalContext: LogMetadataDTOCollection?=nil,
+    result _: (some Sendable)?=nil,
+    message: String?=nil
   ) async {
     // Create the final context by merging the additional context if provided
-    let finalContext = if let additionalContext {
+    let finalContext=if let additionalContext {
       context.withUpdatedMetadata(context.metadata.merging(with: additionalContext))
     } else {
       context
     }
-    
+
     let enhancedContext=enhanceContext(finalContext)
       .withPublic(key: "status", value: "success")
 
@@ -366,16 +369,16 @@ public actor BackupLogger: DomainLoggerProtocol {
    */
   public func logOperationFailure(
     context: BackupLogContext,
-    additionalContext: LogMetadataDTOCollection? = nil,
+    additionalContext: LogMetadataDTOCollection?=nil,
     message: String
   ) async {
     // Create the final context by merging the additional context if provided
-    let finalContext = if let additionalContext {
+    let finalContext=if let additionalContext {
       context.withUpdatedMetadata(context.metadata.merging(with: additionalContext))
     } else {
       context
     }
-    
+
     let enhancedContext=enhanceContext(finalContext)
       .withPublic(key: "status", value: "failure")
 
@@ -397,9 +400,9 @@ public actor BackupLogger: DomainLoggerProtocol {
    */
   public func logOperationError(
     context: BackupLogContext,
-    additionalContext: LogMetadataDTOCollection? = nil,
+    additionalContext: LogMetadataDTOCollection?=nil,
     error: Error,
-    message: String? = nil
+    message: String?=nil
   ) async {
     await logError(error, context: context, additionalContext: additionalContext)
 
@@ -419,16 +422,16 @@ public actor BackupLogger: DomainLoggerProtocol {
    */
   public func logOperationCancelled(
     context: BackupLogContext,
-    additionalContext: LogMetadataDTOCollection? = nil,
-    message: String? = nil
+    additionalContext: LogMetadataDTOCollection?=nil,
+    message: String?=nil
   ) async {
     // Create the final context by merging the additional context if provided
-    let finalContext = if let additionalContext {
+    let finalContext=if let additionalContext {
       context.withUpdatedMetadata(context.metadata.merging(with: additionalContext))
     } else {
       context
     }
-    
+
     let enhancedContext=enhanceContext(finalContext)
       .withPublic(key: "status", value: "cancelled")
 
@@ -445,25 +448,25 @@ extension BackupLogContext {
   func getMetadata() -> MetadataCollection {
     // Convert the BackupLogContext to a LogMetadataDTOCollection
     // This ensures all privacy annotations are properly maintained
-    let metadataCollection = toMetadataCollection()
-    
+    let metadataCollection=toMetadataCollection()
+
     // Convert to the legacy MetadataCollection format
     // This is needed for compatibility with the existing logging system
-    var legacyMetadata = MetadataCollection()
-    
+    var legacyMetadata=MetadataCollection()
+
     // Transfer all metadata with their privacy levels preserved
     for item in metadataCollection.items {
       switch item.privacyLevel {
-      case .public:
-        legacyMetadata.add(key: item.key, value: item.value, isPrivate: false)
-      case .private, .sensitive, .hash:
-        legacyMetadata.add(key: item.key, value: item.value, isPrivate: true)
-      case .auto:
-        // For auto privacy level, use the system's automatic detection
-        legacyMetadata.add(key: item.key, value: item.value, isPrivate: false)
+        case .public:
+          legacyMetadata.add(key: item.key, value: item.value, isPrivate: false)
+        case .private, .sensitive, .hash:
+          legacyMetadata.add(key: item.key, value: item.value, isPrivate: true)
+        case .auto:
+          // For auto privacy level, use the system's automatic detection
+          legacyMetadata.add(key: item.key, value: item.value, isPrivate: false)
       }
     }
-    
+
     return legacyMetadata
   }
 }

@@ -3,10 +3,10 @@ import LoggingTypes
 
 /**
  # Privacy-Aware Logger
- 
+
  An actor that implements the PrivacyAwareLoggingProtocol with support for
  privacy controls and proper isolation for concurrent logging.
- 
+
  This implementation follows the Alpha Dot Five architecture principles by:
  1. Using actor isolation for thread safety
  2. Providing comprehensive privacy controls for sensitive data
@@ -28,7 +28,7 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
 
   /**
    Creates a new privacy-aware logger.
-   
+
    - Parameters:
      - minimumLevel: The minimum log level to process
      - identifier: The identifier for this logger instance
@@ -53,7 +53,7 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
 
   /**
    Implements the core logging functionality with LogContextDTO.
-   
+
    - Parameters:
      - level: The severity level of the log
      - message: The message to log
@@ -87,7 +87,7 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
 
   /**
    Helper method to create or use an existing metadata collection.
-   
+
    - Parameter metadata: The metadata to use directly
    - Returns: A metadata collection
    */
@@ -99,7 +99,7 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
   /**
    Deprecated helper function to convert LogMetadataDTOCollection to PrivacyMetadata.
    This method is kept for backward compatibility but should not be used in new code.
-   
+
    - Parameter metadata: The metadata collection to convert
    - Returns: A PrivacyMetadata instance
    */

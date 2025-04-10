@@ -107,11 +107,11 @@ public struct OSLogDestination: LoggingTypes.LogDestination {
     }
 
     // Convert LogMetadataDTOCollection to dictionary of strings
-    var result = [String: String]()
+    var result=[String: String]()
     for entry in metadata.entries {
       // Skip privacy control keys
       if !entry.key.starts(with: "__privacy_") {
-        result[entry.key] = entry.value
+        result[entry.key]=entry.value
       }
     }
 

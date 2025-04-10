@@ -1,7 +1,7 @@
+import CoreDTOs
 import FileSystemInterfaces
 import FileSystemTypes
 import Foundation
-import CoreDTOs
 
 /**
  # SecurePathAdapter
@@ -45,10 +45,11 @@ public enum SecurePathAdapter {
    - Returns: A FilePathDTO representation
    */
   public static func toFilePathDTO(_ securePath: SecurePath) -> FilePathDTO {
-    let path = securePath.toString()
-    let directoryPath = securePath.isDirectory ? path : (URL(fileURLWithPath: path).deletingLastPathComponent().path)
-    let fileName = securePath.isDirectory ? "" : (URL(fileURLWithPath: path).lastPathComponent)
-    
+    let path=securePath.toString()
+    let directoryPath=securePath
+      .isDirectory ? path : (URL(fileURLWithPath: path).deletingLastPathComponent().path)
+    let fileName=securePath.isDirectory ? "" : (URL(fileURLWithPath: path).lastPathComponent)
+
     return FilePathDTO(
       path: path,
       fileName: fileName,
@@ -89,7 +90,7 @@ public enum SecurePathAdapter {
    - Returns: The corresponding FilePathDTO security options
    */
   private static func mapSecurityOptions(_ level: PathSecurityLevel) -> SecurityOptions {
-    let securityLevel: SecurityLevel = switch level {
+    let securityLevel: SecurityLevel=switch level {
       case .standard:
         .standard
       case .elevated:

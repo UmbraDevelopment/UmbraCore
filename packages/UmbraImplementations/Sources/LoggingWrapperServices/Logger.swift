@@ -270,7 +270,7 @@ public actor Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked Sendabl
     if let metadata {
       for entry in metadata.entries {
         // Apply privacy controls based on the entry's privacy level
-        let value = switch entry.privacyLevel {
+        let value=switch entry.privacyLevel {
           case .public:
             entry.value
           case .private:
@@ -292,8 +292,8 @@ public actor Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked Sendabl
             // In a real implementation, this would be automatically classified
             "<auto-redacted>"
         }
-        
-        context[entry.key] = value
+
+        context[entry.key]=value
       }
     }
 
@@ -313,9 +313,9 @@ public actor Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked Sendabl
     _ level: LoggingTypes.LogLevel,
     _ message: @autoclosure () -> Any,
     metadata: LoggingTypes.LogMetadataDTOCollection?,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
   ) {
     // Immediately evaluate the autoclosure to capture the value
     let messageValue=message()
@@ -342,9 +342,9 @@ public actor Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked Sendabl
     _ level: LoggingTypes.LogLevel,
     _ message: String,
     sensitiveValues: LoggingTypes.LogMetadataDTOCollection,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
   ) {
     // Delegate to actor instance with sensitive privacy level
     Task {
@@ -399,9 +399,9 @@ public actor Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked Sendabl
   public static func error(
     _ message: @autoclosure () -> Any,
     metadata: LoggingTypes.LogMetadataDTOCollection?=nil,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
   ) {
     log(.error, message(), metadata: metadata, file: file, function: function, line: line)
   }
@@ -410,9 +410,9 @@ public actor Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked Sendabl
   public static func trace(
     _ message: @autoclosure () -> Any,
     metadata: LoggingTypes.LogMetadataDTOCollection?=nil,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
   ) {
     log(.trace, message(), metadata: metadata, file: file, function: function, line: line)
   }
@@ -421,9 +421,9 @@ public actor Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked Sendabl
   public static func critical(
     _ message: @autoclosure () -> Any,
     metadata: LoggingTypes.LogMetadataDTOCollection?=nil,
-    file: String = #file,
-    function: String = #function,
-    line: Int = #line
+    file: String=#file,
+    function: String=#function,
+    line: Int=#line
   ) {
     log(.critical, message(), metadata: metadata, file: file, function: function, line: line)
   }
@@ -468,7 +468,7 @@ public actor Logger: LoggingWrapperInterfaces.LoggerProtocol, @unchecked Sendabl
     public func logSensitive(
       _ level: LoggingTypes.LogLevel,
       _ message: String,
-      sensitiveValues: LoggingTypes.LogMetadata,
+      sensitiveValues _: LoggingTypes.LogMetadata,
       context: LoggingTypes.LogContextDTO
     ) async {
       // Create a modified context with sensitive values properly handled

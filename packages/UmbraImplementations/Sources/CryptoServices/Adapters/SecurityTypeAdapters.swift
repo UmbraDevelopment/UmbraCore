@@ -155,8 +155,8 @@ public enum KeyGenerationOptionsAdapter {
     guard let options else { return nil }
 
     // Convert from CoreSecurityTypes.KeyGenerationOptions to local KeyGenerationOptions
-    let optionsDict: [String: Sendable]? = ["keySize": options.keySizeInBits as Sendable]
-    
+    let optionsDict: [String: Sendable]?=["keySize": options.keySizeInBits as Sendable]
+
     return KeyGenerationOptions(
       keyType: options.keyType,
       useSecureEnclave: options.useSecureEnclave,
@@ -175,10 +175,10 @@ public enum KeyGenerationOptionsAdapter {
     _ options: KeyGenerationOptions?
   ) -> CoreSecurityTypes.KeyGenerationOptions? {
     guard let options else { return nil }
-    
+
     // Extract key size from options dictionary if available
-    let keySize = options.options?.dictionary["keySize"] as? Int ?? 256 // Default to 256 bits
-    
+    let keySize=options.options?.dictionary["keySize"] as? Int ?? 256 // Default to 256 bits
+
     // Create KeyGenerationOptions with correct parameters
     return CoreSecurityTypes.KeyGenerationOptions(
       keyType: options.keyType,

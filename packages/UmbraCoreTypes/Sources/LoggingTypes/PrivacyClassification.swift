@@ -55,20 +55,20 @@ public enum PrivacyClassification: String, Codable, Sendable, Equatable, CaseIte
         "Classification determined by context"
     }
   }
-  
+
   /// Convert to LogPrivacyLevel
   public func toLogPrivacyLevel() -> LogPrivacyLevel {
     switch self {
       case .public:
-        return .public
+        .public
       case .private:
-        return .private
+        .private
       case .sensitive:
-        return .sensitive
+        .sensitive
       case .hash:
-        return .hash
+        .hash
       case .auto:
-        return .auto
+        .auto
     }
   }
 }

@@ -1,31 +1,34 @@
 import CoreSecurityTypes
 import Foundation
 import LoggingInterfaces
-import LoggingTypes
 import LoggingServices
+import LoggingTypes
 
 /// Helper function to create LogMetadataDTOCollection from dictionary
 private func createLogMetadataCollection(_ dict: [String: String]) -> LogMetadataDTOCollection {
-  var metadataCollection = LogMetadataDTOCollection()
+  var metadataCollection=LogMetadataDTOCollection()
   for (key, value) in dict {
-    metadataCollection = metadataCollection.withPublic(key: key, value: value)
+    metadataCollection=metadataCollection.withPublic(key: key, value: value)
   }
   return metadataCollection
 }
 
 /// Helper function to convert metadata to privacy-tagged values for security events
-private func createSecurityEventMetadata(_ metadata: [String: (value: String, privacyLevel: LogPrivacyLevel)]) -> [String: PrivacyTaggedValue] {
-  var result: [String: PrivacyTaggedValue] = [:]
-  
+private func createSecurityEventMetadata(_ metadata: [String: (
+  value: String,
+  privacyLevel: LogPrivacyLevel
+)]) -> [String: PrivacyTaggedValue] {
+  var result: [String: PrivacyTaggedValue]=[:]
+
   for (key, entry) in metadata {
-    result[key] = PrivacyTaggedValue(
-      value: entry.privacyLevel == .public && Int(entry.value) != nil 
-        ? PrivacyMetadataValue.int(Int(entry.value)!) 
+    result[key]=PrivacyTaggedValue(
+      value: entry.privacyLevel == .public && Int(entry.value) != nil
+        ? PrivacyMetadataValue.int(Int(entry.value)!)
         : PrivacyMetadataValue.string(entry.value),
       privacyLevel: entry.privacyLevel
     )
   }
-  
+
   return result
 }
 
@@ -91,7 +94,7 @@ final class SecurityOperationsErrorHandler {
 
   /**
    Handles a security operation error with appropriate logging and metrics
-   
+
    - Parameters:
      - error: The error that occurred
      - operation: The security operation that was being performed
@@ -102,7 +105,7 @@ final class SecurityOperationsErrorHandler {
     _ error: Error,
     operation: SecurityOperation,
     operationID: String,
-    duration: Double
+    duration _: Double
   ) async {
     // Calculate duration before failure
     let duration=Date().timeIntervalSince(startTime) * 1000
@@ -118,7 +121,7 @@ final class SecurityOperationsErrorHandler {
 
     // Log the error with appropriate context
     await logger.error(
-      "Security operation failed: \(operation.description) - \(error.localizedDescription)", 
+      "Security operation failed: \(operation.description) - \(error.localizedDescription)",
       metadata: errorMetadata,
       source: "SecurityImplementation"
     )
@@ -134,7 +137,8 @@ final class SecurityOperationsErrorHandler {
         "operation": (value: operation.rawValue, privacyLevel: .public),
         "durationMs": (value: String(Int(duration)), privacyLevel: .public),
         "errorType": (value: String(describing: type(of: error)), privacyLevel: .public),
-        "errorDescription": (value: sanitizeErrorMessage(error.localizedDescription), privacyLevel: .sensitive)
+        "errorDescription": (value: sanitizeErrorMessage(error.localizedDescription),
+                             privacyLevel: .sensitive)
       ])
     )
 
@@ -144,7 +148,7 @@ final class SecurityOperationsErrorHandler {
 
   /**
    Creates standardised metadata for error logging
-   
+
    - Parameters:
      - error: The error that occurred
      - operation: The security operation that was being performed
@@ -158,7 +162,7 @@ final class SecurityOperationsErrorHandler {
     operationID: String,
     duration: Double
   ) -> LogMetadataDTOCollection {
-    return createLogMetadataCollection([
+    createLogMetadataCollection([
       "operationId": operationID,
       "operation": operation.rawValue,
       "durationMs": String(format: "%.2f", duration),
@@ -182,9 +186,16 @@ final class SecurityOperationsErrorHandler {
     // Create a safe error message
     let safeErrorMessage=sanitizeErrorMessage(error.localizedDescription)
 
-    return SecurityResultDTO.failure(errorDetails: "Operation failed", executionTimeMs: duration, metadata: ["errorType": String(describing: type(of: error)),
+    return SecurityResultDTO.failure(
+      errorDetails: "Operation failed",
+      executionTimeMs: duration,
+      metadata: [
+        "errorType": String(describing: type(of: error)),
         "errorMessage": safeErrorMessage,
-        "durationMs": String(format: "%.2f", duration)])
+        "durationMs": String(format: "%.2f",
+                             duration)
+      ]
+    )
   }
 
   /**
@@ -203,7 +214,7 @@ final class SecurityOperationsErrorHandler {
     sensitiveData: [String: Any]=[:]
   ) async {
     // Create standard metadata
-    let standardMetadata = createLogMetadataCollection([
+    let standardMetadata=createLogMetadataCollection([
       "operationId": operationID,
       "operation": operation.rawValue,
       "durationMs": String(format: "%.2f", duration),
@@ -213,13 +224,13 @@ final class SecurityOperationsErrorHandler {
 
     // Log the error
     await logger.error(
-      "Security error in \(operation.description): \(sanitizeErrorMessage(error.localizedDescription))", 
+      "Security error in \(operation.description): \(sanitizeErrorMessage(error.localizedDescription))",
       metadata: standardMetadata,
       source: "SecurityImplementation"
     )
 
     // Create privacy-tagged metadata for secure logger
-    var secureMetadata: [String: (value: String, privacyLevel: LogPrivacyLevel)] = [
+    var secureMetadata: [String: (value: String, privacyLevel: LogPrivacyLevel)]=[
       "errorType": (value: String(describing: type(of: error)), privacyLevel: .public),
       "operation": (value: operation.rawValue, privacyLevel: .public),
       "errorDescription": (value: error.localizedDescription, privacyLevel: .sensitive)
@@ -227,12 +238,12 @@ final class SecurityOperationsErrorHandler {
 
     // Add context with privacy tagging
     for (key, value) in context {
-      secureMetadata[key] = (value: value, privacyLevel: .public)
+      secureMetadata[key]=(value: value, privacyLevel: .public)
     }
 
     // Add sensitive data with appropriate privacy levels
     for (key, value) in sensitiveData {
-      secureMetadata[key] = (value: String(describing: value), privacyLevel: .sensitive)
+      secureMetadata[key]=(value: String(describing: value), privacyLevel: .sensitive)
     }
 
     // Log with secure logger for enhanced privacy awareness

@@ -15,28 +15,28 @@ public actor KeychainResticCredentialManager: ResticCredentialManager {
   ///   - keychain: The keychain implementation to use
   ///   - logger: Logger for credential operations
   public init(keychain: any KeychainServiceProtocol, logger: ResticLogger) {
-    self.keychain = keychain
-    self.logger = logger
+    self.keychain=keychain
+    self.logger=logger
   }
-  
+
   /**
    Creates a log context directly without actor isolation.
-   
+
    - Parameter metadata: The metadata dictionary
    - Returns: A BaseLogContextDTO
    */
   private nonisolated func createContext(_ metadata: [String: String]) -> BaseLogContextDTO {
-    var collection = LogMetadataDTOCollection()
-    
+    var collection=LogMetadataDTOCollection()
+
     for (key, value) in metadata {
       // For repository and error keys, use private metadata to enhance security
       if key == "repository" || key == "error" {
-        collection = collection.withPrivate(key: key, value: value)
+        collection=collection.withPrivate(key: key, value: value)
       } else {
-        collection = collection.withPublic(key: key, value: value)
+        collection=collection.withPublic(key: key, value: value)
       }
     }
-    
+
     return BaseLogContextDTO(
       domainName: "ResticServices",
       source: "KeychainResticCredentialManager",
@@ -50,7 +50,7 @@ public actor KeychainResticCredentialManager: ResticCredentialManager {
   /// - Returns: True if credentials exist, false otherwise
   public func hasCredentials(for repository: String) async -> Bool {
     do {
-      _ = try await getCredentials(for: repository)
+      _=try await getCredentials(for: repository)
       return true
     } catch {
       return false
@@ -64,10 +64,10 @@ public actor KeychainResticCredentialManager: ResticCredentialManager {
   public func getCredentials(
     for repository: String
   ) async throws -> ResticCredentials {
-    let context = createContext([
+    let context=createContext([
       "repository": repository
     ])
-    
+
     await logger.debug(
       "Retrieving credentials for repository",
       context: context
@@ -75,22 +75,22 @@ public actor KeychainResticCredentialManager: ResticCredentialManager {
 
     do {
       // Try to get password from the keychain
-      let password = try await keychain.retrievePassword(
+      let password=try await keychain.retrievePassword(
         for: keychainKey(for: repository),
         keychainOptions: KeychainOptions.standard
       )
 
       // Create and return credentials
-      let credentials = ResticCredentials(
+      let credentials=ResticCredentials(
         repositoryIdentifier: repository,
         password: password
       )
 
-      let successContext = createContext([
+      let successContext=createContext([
         "repository": repository,
         "hasPassword": !password.isEmpty ? "yes" : "no"
       ])
-      
+
       await logger.debug(
         "Successfully retrieved credentials",
         context: successContext
@@ -99,11 +99,11 @@ public actor KeychainResticCredentialManager: ResticCredentialManager {
       return credentials
     } catch {
       // Map keychain errors to more specific security errors
-      let errorContext = createContext([
+      let errorContext=createContext([
         "repository": repository,
         "error": error.localizedDescription
       ])
-      
+
       await logger.error(
         "Failed to retrieve credentials",
         context: errorContext
@@ -128,10 +128,10 @@ public actor KeychainResticCredentialManager: ResticCredentialManager {
       throw ResticError.invalidParameter("Cannot store empty password")
     }
 
-    let context = createContext([
+    let context=createContext([
       "repository": repository
     ])
-    
+
     await logger.debug(
       "Storing credentials for repository",
       context: context
@@ -145,20 +145,20 @@ public actor KeychainResticCredentialManager: ResticCredentialManager {
         keychainOptions: KeychainOptions.standard
       )
 
-      let successContext = createContext([
+      let successContext=createContext([
         "repository": repository
       ])
-      
+
       await logger.debug(
         "Successfully stored credentials",
         context: successContext
       )
     } catch {
-      let errorContext = createContext([
+      let errorContext=createContext([
         "repository": repository,
         "error": error.localizedDescription
       ])
-      
+
       await logger.error(
         "Failed to store credentials",
         context: errorContext
@@ -175,10 +175,10 @@ public actor KeychainResticCredentialManager: ResticCredentialManager {
   public func removeCredentials(
     for repository: String
   ) async throws {
-    let context = createContext([
+    let context=createContext([
       "repository": repository
     ])
-    
+
     await logger.debug(
       "Removing credentials for repository",
       context: context
@@ -190,10 +190,10 @@ public actor KeychainResticCredentialManager: ResticCredentialManager {
         keychainOptions: KeychainOptions.standard
       )
 
-      let successContext = createContext([
+      let successContext=createContext([
         "repository": repository
       ])
-      
+
       await logger.debug(
         "Successfully removed credentials",
         context: successContext
@@ -201,17 +201,17 @@ public actor KeychainResticCredentialManager: ResticCredentialManager {
     } catch {
       // Don't throw if the item doesn't exist - treat as success
       if
-        let nsError = error as NSError?,
+        let nsError=error as NSError?,
         nsError.domain == "com.apple.security" && nsError.code == -25300
       {
         return
       }
 
-      let errorContext = createContext([
+      let errorContext=createContext([
         "repository": repository,
         "error": error.localizedDescription
       ])
-      
+
       await logger.error(
         "Failed to remove credentials",
         context: errorContext

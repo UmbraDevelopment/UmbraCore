@@ -13,7 +13,7 @@ import LoggingTypes
  */
 public struct ResticLogContext: LogContextDTO {
   /// The domain name for this context
-  public let domainName: String = "ResticServices"
+  public let domainName: String="ResticServices"
 
   /// Correlation identifier for tracing related logs
   public let correlationID: String?
@@ -35,13 +35,13 @@ public struct ResticLogContext: LogContextDTO {
 
   /// Initialises a Restic log context
   public init(
-    metadata: LogMetadataDTOCollection = LogMetadataDTOCollection(),
-    correlationID: String? = nil,
-    source: String? = nil
+    metadata: LogMetadataDTOCollection=LogMetadataDTOCollection(),
+    correlationID: String?=nil,
+    source: String?=nil
   ) {
-    self.correlationID = correlationID
-    self.source = source
-    self.metadata = metadata
+    self.correlationID=correlationID
+    self.source=source
+    self.metadata=metadata
   }
 
   /// Gets the source of this log context
@@ -50,7 +50,7 @@ public struct ResticLogContext: LogContextDTO {
     if let source {
       return source
     }
-    if let op = operation {
+    if let op=operation {
       return "ResticService.\(op)"
     }
     return domainName
@@ -59,14 +59,14 @@ public struct ResticLogContext: LogContextDTO {
   /// Creates a metadata collection from this context
   /// - Returns: A LogMetadataDTOCollection with appropriate privacy annotations
   public func createMetadataCollection() -> LogMetadataDTOCollection {
-    var collection = metadata
+    var collection=metadata
     if let operation {
-      collection = collection.withPublic(key: "operation", value: operation)
+      collection=collection.withPublic(key: "operation", value: operation)
     }
     if let correlationID {
-      collection = collection.withPublic(key: "correlationId", value: correlationID)
+      collection=collection.withPublic(key: "correlationId", value: correlationID)
     }
-    collection = collection.withPublic(key: "domain", value: domainName)
+    collection=collection.withPublic(key: "domain", value: domainName)
     return collection
   }
 
@@ -74,8 +74,8 @@ public struct ResticLogContext: LogContextDTO {
   /// - Parameter metadata: The new metadata collection
   /// - Returns: A new log context with updated metadata
   public func withUpdatedMetadata(_ metadata: LogMetadataDTOCollection) -> ResticLogContext {
-    var newContext = self
-    newContext.metadata = metadata
+    var newContext=self
+    newContext.metadata=metadata
     return newContext
   }
 
@@ -85,8 +85,8 @@ public struct ResticLogContext: LogContextDTO {
   ///   - value: The metadata value
   /// - Returns: A new context with the added metadata
   public func withPublic(key: String, value: String) -> ResticLogContext {
-    var newContext = self
-    newContext.metadata = newContext.metadata.withPublic(key: key, value: value)
+    var newContext=self
+    newContext.metadata=newContext.metadata.withPublic(key: key, value: value)
     return newContext
   }
 
@@ -96,8 +96,8 @@ public struct ResticLogContext: LogContextDTO {
   ///   - value: The metadata value
   /// - Returns: A new context with the added metadata
   public func withPrivate(key: String, value: String) -> ResticLogContext {
-    var newContext = self
-    newContext.metadata = newContext.metadata.withPrivate(key: key, value: value)
+    var newContext=self
+    newContext.metadata=newContext.metadata.withPrivate(key: key, value: value)
     return newContext
   }
 
@@ -107,17 +107,18 @@ public struct ResticLogContext: LogContextDTO {
   ///   - value: The metadata value
   /// - Returns: A new context with the added metadata
   public func withSensitive(key: String, value: String) -> ResticLogContext {
-    var newContext = self
-    newContext.metadata = newContext.metadata.withSensitive(key: key, value: value)
+    var newContext=self
+    newContext.metadata=newContext.metadata.withSensitive(key: key, value: value)
     return newContext
   }
 
   /// Adds additional metadata to this context
   /// - Parameter additionalMetadata: The metadata to add
   /// - Returns: A new context with the added metadata
-  public func withAdditionalMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> ResticLogContext {
-    var newContext = self
-    newContext.metadata = newContext.metadata.merging(with: additionalMetadata)
+  public func withAdditionalMetadata(_ additionalMetadata: LogMetadataDTOCollection)
+  -> ResticLogContext {
+    var newContext=self
+    newContext.metadata=newContext.metadata.merging(with: additionalMetadata)
     return newContext
   }
 }

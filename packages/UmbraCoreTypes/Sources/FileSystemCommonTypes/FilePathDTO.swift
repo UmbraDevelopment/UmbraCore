@@ -1,7 +1,7 @@
 import Foundation
 
 /// A Foundation-independent representation of a file path
-/// 
+///
 /// This is the canonical path representation for the Alpha Dot Five architecture,
 /// providing a comprehensive and type-safe way to work with file paths.
 public struct FilePathDTO: Sendable, Equatable, Hashable {
@@ -35,7 +35,7 @@ public struct FilePathDTO: Sendable, Equatable, Hashable {
 
   /// The resource type
   public let resourceType: ResourceType
-  
+
   /// Whether this path represents a directory (for compatibility)
   public var isDirectory: Bool {
     resourceType == .directory
@@ -43,7 +43,7 @@ public struct FilePathDTO: Sendable, Equatable, Hashable {
 
   /// Whether the path is absolute
   public let isAbsolute: Bool
-  
+
   /// Security options for this path
   public let securityOptions: SecurityOptions?
 
@@ -62,38 +62,38 @@ public struct FilePathDTO: Sendable, Equatable, Hashable {
     fileName: String,
     directoryPath: String,
     resourceType: ResourceType = .unknown,
-    isAbsolute: Bool = true,
-    securityOptions: SecurityOptions? = nil
+    isAbsolute: Bool=true,
+    securityOptions: SecurityOptions?=nil
   ) {
-    self.path = path
-    self.fileName = fileName
-    self.directoryPath = directoryPath
-    self.resourceType = resourceType
-    self.isAbsolute = isAbsolute
-    self.securityOptions = securityOptions
+    self.path=path
+    self.fileName=fileName
+    self.directoryPath=directoryPath
+    self.resourceType=resourceType
+    self.isAbsolute=isAbsolute
+    self.securityOptions=securityOptions
   }
-  
+
   /// Creates a new file path with simplified parameters
   /// - Parameters:
   ///   - path: The string representation of the path
   ///   - isDirectory: Whether this path represents a directory
   ///   - securityOptions: Optional security options for this path
   public init(
-    path: String, 
-    isDirectory: Bool = false,
-    securityOptions: SecurityOptions? = nil
+    path: String,
+    isDirectory: Bool=false,
+    securityOptions: SecurityOptions?=nil
   ) {
-    let components = path.split(separator: "/")
-    let fileName = components.last.map(String.init) ?? ""
-    let directoryPath = components.dropLast().joined(separator: "/")
-    let fullDirectoryPath = path.hasPrefix("/") ? "/\(directoryPath)" : directoryPath
-    
-    self.path = path
-    self.fileName = fileName
-    self.directoryPath = fullDirectoryPath
-    self.resourceType = isDirectory ? .directory : .file
-    self.isAbsolute = path.hasPrefix("/")
-    self.securityOptions = securityOptions
+    let components=path.split(separator: "/")
+    let fileName=components.last.map(String.init) ?? ""
+    let directoryPath=components.dropLast().joined(separator: "/")
+    let fullDirectoryPath=path.hasPrefix("/") ? "/\(directoryPath)" : directoryPath
+
+    self.path=path
+    self.fileName=fileName
+    self.directoryPath=fullDirectoryPath
+    resourceType=isDirectory ? .directory : .file
+    isAbsolute=path.hasPrefix("/")
+    self.securityOptions=securityOptions
   }
 
   // MARK: - Factory Methods
@@ -103,10 +103,10 @@ public struct FilePathDTO: Sendable, Equatable, Hashable {
   /// - Returns: A new FilePathDTO
   public static func fromString(_ path: String) -> FilePathDTO {
     // Simple path component extraction
-    let components = path.split(separator: "/")
-    let fileName = components.last.map(String.init) ?? ""
-    let directoryPath = components.dropLast().joined(separator: "/")
-    let fullDirectoryPath = path.hasPrefix("/") ? "/\(directoryPath)" : directoryPath
+    let components=path.split(separator: "/")
+    let fileName=components.last.map(String.init) ?? ""
+    let directoryPath=components.dropLast().joined(separator: "/")
+    let fullDirectoryPath=path.hasPrefix("/") ? "/\(directoryPath)" : directoryPath
 
     return FilePathDTO(
       path: path,
@@ -120,8 +120,8 @@ public struct FilePathDTO: Sendable, Equatable, Hashable {
   /// Create a temporary file path
   /// - Parameter prefix: Optional file name prefix
   /// - Returns: A path to a temporary location
-  public static func temporary(prefix: String = "tmp") -> FilePathDTO {
-    let uniqueName = "\(prefix)_\(UUID().uuidString)"
+  public static func temporary(prefix: String="tmp") -> FilePathDTO {
+    let uniqueName="\(prefix)_\(UUID().uuidString)"
     return FilePathDTO(
       path: "/tmp/\(uniqueName)",
       fileName: uniqueName,
@@ -138,7 +138,7 @@ extension FilePathDTO {
   /// - Parameter component: Component to append
   /// - Returns: A new path with the component appended
   public func appendingComponent(_ component: String) -> FilePathDTO {
-    let newPath = "\(path)/\(component)"
+    let newPath="\(path)/\(component)"
     return FilePathDTO.fromString(newPath)
   }
 
@@ -155,7 +155,7 @@ extension FilePathDTO {
       securityOptions: securityOptions
     )
   }
-  
+
   /// Create a new path with updated security options
   /// - Parameter securityOptions: The new security options
   /// - Returns: A new path with updated security options

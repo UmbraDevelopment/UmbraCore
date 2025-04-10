@@ -126,7 +126,7 @@ public actor KeychainSecurityActor {
     keyIdentifier: String?=nil,
     additionalContext: LogMetadataDTOCollection?=nil
   ) async throws -> String {
-    let derivedKeyIdentifier = keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
+    let derivedKeyIdentifier=keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
 
     // Create proper structured logging
     await keychainLogger.logOperationStart(
@@ -223,7 +223,7 @@ public actor KeychainSecurityActor {
     keyIdentifier: String?=nil,
     additionalContext: LogMetadataDTOCollection?=nil
   ) async throws -> String {
-    let derivedKeyIdentifier = keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
+    let derivedKeyIdentifier=keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
 
     // Log the operation start
     await keychainLogger.logOperationStart(
@@ -316,7 +316,7 @@ public actor KeychainSecurityActor {
     deleteKey: Bool=true,
     additionalContext: LogMetadataDTOCollection?=nil
   ) async throws {
-    let derivedKeyIdentifier = keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
+    let derivedKeyIdentifier=keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
 
     // Log the operation start
     await keychainLogger.logOperationStart(

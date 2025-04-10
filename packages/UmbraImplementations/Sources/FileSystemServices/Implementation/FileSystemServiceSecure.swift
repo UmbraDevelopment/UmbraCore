@@ -1,6 +1,6 @@
-import Foundation
 import FileSystemInterfaces
 import FileSystemTypes
+import Foundation
 import LoggingInterfaces
 
 /**
@@ -31,13 +31,13 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
 
   /// Logger for this service
   private let logger: any LoggingProtocol
-  
+
   /// Secure file operations implementation
   public let secureOperations: SecureFileOperationsProtocol
 
   /**
    Initialises a new secure file system service.
-   
+
    - Parameters:
       - filePathService: The path service to use.
       - logger: Optional logger.
@@ -45,12 +45,12 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    */
   public init(
     filePathService: any FilePathServiceProtocol,
-    logger: (any LoggingProtocol)? = nil,
-    secureOperations: SecureFileOperationsProtocol? = nil
+    logger: (any LoggingProtocol)?=nil,
+    secureOperations: SecureFileOperationsProtocol?=nil
   ) {
-    self.filePathService = filePathService
-    self.logger = logger ?? NullLogger()
-    self.secureOperations = secureOperations ?? SecureFileOperationsImpl()
+    self.filePathService=filePathService
+    self.logger=logger ?? NullLogger()
+    self.secureOperations=secureOperations ?? SecureFileOperationsImpl()
   }
 
   // MARK: - Core File & Directory Operations
@@ -441,8 +441,8 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
       )
     }
 
-    let url = URL(fileURLWithPath: securePath.path)
-    
+    let url=URL(fileURLWithPath: securePath.path)
+
     // Start accessing the security-scoped resource
     return url.startAccessingSecurityScopedResource()
   }
@@ -461,8 +461,8 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
       return
     }
 
-    let url = URL(fileURLWithPath: securePath.path)
-    
+    let url=URL(fileURLWithPath: securePath.path)
+
     // Stop accessing the security-scoped resource
     url.stopAccessingSecurityScopedResource()
   }
@@ -476,21 +476,25 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    */
   public func createTemporaryFile(options: TemporaryFileOptions?) async throws -> FilePathDTO {
     await logDebug("Creating temporary file")
-    
+
     // Get the temporary directory
     let tempDir=FileManager.default.temporaryDirectory
-    
+
     // Generate a unique filename
     let uuid=UUID().uuidString
     let prefix=options?.prefix ?? ""
     let fileExtension=options?.fileExtension ?? ""
-    
+
     let filename="\(prefix)\(uuid)\(fileExtension.isEmpty ? "" : ".\(fileExtension)")"
     let url=tempDir.appendingPathComponent(filename)
-    
+
     // Create an empty file
-    _ = Foundation.FileManager.default.createFile(atPath: url.path, contents: nil, attributes: nil) as Bool
-    
+    _=Foundation.FileManager.default.createFile(
+      atPath: url.path,
+      contents: nil,
+      attributes: nil
+    ) as Bool
+
     return FilePathDTO(path: url.path, isDirectory: false)
   }
 
@@ -503,17 +507,17 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    */
   public func createTemporaryDirectory(options: TemporaryFileOptions?) async throws -> FilePathDTO {
     await logDebug("Creating temporary directory")
-    
+
     // Get the temporary directory
     let tempDir=FileManager.default.temporaryDirectory
-    
+
     // Generate a unique directory name
     let uuid=UUID().uuidString
     let prefix=options?.prefix ?? ""
-    
+
     let dirName="\(prefix)\(uuid)"
     let url=tempDir.appendingPathComponent(dirName)
-    
+
     do {
       try Foundation.FileManager.default.createDirectory(
         at: url,
@@ -526,7 +530,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
         reason: error.localizedDescription
       )
     }
-    
+
     return FilePathDTO(path: url.path, isDirectory: true)
   }
 
@@ -678,7 +682,11 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     try await ensureParentDirectoryExists(for: securePath)
 
     // Create an empty file
-    _ = Foundation.FileManager.default.createFile(atPath: securePath.path, contents: nil, attributes: nil) as Bool
+    _=Foundation.FileManager.default.createFile(
+      atPath: securePath.path,
+      contents: nil,
+      attributes: nil
+    ) as Bool
 
     // Write the data to the file
     do {
@@ -1253,16 +1261,16 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
   ) async throws -> Data {
     await logDebug("Creating security bookmark for \(path.path), readOnly: \(readOnly)")
 
-    guard let securePath = await filePathService.securePath(from: path) else {
+    guard let securePath=await filePathService.securePath(from: path) else {
       throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
     }
-    
-    let url = URL(fileURLWithPath: securePath.path, isDirectory: path.isDirectory)
-    
+
+    let url=URL(fileURLWithPath: securePath.path, isDirectory: path.isDirectory)
+
     do {
-      let options: URL.BookmarkCreationOptions = readOnly ?
+      let options: URL.BookmarkCreationOptions=readOnly ?
         [.securityScopeAllowOnlyReadAccess] : []
-      
+
       return try url.bookmarkData(
         options: options,
         includingResourceValuesForKeys: nil as [URLResourceKey]?,
@@ -1277,76 +1285,80 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
   }
 
   // MARK: - FileSystemServiceProtocol Conformance
-  
+
   /**
    Gets the temporary directory path appropriate for this file system service.
-   
+
    - Returns: The path to the temporary directory.
    */
   public func temporaryDirectoryPath() async -> String {
     FileManager.default.temporaryDirectory.path
   }
-  
+
   /**
    Creates a unique file name in the specified directory.
-   
+
    - Parameters:
       - directory: The directory in which to create the unique name.
       - prefix: Optional prefix for the file name.
       - extension: Optional file extension.
    - Returns: A unique file path.
    */
-  public func createUniqueFilename(in directory: String, prefix: String?, extension: String?) async -> String {
-    let prefixToUse = prefix ?? ""
-    let extensionToUse = `extension` != nil ? ".\(`extension`!)" : ""
-    let uuid = UUID().uuidString
+  public func createUniqueFilename(
+    in directory: String,
+    prefix: String?,
+    extension: String?
+  ) async -> String {
+    let prefixToUse=prefix ?? ""
+    let extensionToUse=`extension` != nil ? ".\(`extension`!)" : ""
+    let uuid=UUID().uuidString
     return "\(directory)/\(prefixToUse)\(uuid)\(extensionToUse)"
   }
-  
+
   /**
    Normalises a file path according to system rules.
-   
+
    - Parameter path: The path to normalise.
    - Returns: The normalised path.
    */
   public func normalisePath(_ path: String) async -> String {
     (path as NSString).standardizingPath
   }
-  
+
   /**
    Creates a sandboxed file system service instance that restricts
    all operations to within the specified root directory.
-   
+
    - Parameter rootDirectory: The directory to restrict operations to.
    - Returns: A sandboxed file system service.
    */
   public static func createSandboxed(rootDirectory: String) -> Self {
-    return Self(
+    Self(
       filePathService: FilePathServiceFactory.shared.createSandboxed(rootDirectory: rootDirectory),
       secureOperations: SandboxedSecureFileOperations(rootDirectory: rootDirectory)
     )
   }
-  
+
   // MARK: - FileReadOperationsProtocol Conformance
 
   /**
    Reads the contents of a file at the specified path.
-   
+
    - Parameter path: The path to the file to read.
    - Returns: The file contents as Data.
    - Throws: FileSystemError if the read operation fails.
    */
   public func readFile(at path: String) async throws -> Data {
     // Convert the path to a FilePathDTO
-    let filePath = FilePathDTO(path: path)
-    
+    let filePath=FilePathDTO(path: path)
+
     // Call the FilePathDTO version of this method
     return try await readFile(at: filePath)
   }
-  
+
   /**
    Reads the contents of a file at the specified path as a string.
-   
+
    - Parameters:
       - path: The path to the file to read.
       - encoding: The string encoding to use for reading the file.
@@ -1355,32 +1367,32 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    */
   public func readFileAsString(at path: String, encoding: String.Encoding) async throws -> String {
     // Convert the path to a FilePathDTO
-    let filePath = FilePathDTO(path: path)
-    
+    let filePath=FilePathDTO(path: path)
+
     // Read the file data
-    let data = try await readFile(at: path)
-    
+    let data=try await readFile(at: path)
+
     // Convert the data to a string
-    guard let string = String(data: data, encoding: encoding) else {
+    guard let string=String(data: data, encoding: encoding) else {
       throw FileSystemInterfaces.FileSystemError.readError(
         path: path,
         reason: "Could not convert data to string with encoding \(encoding)"
       )
     }
-    
+
     return string
   }
-  
+
   /**
    Checks if a file exists at the specified path.
-   
+
    - Parameter path: The path to check.
    - Returns: True if the file exists, false otherwise.
    */
   public func fileExists(at path: String) async -> Bool {
     // Convert the path to a FilePathDTO
-    let filePath = FilePathDTO(path: path)
-    
+    let filePath=FilePathDTO(path: path)
+
     // Call the FilePathDTO version of this method
     do {
       return try await fileExists(at: filePath)
@@ -1388,25 +1400,25 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
       return false
     }
   }
-  
+
   /**
    Lists the contents of a directory at the specified path.
-   
+
    - Parameter path: The path to the directory to list.
    - Returns: An array of file paths contained in the directory.
    - Throws: FileSystemError if the directory cannot be read.
    */
   public func listDirectory(at path: String) async throws -> [String] {
     // Convert the path to a FilePathDTO
-    let filePath = FilePathDTO(path: path)
-    
+    let filePath=FilePathDTO(path: path)
+
     // Call the core implementation that works with URLs
-    let url = URL(fileURLWithPath: path, isDirectory: true)
-    
+    let url=URL(fileURLWithPath: path, isDirectory: true)
+
     do {
-      let contents = try FileManager.default.contentsOfDirectory(atPath: path)
+      let contents=try FileManager.default.contentsOfDirectory(atPath: path)
       return contents.map { item in
-        let itemPath = path.hasSuffix("/") ? "\(path)\(item)" : "\(path)/\(item)"
+        let itemPath=path.hasSuffix("/") ? "\(path)\(item)" : "\(path)/\(item)"
         return itemPath
       }
     } catch {
@@ -1416,42 +1428,42 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
       )
     }
   }
-  
+
   /**
    Lists the contents of a directory recursively.
-   
+
    - Parameter path: The path to the directory to list.
    - Returns: An array of file paths contained in the directory and its subdirectories.
    - Throws: FileSystemError if the directory cannot be read.
    */
   public func listDirectoryRecursively(at path: String) async throws -> [String] {
     // Convert the path to a FilePathDTO
-    let filePath = FilePathDTO(path: path)
-    
+    let filePath=FilePathDTO(path: path)
+
     // Implement recursive directory listing
-    var allPaths: [String] = []
-    
+    var allPaths: [String]=[]
+
     // Get the direct contents first
-    let directContents = try await listDirectory(at: path)
+    let directContents=try await listDirectory(at: path)
     allPaths.append(contentsOf: directContents)
-    
+
     // Recursively process subdirectories
     for itemPath in directContents {
-      var isDir: ObjCBool = false
+      var isDir: ObjCBool=false
       if FileManager.default.fileExists(atPath: itemPath, isDirectory: &isDir) && isDir.boolValue {
-        let subPaths = try await listDirectoryRecursively(at: itemPath)
+        let subPaths=try await listDirectoryRecursively(at: itemPath)
         allPaths.append(contentsOf: subPaths)
       }
     }
-    
+
     return allPaths
   }
-  
+
   // MARK: - FileWriteOperationsProtocol Conformance
-  
+
   /**
    Creates a new file at the specified path.
-   
+
    - Parameters:
       - path: The path where the file should be created.
       - options: Optional creation options.
@@ -1460,15 +1472,15 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    */
   public func createFile(at path: String, options: FileCreationOptions?) async throws -> String {
     // Convert the path to a FilePathDTO
-    let filePath = FilePathDTO(path: path)
-    
+    let filePath=FilePathDTO(path: path)
+
     // Check if file exists and overwrite is not allowed
     if FileManager.default.fileExists(atPath: path) && options?.shouldOverwrite != true {
       throw FileSystemInterfaces.FileSystemError.pathAlreadyExists(path: path)
     }
-    
+
     // Create parent directories if needed
-    let directoryPath = (path as NSString).deletingLastPathComponent
+    let directoryPath=(path as NSString).deletingLastPathComponent
     if !directoryPath.isEmpty && !FileManager.default.fileExists(atPath: directoryPath) {
       try FileManager.default.createDirectory(
         atPath: directoryPath,
@@ -1476,21 +1488,27 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
         attributes: nil
       )
     }
-    
+
     // Create the file
-    if !FileManager.default.createFile(atPath: path, contents: nil, attributes: options?.attributes) {
+    if
+      !FileManager.default.createFile(
+        atPath: path,
+        contents: nil,
+        attributes: options?.attributes
+      )
+    {
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: path,
         reason: "Failed to create file"
       )
     }
-    
+
     return path
   }
-  
+
   /**
    Writes a string to a file at the specified path.
-   
+
    - Parameters:
       - string: The string content to write.
       - path: The path where the file should be written.
@@ -1498,27 +1516,35 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
       - options: Optional write options.
    - Throws: FileSystemError if the write operation fails.
    */
-  public func writeString(_ string: String, to path: String, encoding: String.Encoding, options: FileWriteOptions?) async throws {
+  public func writeString(
+    _ string: String,
+    to path: String,
+    encoding: String.Encoding,
+    options: FileWriteOptions?
+  ) async throws {
     // Convert the path to a FilePathDTO
-    let filePath = FilePathDTO(path: path)
-    
+    let filePath=FilePathDTO(path: path)
+
     // Call the FilePathDTO version of this method
     try await writeString(string, to: filePath, encoding: encoding, options: options)
   }
-  
+
   /**
    Creates a directory at the specified path.
-   
+
    - Parameters:
       - path: The path where the directory should be created.
       - options: Optional creation options.
    - Returns: The path to the created directory.
    - Throws: FileSystemError if directory creation fails.
    */
-  public func createDirectory(at path: String, options: DirectoryCreationOptions?) async throws -> String {
+  public func createDirectory(
+    at path: String,
+    options: DirectoryCreationOptions?
+  ) async throws -> String {
     // Convert the path to a FilePathDTO
-    let filePath = FilePathDTO(path: path)
-    
+    let filePath=FilePathDTO(path: path)
+
     // Implement directory creation
     do {
       try FileManager.default.createDirectory(
@@ -1534,10 +1560,10 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
       )
     }
   }
-  
+
   /**
    Deletes the item at the specified path.
-   
+
    - Parameter path: The path to the item to delete.
    - Throws: FileSystemError if the delete operation fails.
    */
@@ -1547,51 +1573,59 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
       try FileManager.default.removeItem(atPath: path)
     } catch {
       throw FileSystemInterfaces.FileSystemError.deleteError(
-        path: path, 
+        path: path,
         reason: "Failed to delete item: \(error.localizedDescription)"
       )
     }
   }
-  
+
   /**
    Moves an item from one path to another.
-   
+
    - Parameters:
       - sourcePath: The path to the item to move.
       - destinationPath: The destination path.
       - options: Optional move options.
    - Throws: FileSystemError if the move operation fails.
    */
-  public func move(from sourcePath: String, to destinationPath: String, options: FileMoveOptions?) async throws {
+  public func move(
+    from sourcePath: String,
+    to destinationPath: String,
+    options: FileMoveOptions?
+  ) async throws {
     // Convert the paths to FilePathDTO
-    let sourceFilePath = FilePathDTO(path: sourcePath)
-    let destFilePath = FilePathDTO(path: destinationPath)
-    
+    let sourceFilePath=FilePathDTO(path: sourcePath)
+    let destFilePath=FilePathDTO(path: destinationPath)
+
     // Call the FilePathDTO version of this method
     try await move(from: sourceFilePath, to: destFilePath, options: options)
   }
-  
+
   /**
    Copies an item from one path to another.
-   
+
    - Parameters:
       - sourcePath: The path to the item to copy.
       - destinationPath: The destination path.
       - options: Optional copy options.
    - Throws: FileSystemError if the copy operation fails.
    */
-  public func copy(from sourcePath: String, to destinationPath: String, options: FileCopyOptions?) async throws {
+  public func copy(
+    from sourcePath: String,
+    to destinationPath: String,
+    options: FileCopyOptions?
+  ) async throws {
     // Convert the paths to FilePathDTO
-    let sourceFilePath = FilePathDTO(path: sourcePath)
-    let destFilePath = FilePathDTO(path: destinationPath)
-    
+    let sourceFilePath=FilePathDTO(path: sourcePath)
+    let destFilePath=FilePathDTO(path: destinationPath)
+
     // Call the FilePathDTO version of this method
     try await copy(from: sourceFilePath, to: destFilePath, options: options)
   }
-  
+
   /**
    Gets the attributes of a file or directory.
-   
+
    - Parameter path: The path to the file or directory.
    - Returns: The file attributes.
    - Throws: FileSystemError if the attributes cannot be retrieved.
@@ -1599,7 +1633,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
   public func getAttributes(at path: String) async throws -> FileAttributes {
     // Get attributes directly from FileManager
     do {
-      let attributes = try FileManager.default.attributesOfItem(atPath: path)
+      let attributes=try FileManager.default.attributesOfItem(atPath: path)
       return FileAttributes(attributes)
     } catch {
       throw FileSystemInterfaces.FileSystemError.readError(
@@ -1608,10 +1642,10 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
       )
     }
   }
-  
+
   /**
    Sets attributes on a file or directory.
-   
+
    - Parameters:
       - attributes: The attributes to set.
       - path: The path to the file or directory.
@@ -1619,13 +1653,13 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    */
   public func setAttributes(_ attributes: FileAttributes, at path: String) async throws {
     // Try to convert to Foundation attributes
-    guard let foundationAttributes = attributes.foundationAttributes else {
+    guard let foundationAttributes=attributes.foundationAttributes else {
       throw FileSystemInterfaces.FileSystemError.invalidArgument(
         name: "attributes",
         value: "Could not convert to Foundation attributes"
       )
     }
-    
+
     // Set attributes directly with FileManager
     do {
       try FileManager.default.setAttributes(foundationAttributes, ofItemAtPath: path)
@@ -1636,18 +1670,18 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
       )
     }
   }
-  
+
   /**
    Gets the size of a file.
-   
+
    - Parameter path: The path to the file.
    - Returns: The file size in bytes.
    - Throws: FileSystemError if the file size cannot be retrieved.
    */
   public func getFileSize(at path: String) async throws -> UInt64 {
     do {
-      let attributes = try FileManager.default.attributesOfItem(atPath: path)
-      if let size = attributes[.size] as? UInt64 {
+      let attributes=try FileManager.default.attributesOfItem(atPath: path)
+      if let size=attributes[.size] as? UInt64 {
         return size
       } else {
         throw FileSystemInterfaces.FileSystemError.readError(
@@ -1662,18 +1696,18 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
       )
     }
   }
-  
+
   /**
    Gets the creation date of a file or directory.
-   
+
    - Parameter path: The path to the file or directory.
    - Returns: The creation date.
    - Throws: FileSystemError if the creation date cannot be retrieved.
    */
   public func getCreationDate(at path: String) async throws -> Date {
     do {
-      let attributes = try FileManager.default.attributesOfItem(atPath: path)
-      if let date = attributes[.creationDate] as? Date {
+      let attributes=try FileManager.default.attributesOfItem(atPath: path)
+      if let date=attributes[.creationDate] as? Date {
         return date
       } else {
         throw FileSystemInterfaces.FileSystemError.readError(
@@ -1688,18 +1722,18 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
       )
     }
   }
-  
+
   /**
    Gets the modification date of a file or directory.
-   
+
    - Parameter path: The path to the file or directory.
    - Returns: The modification date.
    - Throws: FileSystemError if the modification date cannot be retrieved.
    */
   public func getModificationDate(at path: String) async throws -> Date {
     do {
-      let attributes = try FileManager.default.attributesOfItem(atPath: path)
-      if let date = attributes[.modificationDate] as? Date {
+      let attributes=try FileManager.default.attributesOfItem(atPath: path)
+      if let date=attributes[.modificationDate] as? Date {
         return date
       } else {
         throw FileSystemInterfaces.FileSystemError.readError(
@@ -1714,50 +1748,53 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
       )
     }
   }
-  
+
   /**
    Gets an extended attribute from a file or directory.
-   
+
    - Parameters:
       - name: The name of the extended attribute.
       - path: The path to the file or directory.
    - Returns: The extended attribute data.
    - Throws: FileSystemError if the extended attribute cannot be retrieved.
    */
-  public func getExtendedAttribute(withName name: String, fromItemAtPath path: String) async throws -> Data {
+  public func getExtendedAttribute(
+    withName name: String,
+    fromItemAtPath path: String
+  ) async throws -> Data {
     // On macOS, use the dedicated xattr functions
     do {
       // Get the attribute size first
-      let size = try path.withCString { pathPtr in
+      let size=try path.withCString { pathPtr in
         name.withCString { namePtr in
           Darwin.getxattr(pathPtr, namePtr, nil, 0, 0, 0)
         }
       }
-      
+
       if size < 0 {
         throw FileSystemInterfaces.FileSystemError.readError(
           path: path,
           reason: "Failed to get extended attribute size"
         )
       }
-      
+
       // Now get the actual data
-      var data = Data(count: size)
-      let result = try data.withUnsafeMutableBytes { buffer in
+      var data=Data(count: size)
+      let result=try data.withUnsafeMutableBytes { buffer in
         path.withCString { pathPtr in
           name.withCString { namePtr in
             Darwin.getxattr(pathPtr, namePtr, buffer.baseAddress, size, 0, 0)
           }
         }
       }
-      
+
       if result < 0 {
         throw FileSystemInterfaces.FileSystemError.readError(
           path: path,
           reason: "Failed to get extended attribute data"
         )
       }
-      
+
       return data
     } catch {
       throw FileSystemInterfaces.FileSystemError.readError(
@@ -1766,27 +1803,31 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
       )
     }
   }
-  
+
   /**
    Sets an extended attribute on a file or directory.
-   
+
    - Parameters:
       - data: The data to set.
       - name: The name of the extended attribute.
       - path: The path to the file or directory.
    - Throws: FileSystemError if the extended attribute cannot be set.
    */
-  public func setExtendedAttribute(_ data: Data, withName name: String, onItemAtPath path: String) async throws {
+  public func setExtendedAttribute(
+    _ data: Data,
+    withName name: String,
+    onItemAtPath path: String
+  ) async throws {
     // On macOS, use the dedicated xattr functions
     do {
-      let result = try data.withUnsafeBytes { buffer in
+      let result=try data.withUnsafeBytes { buffer in
         path.withCString { pathPtr in
           name.withCString { namePtr in
             Darwin.setxattr(pathPtr, namePtr, buffer.baseAddress, buffer.count, 0, 0)
           }
         }
       }
-      
+
       if result < 0 {
         throw FileSystemInterfaces.FileSystemError.writeError(
           path: path,
@@ -1800,10 +1841,10 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
       )
     }
   }
-  
+
   /**
    Lists all extended attributes on a file or directory.
-   
+
    - Parameter path: The path to the file or directory.
    - Returns: An array of extended attribute names.
    - Throws: FileSystemError if the extended attributes cannot be listed.
@@ -1812,42 +1853,42 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
     // On macOS, use the dedicated xattr functions
     do {
       // Get the buffer size first
-      let size = try path.withCString { pathPtr in
+      let size=try path.withCString { pathPtr in
         Darwin.listxattr(pathPtr, nil, 0, 0)
       }
-      
+
       if size < 0 {
         throw FileSystemInterfaces.FileSystemError.readError(
           path: path,
           reason: "Failed to get extended attributes list size"
         )
       }
-      
+
       // Now get the actual list
-      var buffer = [CChar](repeating: 0, count: size)
-      let result = try path.withCString { pathPtr in
+      var buffer=[CChar](repeating: 0, count: size)
+      let result=try path.withCString { pathPtr in
         Darwin.listxattr(pathPtr, &buffer, size, 0)
       }
-      
+
       if result < 0 {
         throw FileSystemInterfaces.FileSystemError.readError(
           path: path,
           reason: "Failed to get extended attributes list"
         )
       }
-      
+
       // Parse the null-terminated strings
-      var attributeNames: [String] = []
-      var start = 0
+      var attributeNames: [String]=[]
+      var start=0
       for i in 0..<size {
         if buffer[i] == 0 {
-          if let name = String(cString: buffer + start, encoding: .utf8) {
+          if let name=String(cString: buffer + start, encoding: .utf8) {
             attributeNames.append(name)
           }
-          start = i + 1
+          start=i + 1
         }
       }
-      
+
       return attributeNames
     } catch {
       throw FileSystemInterfaces.FileSystemError.readError(
@@ -1856,24 +1897,27 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
       )
     }
   }
-  
+
   /**
    Removes an extended attribute from a file or directory.
-   
+
    - Parameters:
       - name: The name of the extended attribute.
       - path: The path to the file or directory.
    - Throws: FileSystemError if the extended attribute cannot be removed.
    */
-  public func removeExtendedAttribute(withName name: String, fromItemAtPath path: String) async throws {
+  public func removeExtendedAttribute(
+    withName name: String,
+    fromItemAtPath path: String
+  ) async throws {
     // On macOS, use the dedicated xattr functions
     do {
-      let result = try path.withCString { pathPtr in
+      let result=try path.withCString { pathPtr in
         name.withCString { namePtr in
           Darwin.removexattr(pathPtr, namePtr, 0)
         }
       }
-      
+
       if result < 0 {
         throw FileSystemInterfaces.FileSystemError.writeError(
           path: path,
@@ -1887,43 +1931,43 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
       )
     }
   }
-  
+
   // MARK: - Private Utility Methods
 
   /**
    Check if a path exists in the filesystem.
-   
+
    - Parameter path: The path to check
    - Returns: true if the path exists, false otherwise
    */
   private func fileExists(_ path: SecurePath) async -> Bool {
     // Use FileManager directly since the protocol method might not be available
-    return FileManager.default.fileExists(atPath: path.path)
+    FileManager.default.fileExists(atPath: path.path)
   }
-  
+
   /**
    Check if a path is a directory.
-   
+
    - Parameter path: The path to check
    - Returns: true if the path is a directory, false otherwise
    */
   private func isPathDirectory(_ path: SecurePath) async -> Bool {
-    let filePath = path.path
-    var isDir: ObjCBool = false
-    let exists = FileManager.default.fileExists(atPath: filePath, isDirectory: &isDir)
+    let filePath=path.path
+    var isDir: ObjCBool=false
+    let exists=FileManager.default.fileExists(atPath: filePath, isDirectory: &isDir)
     return exists && isDir.boolValue
   }
-  
+
   /**
    Check if a path is a file.
-   
+
    - Parameter path: The path to check
    - Returns: true if the path is a file, false otherwise
    */
   private func isPathFile(_ path: SecurePath) async -> Bool {
-    let filePath = path.path
-    var isDir: ObjCBool = false
-    let exists = FileManager.default.fileExists(atPath: filePath, isDirectory: &isDir)
+    let filePath=path.path
+    var isDir: ObjCBool=false
+    let exists=FileManager.default.fileExists(atPath: filePath, isDirectory: &isDir)
     return exists && !isDir.boolValue
   }
 
@@ -1983,21 +2027,21 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    */
   private func ensureParentDirectoryExists(for securePath: FilePathDTO) async throws {
     // Get the parent directory path
-    let pathComponents = securePath.path.split(separator: "/")
+    let pathComponents=securePath.path.split(separator: "/")
     guard pathComponents.count > 1 else {
       // No parent directory (likely at root level)
       return
     }
-    
-    let parentPath = pathComponents.dropLast().joined(separator: "/")
+
+    let parentPath=pathComponents.dropLast().joined(separator: "/")
     if parentPath.isEmpty {
       return
     }
-    
-    let parentFilePath = FilePathDTO(path: "/\(parentPath)", isDirectory: true)
-    
+
+    let parentFilePath=FilePathDTO(path: "/\(parentPath)", isDirectory: true)
+
     // Create parent directories if needed
-    let exists = await fileExists(at: parentFilePath)
+    let exists=await fileExists(at: parentFilePath)
     if !exists {
       try await createDirectory(
         at: parentFilePath,
@@ -2011,7 +2055,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
 /**
  A null logger implementation used as a default when no logger is provided.
  This avoids the need for nil checks throughout the file system services code.
- 
+
  This implementation follows the Alpha Dot Five architecture principles by:
  1. Using actor isolation for thread safety
  2. Providing a complete implementation of the required protocol
@@ -2027,12 +2071,16 @@ private actor NullLogger: PrivacyAwareLoggingProtocol {
   func log(_: LoggingInterfaces.LogLevel, _: String, context _: LoggingTypes.LogContextDTO) async {
     // Empty implementation for no-op logger
   }
-  
+
   // Implement the required privacy-aware log method
-  func log(_: LoggingInterfaces.LogLevel, _: PrivacyString, context _: LoggingTypes.LogContextDTO) async {
+  func log(
+    _: LoggingInterfaces.LogLevel,
+    _: PrivacyString,
+    context _: LoggingTypes.LogContextDTO
+  ) async {
     // Empty implementation for no-op logger
   }
-  
+
   // Implement the required log sensitive method
   func logSensitive(
     _: LoggingInterfaces.LogLevel,
@@ -2042,7 +2090,7 @@ private actor NullLogger: PrivacyAwareLoggingProtocol {
   ) async {
     // Empty implementation for no-op logger
   }
-  
+
   // Convenience methods with empty implementations
   func trace(_: String, context _: LoggingTypes.LogContextDTO) async {
     // Empty implementation
@@ -2067,35 +2115,35 @@ private actor NullLogger: PrivacyAwareLoggingProtocol {
   func critical(_: String, context _: LoggingTypes.LogContextDTO) async {
     // Empty implementation
   }
-  
+
   // Privacy-aware logging methods
   func trace(_: String, metadata _: LogMetadataDTOCollection?, source _: String) async {
     // Empty implementation
   }
-  
+
   func debug(_: String, metadata _: LogMetadataDTOCollection?, source _: String) async {
     // Empty implementation
   }
-  
+
   func info(_: String, metadata _: LogMetadataDTOCollection?, source _: String) async {
     // Empty implementation
   }
-  
+
   func warning(_: String, metadata _: LogMetadataDTOCollection?, source _: String) async {
     // Empty implementation
   }
-  
+
   func error(_: String, metadata _: LogMetadataDTOCollection?, source _: String) async {
     // Empty implementation
   }
-  
+
   func critical(_: String, metadata _: LogMetadataDTOCollection?, source _: String) async {
     // Empty implementation
   }
-  
+
   // Error logging with privacy controls
   func logError(
-    _ error: Error,
+    _: Error,
     privacyLevel _: LoggingInterfaces.LogPrivacyLevel,
     context _: LoggingTypes.LogContextDTO
   ) async {

@@ -11,18 +11,18 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
   private let logger: LoggingProtocol
 
   /// Default source when none is provided
-  private let defaultSource = "LoggingServiceAdapter"
+  private let defaultSource="LoggingServiceAdapter"
 
   /// Default minimum log level when not specified
   private var minimumLogLevel: UmbraLogLevel = .info
 
   /// Tracking for destinations since the underlying logger may not support them
-  private var destinations: [String: LogDestination] = [:]
+  private var destinations: [String: LogDestination]=[:]
 
   /// Initialise a new logging service adapter
   /// - Parameter logger: The logger to adapt
   public init(logger: LoggingProtocol) {
-    self.logger = logger
+    self.logger=logger
   }
 
   /// Log a trace message
@@ -30,11 +30,15 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
   ///   - message: The message to log
   ///   - metadata: Optional metadata with privacy annotations
   ///   - source: The source of the log message
-  public func verbose(_ message: String, metadata: LogMetadataDTOCollection?, source: String?) async {
-    let actualSource = source ?? defaultSource
+  public func verbose(
+    _ message: String,
+    metadata: LogMetadataDTOCollection?,
+    source: String?
+  ) async {
+    let actualSource=source ?? defaultSource
 
     // Create a LogContext object for context-based logging
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: "LoggingService",
       source: actualSource,
       metadata: metadata ?? LogMetadataDTOCollection()
@@ -49,10 +53,10 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
   ///   - metadata: Optional metadata with privacy annotations
   ///   - source: The source of the log message
   public func debug(_ message: String, metadata: LogMetadataDTOCollection?, source: String?) async {
-    let actualSource = source ?? defaultSource
+    let actualSource=source ?? defaultSource
 
     // Create a LogContext object for context-based logging
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: "LoggingService",
       source: actualSource,
       metadata: metadata ?? LogMetadataDTOCollection()
@@ -67,10 +71,10 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
   ///   - metadata: Optional metadata with privacy annotations
   ///   - source: The source of the log message
   public func info(_ message: String, metadata: LogMetadataDTOCollection?, source: String?) async {
-    let actualSource = source ?? defaultSource
+    let actualSource=source ?? defaultSource
 
     // Create a LogContext object for context-based logging
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: "LoggingService",
       source: actualSource,
       metadata: metadata ?? LogMetadataDTOCollection()
@@ -84,11 +88,15 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
   ///   - message: The message to log
   ///   - metadata: Optional metadata with privacy annotations
   ///   - source: The source of the log message
-  public func warning(_ message: String, metadata: LogMetadataDTOCollection?, source: String?) async {
-    let actualSource = source ?? defaultSource
+  public func warning(
+    _ message: String,
+    metadata: LogMetadataDTOCollection?,
+    source: String?
+  ) async {
+    let actualSource=source ?? defaultSource
 
     // Create a LogContext object for context-based logging
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: "LoggingService",
       source: actualSource,
       metadata: metadata ?? LogMetadataDTOCollection()
@@ -103,10 +111,10 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
   ///   - metadata: Optional metadata with privacy annotations
   ///   - source: The source of the log message
   public func error(_ message: String, metadata: LogMetadataDTOCollection?, source: String?) async {
-    let actualSource = source ?? defaultSource
+    let actualSource=source ?? defaultSource
 
     // Create a LogContext object for context-based logging
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: "LoggingService",
       source: actualSource,
       metadata: metadata ?? LogMetadataDTOCollection()
@@ -120,11 +128,15 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
   ///   - message: The message to log
   ///   - metadata: Optional metadata with privacy annotations
   ///   - source: The source of the log message
-  public func critical(_ message: String, metadata: LogMetadataDTOCollection?, source: String?) async {
-    let actualSource = source ?? defaultSource
+  public func critical(
+    _ message: String,
+    metadata: LogMetadataDTOCollection?,
+    source: String?
+  ) async {
+    let actualSource=source ?? defaultSource
 
     // Create a LogContext object for context-based logging
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: "LoggingService",
       source: actualSource,
       metadata: metadata ?? LogMetadataDTOCollection()
@@ -136,9 +148,9 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
   /// Add a log destination
   /// - Parameter destination: The destination to add
   public func addDestination(_ destination: LoggingTypes.LogDestination) async throws {
-    let id = LogIdentifier(value: UUID().uuidString).description
-    destinations[id] = destination
-    
+    let id=LogIdentifier(value: UUID().uuidString).description
+    destinations[id]=destination
+
     await info(
       "Added log destination: \(destination.identifier)",
       metadata: LogMetadataDTOCollection().withPublic(key: "id", value: id),
@@ -159,15 +171,15 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
       )
       return true
     }
-    
+
     return false
   }
 
   /// Set the minimum log level
   /// - Parameter level: The minimum log level
   public func setMinimumLogLevel(_ level: UmbraLogLevel) async {
-    minimumLogLevel = level
-    
+    minimumLogLevel=level
+
     await debug(
       "Set minimum log level to \(level)",
       metadata: nil,
@@ -178,14 +190,14 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
   /// Get the minimum log level
   /// - Returns: The minimum log level
   public func getMinimumLogLevel() async -> UmbraLogLevel {
-    return minimumLogLevel
+    minimumLogLevel
   }
 
   /// Flush all destinations
   /// - Throws: An error if flushing fails
   public func flushAllDestinations() async throws {
     for (id, destination) in destinations {
-      if let flushable = destination as? FlushableLogDestination {
+      if let flushable=destination as? FlushableLogDestination {
         do {
           try await flushable.flush()
           await debug(

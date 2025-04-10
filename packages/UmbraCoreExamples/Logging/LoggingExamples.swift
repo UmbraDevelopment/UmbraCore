@@ -126,20 +126,20 @@ public enum LoggingExamples {
     // Define a custom error with privacy classification
     struct SensitiveDataError: Error, LoggableErrorProtocol {
       let message: String
-      let source: String = "LoggingExamples.swift:SensitiveDataError"
+      let source: String="LoggingExamples.swift:SensitiveDataError"
       let username: String
       let dataID: String
-      
+
       // Store metadata directly as LogMetadataDTOCollection
       private let metadataCollection: LogMetadataDTOCollection
-      
+
       init(message: String, username: String, dataID: String) {
-        self.message = message
-        self.username = username
-        self.dataID = dataID
-        
+        self.message=message
+        self.username=username
+        self.dataID=dataID
+
         // Build privacy-aware metadata
-        self.metadataCollection = LogMetadataDTOCollection()
+        metadataCollection=LogMetadataDTOCollection()
           .withPublic(key: "operation", value: "DataFetch")
           .withPrivate(key: "username", value: username)
           .withSensitive(key: "dataID", value: dataID)
@@ -148,16 +148,16 @@ public enum LoggingExamples {
       // LoggableErrorProtocol implementation
       public func getLogMessage() -> String { message }
       public func getSource() -> String { source }
-      
+
       // New method that replaces getPrivacyMetadata
-      public func createMetadataCollection() -> LogMetadataDTOCollection { 
-        metadataCollection 
+      public func createMetadataCollection() -> LogMetadataDTOCollection {
+        metadataCollection
       }
-      
+
       // Deprecated method for backwards compatibility
       @available(*, deprecated, message: "Use createMetadataCollection() instead")
-      public func getPrivacyMetadata() -> PrivacyMetadata { 
-        metadataCollection.toPrivacyMetadata() 
+      public func getPrivacyMetadata() -> PrivacyMetadata {
+        metadataCollection.toPrivacyMetadata()
       }
     }
 

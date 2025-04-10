@@ -93,23 +93,22 @@ public struct SnapshotLoggingAdapter {
     error: Error,
     logContext: LogContextDTO
   ) async {
-    let errorDescription = error.localizedDescription
-    let message = "Operation failed: \(errorDescription)"
+    let errorDescription=error.localizedDescription
+    let message="Operation failed: \(errorDescription)"
 
     // For type safety, create a proper SnapshotLogContext if needed
-    let snapshotContext: SnapshotLogContext
-    if let context = logContext as? SnapshotLogContext {
-      snapshotContext = context
+    let snapshotContext: SnapshotLogContext=if let context=logContext as? SnapshotLogContext {
+      context
     } else {
       // Create a new context with the existing metadata
-      snapshotContext = SnapshotLogContext(
+      SnapshotLogContext(
         operation: "unknown",
         metadata: logContext.metadata
       )
     }
-    
+
     // Add error information with proper privacy annotations
-    let updatedContext = snapshotContext
+    let updatedContext=snapshotContext
       .withPublic(key: "status", value: "error")
       .withPublic(key: "errorType", value: String(describing: type(of: error)))
       .withPrivate(key: "errorMessage", value: errorDescription)
@@ -132,44 +131,44 @@ public struct SnapshotLoggingAdapter {
   public func logSnapshotOperation(
     operation: String,
     phase: String,
-    progress: Double? = nil,
-    details: [String: String]? = nil
+    progress: Double?=nil,
+    details: [String: String]?=nil
   ) async {
     // Create a context with all the information using proper privacy annotations
-    var context = SnapshotLogContext(operation: operation)
+    var context=SnapshotLogContext(operation: operation)
       .withPublic(key: "phase", value: phase)
-    
-    if let progress = progress {
-      context = context.withPublic(
-        key: "progress", 
+
+    if let progress {
+      context=context.withPublic(
+        key: "progress",
         value: String(format: "%.1f%%", progress * 100)
       )
     }
-    
+
     // Add any additional details with appropriate privacy levels
-    if let details = details {
+    if let details {
       for (key, value) in details {
         // Determine privacy level based on the key
         if key.contains("path") || key.contains("file") || key.contains("directory") {
           // Paths may contain sensitive information
-          context = context.withPrivate(key: key, value: value)
+          context=context.withPrivate(key: key, value: value)
         } else if key.contains("id") || key.contains("hash") {
           // IDs and hashes are generally public
-          context = context.withPublic(key: key, value: value)
+          context=context.withPublic(key: key, value: value)
         } else if key.contains("user") || key.contains("password") || key.contains("key") {
           // User data and credentials are sensitive
-          context = context.withSensitive(key: key, value: value)
+          context=context.withSensitive(key: key, value: value)
         } else {
           // Default to private for unknown keys
-          context = context.withPrivate(key: key, value: value)
+          context=context.withPrivate(key: key, value: value)
         }
       }
     }
-    
-    let message = progress != nil
+
+    let message=progress != nil
       ? "Snapshot operation: \(operation) - \(phase) (\(String(format: "%.1f%%", progress! * 100)))"
       : "Snapshot operation: \(operation) - \(phase)"
-    
+
     await logger.info(message, context: context)
   }
 
@@ -224,7 +223,10 @@ public struct SnapshotLoggingAdapter {
       if let stringValue=value as? String {
         metadataCollection=metadataCollection.withPrivate(key: key, value: stringValue)
       } else {
-        metadataCollection=metadataCollection.withPrivate(key: key, value: String(describing: value))
+        metadataCollection=metadataCollection.withPrivate(
+          key: key,
+          value: String(describing: value)
+        )
       }
     }
 
@@ -255,7 +257,7 @@ public struct SnapshotLoggingAdapter {
     snapshotID: String?=nil,
     repositoryID: String?=nil,
     operation: String,
-    result: [String: Any]=[:],
+    result _: [String: Any]=[:],
     additionalMetadata: [String: Any]=[:]
   ) async {
     // Create a metadata collection with all the information
@@ -276,7 +278,10 @@ public struct SnapshotLoggingAdapter {
       if let stringValue=value as? String {
         metadataCollection=metadataCollection.withPrivate(key: key, value: stringValue)
       } else {
-        metadataCollection=metadataCollection.withPrivate(key: key, value: String(describing: value))
+        metadataCollection=metadataCollection.withPrivate(
+          key: key,
+          value: String(describing: value)
+        )
       }
     }
 
@@ -324,15 +329,24 @@ public struct SnapshotLoggingAdapter {
     }
 
     // Add error information with appropriate privacy levels
-    metadataCollection=metadataCollection.withPrivate(key: "errorMessage", value: error.localizedDescription)
-    metadataCollection=metadataCollection.withPublic(key: "errorType", value: String(describing: type(of: error)))
+    metadataCollection=metadataCollection.withPrivate(
+      key: "errorMessage",
+      value: error.localizedDescription
+    )
+    metadataCollection=metadataCollection.withPublic(
+      key: "errorType",
+      value: String(describing: type(of: error))
+    )
 
     // Add any additional metadata with appropriate privacy levels
     for (key, value) in additionalMetadata {
       if let stringValue=value as? String {
         metadataCollection=metadataCollection.withPrivate(key: key, value: stringValue)
       } else {
-        metadataCollection=metadataCollection.withPrivate(key: key, value: String(describing: value))
+        metadataCollection=metadataCollection.withPrivate(
+          key: key,
+          value: String(describing: value)
+        )
       }
     }
 

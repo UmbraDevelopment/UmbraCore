@@ -155,24 +155,24 @@ public actor ProviderRegistryActor {
     factory: @escaping @Sendable () throws -> EncryptionProviderProtocol
   ) async throws {
     // Create a proper context with privacy-aware metadata
-    let context = SecurityLogContext(
+    let context=SecurityLogContext(
       operation: "registerProvider",
       source: "ProviderRegistryActor",
       metadata: LogMetadataDTOCollection().withPublic(key: "providerType", value: "\(type)")
     )
-    
+
     await logger.debug("Registering provider of type: \(type)", context: context)
 
     // Check if provider already exists
     if providerFactories[type] != nil {
-      let warningContext = SecurityLogContext(
+      let warningContext=SecurityLogContext(
         operation: "registerProvider",
         source: "ProviderRegistryActor",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "providerType", value: "\(type)")
           .withPublic(key: "action", value: "replace")
       )
-      
+
       await logger.warning(
         "Provider of type \(type) already registered, will be replaced",
         context: warningContext
@@ -180,19 +180,19 @@ public actor ProviderRegistryActor {
     }
 
     // Register the provider factory
-    providerFactories[type] = factory
+    providerFactories[type]=factory
 
     // Verify the provider can be instantiated
     do {
-      let provider = try factory()
-      let successContext = SecurityLogContext(
+      let provider=try factory()
+      let successContext=SecurityLogContext(
         operation: "verifyProvider",
         source: "ProviderRegistryActor",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "providerType", value: "\(type)")
           .withPublic(key: "providerDescription", value: provider.providerType.description)
       )
-      
+
       await logger.debug(
         "Successfully verified provider: \(type) - \(provider.providerType.description)",
         context: successContext
@@ -200,8 +200,8 @@ public actor ProviderRegistryActor {
     } catch {
       // Remove the factory if it fails verification
       providerFactories.removeValue(forKey: type)
-      
-      let errorContext = SecurityLogContext(
+
+      let errorContext=SecurityLogContext(
         operation: "verifyProvider",
         source: "ProviderRegistryActor",
         metadata: LogMetadataDTOCollection()
@@ -209,7 +209,7 @@ public actor ProviderRegistryActor {
           .withPublic(key: "errorType", value: "\(type(of: error))")
           .withPrivate(key: "errorMessage", value: error.localizedDescription)
       )
-      
+
       await logger.error(
         "Provider factory verification failed: \(error.localizedDescription)",
         context: errorContext
@@ -226,12 +226,12 @@ public actor ProviderRegistryActor {
    */
   @discardableResult
   public func unregisterProvider(type: SecurityProviderType) async -> Bool {
-    let context = SecurityLogContext(
+    let context=SecurityLogContext(
       operation: "unregisterProvider",
       source: "ProviderRegistryActor",
       metadata: LogMetadataDTOCollection().withPublic(key: "providerType", value: "\(type)")
     )
-    
+
     await logger.debug("Unregistering provider of type: \(type)", context: context)
     return providerFactories.removeValue(forKey: type) != nil
   }
@@ -260,21 +260,21 @@ public actor ProviderRegistryActor {
       do {
         let provider=try factory()
         providers.append(provider)
-        let successContext = SecurityLogContext(
+        let successContext=SecurityLogContext(
           operation: "instantiateProvider",
           source: "ProviderRegistryActor",
           metadata: LogMetadataDTOCollection()
             .withPublic(key: "providerType", value: "\(type)")
             .withPublic(key: "providerDescription", value: provider.providerType.description)
         )
-        
+
         await logger.debug(
           "Successfully instantiated provider: \(type) - \(provider.providerType.description)",
           context: successContext
         )
       } catch {
         failedTypes.append(type)
-        let errorContext = SecurityLogContext(
+        let errorContext=SecurityLogContext(
           operation: "instantiateProvider",
           source: "ProviderRegistryActor",
           metadata: LogMetadataDTOCollection()
@@ -282,7 +282,7 @@ public actor ProviderRegistryActor {
             .withPublic(key: "errorType", value: "\(type(of: error))")
             .withPrivate(key: "errorMessage", value: error.localizedDescription)
         )
-        
+
         await logger.warning(
           "Failed to instantiate provider \(type): \(error.localizedDescription)",
           context: errorContext
@@ -292,13 +292,16 @@ public actor ProviderRegistryActor {
 
     // If no providers could be instantiated, that's an error
     if providers.isEmpty && !providerFactories.isEmpty {
-      let errorContext = SecurityLogContext(
+      let errorContext=SecurityLogContext(
         operation: "listAvailableProviders",
         source: "ProviderRegistryActor",
         metadata: LogMetadataDTOCollection()
-          .withPublic(key: "failedTypes", value: failedTypes.map(\.description).joined(separator: ", "))
+          .withPublic(
+            key: "failedTypes",
+            value: failedTypes.map(\.description).joined(separator: ", ")
+          )
       )
-      
+
       await logger.error("No encryption providers could be instantiated", context: errorContext)
       throw SecurityProtocolError
         .unsupportedOperation(
@@ -322,13 +325,16 @@ public actor ProviderRegistryActor {
     capabilities: [SecurityCapability]=[]
   ) async throws -> EncryptionProviderProtocol {
     let effectiveCapabilities=capabilities.isEmpty ? [.standardEncryption] : capabilities
-    let context = SecurityLogContext(
+    let context=SecurityLogContext(
       operation: "selectProvider",
       source: "ProviderRegistryActor",
       metadata: LogMetadataDTOCollection()
-        .withPublic(key: "capabilities", value: effectiveCapabilities.map(\.rawValue).joined(separator: ", "))
+        .withPublic(
+          key: "capabilities",
+          value: effectiveCapabilities.map(\.rawValue).joined(separator: ", ")
+        )
     )
-    
+
     await logger.debug(
       "Selecting provider for capabilities: \(effectiveCapabilities.map(\.rawValue).joined(separator: ", "))",
       context: context
@@ -346,21 +352,21 @@ public actor ProviderRegistryActor {
     {
       do {
         let provider=try factory()
-        let successContext = SecurityLogContext(
+        let successContext=SecurityLogContext(
           operation: "selectPreferredProvider",
           source: "ProviderRegistryActor",
           metadata: LogMetadataDTOCollection()
             .withPublic(key: "providerType", value: "\(preferredType)")
             .withPublic(key: "providerDescription", value: provider.providerType.description)
         )
-        
+
         await logger.debug(
           "Using preferred provider: \(preferredType) - \(provider.providerType.description)",
           context: successContext
         )
         return provider
       } catch {
-        let errorContext = SecurityLogContext(
+        let errorContext=SecurityLogContext(
           operation: "selectPreferredProvider",
           source: "ProviderRegistryActor",
           metadata: LogMetadataDTOCollection()
@@ -368,7 +374,7 @@ public actor ProviderRegistryActor {
             .withPublic(key: "errorType", value: "\(type(of: error))")
             .withPrivate(key: "errorMessage", value: error.localizedDescription)
         )
-        
+
         await logger.warning(
           "Preferred provider \(preferredType) failed to instantiate: \(error.localizedDescription)",
           context: errorContext
@@ -383,14 +389,14 @@ public actor ProviderRegistryActor {
     // For now, we don't have a way to check capabilities directly,
     // so we'll use a simple ranking system based on provider type
     if let provider=providers.first {
-      let successContext = SecurityLogContext(
+      let successContext=SecurityLogContext(
         operation: "selectProvider",
         source: "ProviderRegistryActor",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "providerType", value: "\(provider.providerType)")
           .withPublic(key: "providerDescription", value: provider.providerType.description)
       )
-      
+
       await logger.debug(
         "Selected provider: \(provider.providerType.description)",
         context: successContext
@@ -400,13 +406,13 @@ public actor ProviderRegistryActor {
 
     // If fallback is allowed, try to find any working provider
     if configuration.allowFallbackProviders {
-      let fallbackContext = SecurityLogContext(
+      let fallbackContext=SecurityLogContext(
         operation: "selectProvider",
         source: "ProviderRegistryActor",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "action", value: "fallback")
       )
-      
+
       await logger.warning(
         "No provider found meeting all capabilities, attempting fallback",
         context: fallbackContext
@@ -416,28 +422,28 @@ public actor ProviderRegistryActor {
       if let (_, factory)=providerFactories.first {
         do {
           let provider=try factory()
-          let fallbackSuccessContext = SecurityLogContext(
+          let fallbackSuccessContext=SecurityLogContext(
             operation: "selectFallbackProvider",
             source: "ProviderRegistryActor",
             metadata: LogMetadataDTOCollection()
               .withPublic(key: "providerType", value: "\(provider.providerType)")
               .withPublic(key: "providerDescription", value: provider.providerType.description)
           )
-          
+
           await logger.warning(
             "Using fallback provider: \(provider.providerType.description)",
             context: fallbackSuccessContext
           )
           return provider
         } catch {
-          let fallbackErrorContext = SecurityLogContext(
+          let fallbackErrorContext=SecurityLogContext(
             operation: "selectFallbackProvider",
             source: "ProviderRegistryActor",
             metadata: LogMetadataDTOCollection()
               .withPublic(key: "errorType", value: "\(type(of: error))")
               .withPrivate(key: "errorMessage", value: error.localizedDescription)
           )
-          
+
           await logger.error(
             "Fallback provider failed to instantiate: \(error.localizedDescription)",
             context: fallbackErrorContext
@@ -447,13 +453,16 @@ public actor ProviderRegistryActor {
     }
 
     // No suitable provider found
-    let errorContext = SecurityLogContext(
+    let errorContext=SecurityLogContext(
       operation: "selectProvider",
       source: "ProviderRegistryActor",
       metadata: LogMetadataDTOCollection()
-        .withPublic(key: "capabilities", value: effectiveCapabilities.map(\.rawValue).joined(separator: ", "))
+        .withPublic(
+          key: "capabilities",
+          value: effectiveCapabilities.map(\.rawValue).joined(separator: ", ")
+        )
     )
-    
+
     await logger.error(
       "No provider meeting capabilities: \(effectiveCapabilities.map(\.rawValue).joined(separator: ", "))",
       context: errorContext
@@ -470,12 +479,12 @@ public actor ProviderRegistryActor {
    - Throws: Error if no FIPS-compliant provider is available
    */
   private func selectProviderForFipsCompliance() async throws -> EncryptionProviderProtocol {
-    let context = SecurityLogContext(
+    let context=SecurityLogContext(
       operation: "selectFipsCompliantProvider",
       source: "ProviderRegistryActor",
       metadata: LogMetadataDTOCollection()
     )
-    
+
     await logger.debug("Selecting FIPS-compliant provider", context: context)
 
     // In a real implementation, we would check which providers are FIPS certified
@@ -483,28 +492,28 @@ public actor ProviderRegistryActor {
     if let factory=providerFactories[.ring] {
       do {
         let provider=try factory()
-        let successContext = SecurityLogContext(
+        let successContext=SecurityLogContext(
           operation: "selectFipsCompliantProvider",
           source: "ProviderRegistryActor",
           metadata: LogMetadataDTOCollection()
             .withPublic(key: "providerType", value: "\(provider.providerType)")
             .withPublic(key: "providerDescription", value: provider.providerType.description)
         )
-        
+
         await logger.debug(
           "Selected FIPS-compliant provider: \(provider.providerType.description)",
           context: successContext
         )
         return provider
       } catch {
-        let errorContext = SecurityLogContext(
+        let errorContext=SecurityLogContext(
           operation: "selectFipsCompliantProvider",
           source: "ProviderRegistryActor",
           metadata: LogMetadataDTOCollection()
             .withPublic(key: "errorType", value: "\(type(of: error))")
             .withPrivate(key: "errorMessage", value: error.localizedDescription)
         )
-        
+
         await logger.warning(
           "FIPS-compliant provider .ring failed to instantiate: \(error.localizedDescription)",
           context: errorContext
@@ -517,28 +526,28 @@ public actor ProviderRegistryActor {
     if let factory=providerFactories[.apple] {
       do {
         let provider=try factory()
-        let fallbackSuccessContext = SecurityLogContext(
+        let fallbackSuccessContext=SecurityLogContext(
           operation: "selectFipsCompliantProvider",
           source: "ProviderRegistryActor",
           metadata: LogMetadataDTOCollection()
             .withPublic(key: "providerType", value: "\(provider.providerType)")
             .withPublic(key: "providerDescription", value: provider.providerType.description)
         )
-        
+
         await logger.warning(
           "Using Apple provider as fallback for FIPS compliance: \(provider.providerType.description)",
           context: fallbackSuccessContext
         )
         return provider
       } catch {
-        let fallbackErrorContext = SecurityLogContext(
+        let fallbackErrorContext=SecurityLogContext(
           operation: "selectFipsCompliantProvider",
           source: "ProviderRegistryActor",
           metadata: LogMetadataDTOCollection()
             .withPublic(key: "errorType", value: "\(type(of: error))")
             .withPrivate(key: "errorMessage", value: error.localizedDescription)
         )
-        
+
         await logger.error(
           "Apple provider FIPS fallback failed to instantiate: \(error.localizedDescription)",
           context: fallbackErrorContext
@@ -547,12 +556,12 @@ public actor ProviderRegistryActor {
     }
 
     // No FIPS-compliant provider found
-    let errorContext = SecurityLogContext(
+    let errorContext=SecurityLogContext(
       operation: "selectFipsCompliantProvider",
       source: "ProviderRegistryActor",
       metadata: LogMetadataDTOCollection()
     )
-    
+
     await logger.error(
       "No FIPS-compliant provider could be instantiated",
       context: errorContext

@@ -99,28 +99,28 @@ public struct BookmarkLogContext: LogContextDTO {
     }
     return "\(domainName).\(operation)"
   }
-  
+
   /**
    * Creates a metadata collection from this context.
    *
    * - Returns: A LogMetadataDTOCollection with appropriate privacy annotations
    */
   public func createMetadataCollection() -> LogMetadataDTOCollection {
-    var collection = metadata
-    
+    var collection=metadata
+
     // Add standard fields with appropriate privacy levels
-    collection = collection.withPublic(key: "operation", value: operation)
-    collection = collection.withPublic(key: "status", value: status)
-    collection = collection.withPublic(key: "domain", value: domainName)
-    
+    collection=collection.withPublic(key: "operation", value: operation)
+    collection=collection.withPublic(key: "status", value: status)
+    collection=collection.withPublic(key: "domain", value: domainName)
+
     if let identifier {
-      collection = collection.withPrivate(key: "identifier", value: identifier)
+      collection=collection.withPrivate(key: "identifier", value: identifier)
     }
-    
+
     if let correlationID {
-      collection = collection.withPublic(key: "correlationId", value: correlationID)
+      collection=collection.withPublic(key: "correlationId", value: correlationID)
     }
-    
+
     return collection
   }
 
@@ -130,9 +130,10 @@ public struct BookmarkLogContext: LogContextDTO {
    * - Parameter additionalMetadata: The metadata to add
    * - Returns: A new context with the additional metadata
    */
-  public func withAdditionalMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> BookmarkLogContext {
-    let combinedMetadata = metadata.merging(with: additionalMetadata)
-    
+  public func withAdditionalMetadata(_ additionalMetadata: LogMetadataDTOCollection)
+  -> BookmarkLogContext {
+    let combinedMetadata=metadata.merging(with: additionalMetadata)
+
     return BookmarkLogContext(
       operation: operation,
       identifier: identifier,
@@ -143,7 +144,7 @@ public struct BookmarkLogContext: LogContextDTO {
       metadata: combinedMetadata
     )
   }
-  
+
   /**
    * Adds a public metadata entry to the context.
    *
@@ -155,7 +156,7 @@ public struct BookmarkLogContext: LogContextDTO {
   public func withPublicMetadata(key: String, value: String) -> BookmarkLogContext {
     withUpdatedMetadata(metadata.withPublic(key: key, value: value))
   }
-  
+
   /**
    * Adds a private metadata entry to the context.
    *
@@ -167,7 +168,7 @@ public struct BookmarkLogContext: LogContextDTO {
   public func withPrivateMetadata(key: String, value: String) -> BookmarkLogContext {
     withUpdatedMetadata(metadata.withPrivate(key: key, value: value))
   }
-  
+
   /**
    * Adds a sensitive metadata entry to the context.
    *

@@ -67,11 +67,11 @@ public actor DefaultCryptoProvider: CryptoProviderProtocol {
     // Use appropriate encryption based on the options
     let algorithm=options?.algorithm ?? .aes256GCM
 
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: "CryptoProvider",
       source: "DefaultCryptoProvider.encrypt",
       metadata: LogMetadataDTOCollection().withPublic(
-        key: "algorithm", 
+        key: "algorithm",
         value: algorithm.rawValue
       )
     )
@@ -103,11 +103,11 @@ public actor DefaultCryptoProvider: CryptoProviderProtocol {
     // Use appropriate decryption based on the options
     let algorithm=options?.algorithm ?? .aes256GCM
 
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: "CryptoProvider",
       source: "DefaultCryptoProvider.decrypt",
       metadata: LogMetadataDTOCollection().withPublic(
-        key: "algorithm", 
+        key: "algorithm",
         value: algorithm.rawValue
       )
     )
@@ -134,11 +134,11 @@ public actor DefaultCryptoProvider: CryptoProviderProtocol {
     data: Data,
     algorithm: CoreSecurityTypes.HashAlgorithm
   ) async -> Result<Data, Error> {
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: "CryptoProvider",
       source: "DefaultCryptoProvider.hash",
       metadata: LogMetadataDTOCollection().withPublic(
-        key: "algorithm", 
+        key: "algorithm",
         value: algorithm.rawValue
       )
     )
@@ -165,7 +165,7 @@ public actor DefaultCryptoProvider: CryptoProviderProtocol {
     keySize: Int,
     keyType: CoreSecurityTypes.KeyType
   ) async -> Result<Data, Error> {
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: "CryptoProvider",
       source: "DefaultCryptoProvider.generateKey",
       metadata: LogMetadataDTOCollection()

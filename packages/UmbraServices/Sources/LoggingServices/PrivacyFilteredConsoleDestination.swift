@@ -108,8 +108,11 @@ public actor PrivacyFilteredConsoleDestination: ActorLogDestination {
   /// - Parameter metadata: The metadata to format
   /// - Returns: A formatted metadata string with privacy filtering applied
   private func formatPrivacyFilteredMetadata(_ metadata: LogMetadataDTOCollection) -> String {
-    let pairs = metadata.entries.map { entry in
-      let filteredValue = applyPrivacyFiltering(to: entry.value, withLevel: entry.privacyLevel.toLogPrivacyLevel())
+    let pairs=metadata.entries.map { entry in
+      let filteredValue=applyPrivacyFiltering(
+        to: entry.value,
+        withLevel: entry.privacyLevel.toLogPrivacyLevel()
+      )
       return "\(entry.key): \(filteredValue)"
     }
     return "{" + pairs.joined(separator: ", ") + "}"
@@ -176,15 +179,15 @@ extension PrivacyClassification {
   func toLogPrivacyLevel() -> LogPrivacyLevel {
     switch self {
       case .public:
-        return .public
+        .public
       case .private:
-        return .private
+        .private
       case .sensitive:
-        return .sensitive
+        .sensitive
       case .hash:
-        return .hash
+        .hash
       case .auto:
-        return .auto
+        .auto
     }
   }
 }

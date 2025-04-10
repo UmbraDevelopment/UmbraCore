@@ -97,16 +97,16 @@ public struct SnapshotComparisonDTO: Sendable, Equatable {
    */
   public func toInterfaceType() -> BackupInterfaces.BackupSnapshotComparisonResult {
     // Convert files to BackupFile objects
-    let added = (addedFiles ?? []).map { $0.toBackupFile() }
-    let removed = (removedFiles ?? []).map { $0.toBackupFile() }
-    let modified = (modifiedFiles ?? []).map { $0.toBackupFile() }
-    
+    let added=(addedFiles ?? []).map { $0.toBackupFile() }
+    let removed=(removedFiles ?? []).map { $0.toBackupFile() }
+    let modified=(modifiedFiles ?? []).map { $0.toBackupFile() }
+
     // Calculate total change size
-    let changeSize = UInt64(
+    let changeSize=UInt64(
       (addedFiles ?? []).reduce(0) { $0 + $1.size } +
-      (modifiedFiles ?? []).reduce(0) { $0 + $1.size }
+        (modifiedFiles ?? []).reduce(0) { $0 + $1.size }
     )
-    
+
     // Create the result
     return BackupInterfaces.BackupSnapshotComparisonResult(
       firstSnapshotID: snapshotID1,

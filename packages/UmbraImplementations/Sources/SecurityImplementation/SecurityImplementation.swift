@@ -1,15 +1,15 @@
 import CoreSecurityTypes
 import Foundation
-import LoggingTypes
-import LoggingServices
 import LoggingInterfaces
+import LoggingServices
+import LoggingTypes
 import SecurityCoreInterfaces
 
 /// Helper function to create LogMetadataDTOCollection from dictionary
 private func createLogMetadataCollection(_ dict: [String: String]) -> LogMetadataDTOCollection {
-  var logMetadata = LogMetadataDTOCollection()
+  var logMetadata=LogMetadataDTOCollection()
   for (key, value) in dict {
-    logMetadata = logMetadata.withPublic(key: key, value: value)
+    logMetadata=logMetadata.withPublic(key: key, value: value)
   }
   return logMetadata
 }
@@ -72,19 +72,19 @@ public enum SecurityImplementation {
   public static func createSecurityProvider(
     logger: (any LoggingProtocol)?=nil
   ) async -> SecurityProviderProtocol {
-    if let logger = logger {
+    if let logger {
       return await SecurityServiceFactory.createWithLogger(logger)
     } else {
       // Create a factory instance first
-      let factory = LoggingServiceFactory.shared
-      let logger = await factory.createPrivacyAwareLogger(
+      let factory=LoggingServiceFactory.shared
+      let logger=await factory.createPrivacyAwareLogger(
         subsystem: "com.umbra.security",
         category: "SecurityProvider"
       )
-      
+
       // Create an adapter to convert PrivacyAwareLoggingActor to LoggingProtocol
-      let loggingAdapter = PrivacyAwareLoggingAdapter(logger: logger)
-      
+      let loggingAdapter=PrivacyAwareLoggingAdapter(logger: logger)
+
       return await SecurityServiceFactory.createStandard(
         logger: loggingAdapter
       )
@@ -104,25 +104,25 @@ public enum SecurityImplementation {
    */
   public static func createCustomSecurityProvider(
     cryptoService: CryptoServiceProtocol,
-    keyManager: KeyManagementProtocol,
+    keyManager _: KeyManagementProtocol,
     logger: any LoggingProtocol
   ) async -> SecurityProviderProtocol {
     // Create a factory instance
-    let factory = LoggingServiceFactory.shared
-    
+    let factory=LoggingServiceFactory.shared
+
     // Create a secure logger with privacy-aware capabilities
-    let secureLogger = await factory.createComprehensivePrivacyAwareLogger(
+    let secureLogger=await factory.createComprehensivePrivacyAwareLogger(
       subsystem: "com.umbra.security",
       category: "SecurityProvider",
       environment: .production
     )
-    
+
     // Create default configuration
-    let configuration = SecurityConfigurationDTO(
+    let configuration=SecurityConfigurationDTO(
       securityLevel: .standard,
       loggingLevel: .info
     )
-    
+
     // Create the security service actor directly
     return SecurityServiceActor(
       cryptoService: cryptoService,
@@ -141,7 +141,7 @@ public enum SecurityImplementation {
    - Returns: A security provider configured for development use
    */
   public static func createDevelopmentSecurityProvider() async -> SecurityProviderProtocol {
-    return await SecurityServiceFactory.createForDevelopment()
+    await SecurityServiceFactory.createForDevelopment()
   }
 
   /**
@@ -153,7 +153,7 @@ public enum SecurityImplementation {
    - Returns: A security provider configured for production use
    */
   public static func createProductionSecurityProvider() async -> SecurityProviderProtocol {
-    return await SecurityServiceFactory.createForProduction()
+    await SecurityServiceFactory.createForProduction()
   }
 
   /**
@@ -164,7 +164,7 @@ public enum SecurityImplementation {
 
 /**
  Adapter to convert PrivacyAwareLoggingActor to LoggingProtocol
- 
+
  This class provides a bridge between actor-based PrivacyAwareLoggingActor
  and the protocol-based LoggingProtocol interface, enabling seamless integration
  with components that expect the LoggingProtocol interface.
@@ -173,68 +173,83 @@ public enum SecurityImplementation {
 private final class PrivacyAwareLoggingAdapter: LoggingProtocol, @unchecked Sendable {
   /// The underlying privacy-aware logger actor
   private let logger: PrivacyAwareLoggingActor
-  
+
   /// The actor used for logging operations
   public var loggingActor: LoggingActor {
     fatalError("Direct access to underlying LoggingActor is not supported")
   }
-  
+
   /// Creates a new adapter wrapping a privacy-aware logger
   /// - Parameter logger: The privacy-aware logger to wrap
   init(logger: PrivacyAwareLoggingActor) {
-    self.logger = logger
+    self.logger=logger
   }
-  
+
   /// Log a debug message
   /// - Parameters:
   ///   - message: The message to log
   ///   - metadata: Optional metadata for the log entry
   func debug(_ message: String, metadata: LogMetadataDTOCollection?) {
     Task {
-      await logger.debug(message, context: SimpleLogContext(metadata: metadata ?? LogMetadataDTOCollection()))
+      await logger.debug(
+        message,
+        context: SimpleLogContext(metadata: metadata ?? LogMetadataDTOCollection())
+      )
     }
   }
-  
+
   /// Log an info message
   /// - Parameters:
   ///   - message: The message to log
   ///   - metadata: Optional metadata for the log entry
   func info(_ message: String, metadata: LogMetadataDTOCollection?) {
     Task {
-      await logger.info(message, context: SimpleLogContext(metadata: metadata ?? LogMetadataDTOCollection()))
+      await logger.info(
+        message,
+        context: SimpleLogContext(metadata: metadata ?? LogMetadataDTOCollection())
+      )
     }
   }
-  
+
   /// Log a warning message
   /// - Parameters:
   ///   - message: The message to log
   ///   - metadata: Optional metadata for the log entry
   func warning(_ message: String, metadata: LogMetadataDTOCollection?) {
     Task {
-      await logger.warning(message, context: SimpleLogContext(metadata: metadata ?? LogMetadataDTOCollection()))
+      await logger.warning(
+        message,
+        context: SimpleLogContext(metadata: metadata ?? LogMetadataDTOCollection())
+      )
     }
   }
-  
+
   /// Log an error message
   /// - Parameters:
   ///   - message: The message to log
   ///   - metadata: Optional metadata for the log entry
   func error(_ message: String, metadata: LogMetadataDTOCollection?) {
     Task {
-      await logger.error(message, context: SimpleLogContext(metadata: metadata ?? LogMetadataDTOCollection()))
+      await logger.error(
+        message,
+        context: SimpleLogContext(metadata: metadata ?? LogMetadataDTOCollection())
+      )
     }
   }
-  
+
   /// Log a critical message
   /// - Parameters:
   ///   - message: The message to log
   ///   - metadata: Optional metadata for the log entry
   func critical(_ message: String, metadata: LogMetadataDTOCollection?) {
     Task {
-      await logger.critical(message, context: SimpleLogContext(metadata: metadata ?? LogMetadataDTOCollection()))
+      await logger.critical(
+        message,
+        context: SimpleLogContext(metadata: metadata ?? LogMetadataDTOCollection())
+      )
     }
   }
-  
+
   /// Log a message with the specified level
   /// - Parameters:
   ///   - level: The log level
@@ -242,46 +257,46 @@ private final class PrivacyAwareLoggingAdapter: LoggingProtocol, @unchecked Send
   ///   - context: The log context
   func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
     switch level {
-    case .debug:
-      await logger.debug(message, context: context)
-    case .info:
-      await logger.info(message, context: context)
-    case .warning:
-      await logger.warning(message, context: context)
-    case .error:
-      await logger.error(message, context: context)
-    case .critical:
-      await logger.critical(message, context: context)
+      case .debug:
+        await logger.debug(message, context: context)
+      case .info:
+        await logger.info(message, context: context)
+      case .warning:
+        await logger.warning(message, context: context)
+      case .error:
+        await logger.error(message, context: context)
+      case .critical:
+        await logger.critical(message, context: context)
     }
   }
 }
 
 /**
  Simple implementation of LogContextDTO for basic logging needs.
- 
+
  This struct provides a minimal implementation of the LogContextDTO protocol
  that can be used for simple logging without needing to create specialised
  context types.
  */
 private struct SimpleLogContext: LogContextDTO {
   /// The domain name for this context
-  let domainName: String = "SecurityImplementation"
-  
+  let domainName: String="SecurityImplementation"
+
   /// Optional source information
-  let source: String? = nil
-  
+  let source: String?=nil
+
   /// Optional correlation ID for tracing related log events
-  let correlationID: String? = UUID().uuidString
-  
+  let correlationID: String?=UUID().uuidString
+
   /// The metadata collection for this context
   let metadata: LogMetadataDTOCollection
-  
+
   /**
    Creates a new simple log context with the given metadata.
-   
+
    - Parameter metadata: The metadata for the log context
    */
   init(metadata: LogMetadataDTOCollection) {
-    self.metadata = metadata
+    self.metadata=metadata
   }
 }

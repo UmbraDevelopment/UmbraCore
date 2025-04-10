@@ -242,7 +242,7 @@ extension FileSystemServiceImpl {
     }
 
     // Check if the path is a directory
-    var isDir: ObjCBool = false
+    var isDir: ObjCBool=false
     fileManager.fileExists(atPath: path.path, isDirectory: &isDir)
 
     if !isDir.boolValue {

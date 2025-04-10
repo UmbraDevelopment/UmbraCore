@@ -39,50 +39,44 @@ public enum SecurityProviderFactory {
     logger: LoggingInterfaces.LoggingProtocol?=nil
   ) async -> SecurityProviderProtocol {
     // Create standard crypto service
-    let cryptoService: any CryptoServiceProtocol = await CryptoServiceFactory.shared
+    let cryptoService: any CryptoServiceProtocol=await CryptoServiceFactory.shared
       .createDefault(logger: logger)
-    
+
     // Create the key manager with appropriate logger
-    let keyManager = KeyManagementFactory.createKeyManager(
+    let keyManager=KeyManagementFactory.createKeyManager(
       logger: logger as? LoggingServiceProtocol
     )
 
     // Use the provided logger or create a default one with debug level logging
     let actualLogger: LoggingInterfaces.LoggingProtocol
     if let logger {
-      actualLogger = logger
+      actualLogger=logger
     } else {
       // Create a development logger with appropriate settings
-      let factory = LoggingServiceFactory.shared
-      let developmentLogger = await factory.createDevelopmentLogger(
+      let factory=LoggingServiceFactory.shared
+      let developmentLogger=await factory.createDevelopmentLogger(
         minimumLevel: .debug,
         formatter: nil
       )
       // Convert the LoggingServiceActor to LoggingProtocol using a wrapper
-      actualLogger = await SecurityLoggingUtilities.createLoggingWrapper(logger: developmentLogger)
+      actualLogger=await SecurityLoggingUtilities.createLoggingWrapper(logger: developmentLogger)
     }
-    
+
     // Create secure logger for privacy-aware logging
-    let secureLogger = await SecurityLoggingUtilities.createSecureLogger(
+    let secureLogger=await SecurityLoggingUtilities.createSecureLogger(
       subsystem: "com.umbra.security",
       category: "SecurityService"
     )
 
-    // Create the security service actor
-    let securityService = SecurityServiceActor(
-      cryptoService: cryptoService,
+    // Create security service with standard configuration
+    return await SecurityServiceFactory.createWithLoggers(
       logger: actualLogger,
       secureLogger: secureLogger,
-      configuration: CoreSecurityTypes.SecurityConfigurationDTO(
-        securityLevel: CoreSecurityTypes.SecurityLevelDTO.standard,
-        loggingLevel: CoreSecurityTypes.SecurityLogLevelDTO.info
+      configuration: SecurityInterfaces.SecurityConfigurationDTO(
+        securityLevel: .standard,
+        loggingLevel: .info
       )
     )
-
-    // Initialize the service
-    try? await securityService.initialize()
-
-    return securityService
   }
 
   /**
@@ -102,53 +96,47 @@ public enum SecurityProviderFactory {
     logger: LoggingInterfaces.LoggingProtocol?=nil
   ) async -> SecurityProviderProtocol {
     // Create high-security crypto service
-    let cryptoService: any CryptoServiceProtocol = await CryptoServiceFactory
+    let cryptoService: any CryptoServiceProtocol=await CryptoServiceFactory
       .createHighSecurityCryptoService(
         keySize: 256,
         hashAlgorithm: .sha256,
         saltSize: 16,
-        iterations: 100000
+        iterations: 100_000
       )
-    let keyManager = KeyManagementFactory.createKeyManager(
+    let keyManager=KeyManagementFactory.createKeyManager(
       logger: logger as? LoggingServiceProtocol
     )
 
     // Use the provided logger or create a default one with debug level logging
     let actualLogger: LoggingInterfaces.LoggingProtocol
     if let logger {
-      actualLogger = logger
+      actualLogger=logger
     } else {
       // Create a development logger with appropriate settings
-      let factory = LoggingServiceFactory.shared
-      let developmentLogger = await factory.createDevelopmentLogger(
+      let factory=LoggingServiceFactory.shared
+      let developmentLogger=await factory.createDevelopmentLogger(
         minimumLevel: .debug,
         formatter: nil
       )
       // Convert the LoggingServiceActor to LoggingProtocol using a wrapper
-      actualLogger = await SecurityLoggingUtilities.createLoggingWrapper(logger: developmentLogger)
+      actualLogger=await SecurityLoggingUtilities.createLoggingWrapper(logger: developmentLogger)
     }
-    
+
     // Create secure logger for privacy-aware logging
-    let secureLogger = await SecurityLoggingUtilities.createSecureLogger(
+    let secureLogger=await SecurityLoggingUtilities.createSecureLogger(
       subsystem: "com.umbra.security",
       category: "SecurityService"
     )
 
-    // Create the security service actor
-    let securityService = SecurityServiceActor(
-      cryptoService: cryptoService,
+    // Create security service with high security configuration
+    return await SecurityServiceFactory.createWithLoggers(
       logger: actualLogger,
       secureLogger: secureLogger,
-      configuration: CoreSecurityTypes.SecurityConfigurationDTO(
-        securityLevel: CoreSecurityTypes.SecurityLevelDTO.high,
-        loggingLevel: CoreSecurityTypes.SecurityLogLevelDTO.info
+      configuration: SecurityInterfaces.SecurityConfigurationDTO(
+        securityLevel: .high,
+        loggingLevel: .info
       )
     )
-
-    // Initialize the service
-    try? await securityService.initialize()
-
-    return securityService
   }
 
   /**
@@ -169,55 +157,49 @@ public enum SecurityProviderFactory {
     logger: LoggingInterfaces.LoggingProtocol?=nil
   ) async -> SecurityProviderProtocol {
     // Create max-security crypto service
-    let cryptoService: any CryptoServiceProtocol = await CryptoServiceFactory
+    let cryptoService: any CryptoServiceProtocol=await CryptoServiceFactory
       .createMaxSecurityCryptoService(
         keySize: 512,
         hashAlgorithm: .sha512,
         saltSize: 32,
-        iterations: 200000,
+        iterations: 200_000,
         memorySize: 1024 * 1024 * 1024,
         parallelism: 4
       )
-    let keyManager = KeyManagementFactory.createKeyManager(
+    let keyManager=KeyManagementFactory.createKeyManager(
       logger: logger as? LoggingServiceProtocol
     )
 
     // Use the provided logger or create a default one with debug level logging
     let actualLogger: LoggingInterfaces.LoggingProtocol
     if let logger {
-      actualLogger = logger
+      actualLogger=logger
     } else {
       // Create a development logger with appropriate settings
-      let factory = LoggingServiceFactory.shared
-      let developmentLogger = await factory.createDevelopmentLogger(
+      let factory=LoggingServiceFactory.shared
+      let developmentLogger=await factory.createDevelopmentLogger(
         minimumLevel: .debug,
         formatter: nil
       )
       // Convert the LoggingServiceActor to LoggingProtocol using a wrapper
-      actualLogger = await SecurityLoggingUtilities.createLoggingWrapper(logger: developmentLogger)
+      actualLogger=await SecurityLoggingUtilities.createLoggingWrapper(logger: developmentLogger)
     }
-    
+
     // Create secure logger for privacy-aware logging
-    let secureLogger = await SecurityLoggingUtilities.createSecureLogger(
+    let secureLogger=await SecurityLoggingUtilities.createSecureLogger(
       subsystem: "com.umbra.security",
       category: "SecurityService"
     )
 
-    // Create the security service actor
-    let securityService = SecurityServiceActor(
-      cryptoService: cryptoService,
+    // Create security service with max security configuration
+    return await SecurityServiceFactory.createWithLoggers(
       logger: actualLogger,
       secureLogger: secureLogger,
-      configuration: CoreSecurityTypes.SecurityConfigurationDTO(
-        securityLevel: CoreSecurityTypes.SecurityLevelDTO.maximum,
-        loggingLevel: CoreSecurityTypes.SecurityLogLevelDTO.warning
+      configuration: SecurityInterfaces.SecurityConfigurationDTO(
+        securityLevel: .maximum,
+        loggingLevel: .warning
       )
     )
-
-    // Initialize the service
-    try? await securityService.initialize()
-
-    return securityService
   }
 }
 

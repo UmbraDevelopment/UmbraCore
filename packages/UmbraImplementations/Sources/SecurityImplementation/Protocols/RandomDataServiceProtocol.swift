@@ -1,6 +1,6 @@
+import CoreSecurityTypes
 import Foundation
 import LoggingTypes
-import CoreSecurityTypes
 
 /// Protocol for secure random data generation services.
 ///
@@ -38,10 +38,10 @@ public protocol RandomDataServiceProtocol: Sendable {
 public enum EntropySource: String, Sendable, CaseIterable {
   /// System-provided entropy (e.g., /dev/urandom)
   case system
-  
+
   /// Hardware-based entropy (e.g., secure enclave, TPM)
   case hardware
-  
+
   /// Hybrid approach combining multiple entropy sources
   case hybrid
 }
@@ -50,18 +50,19 @@ public enum EntropySource: String, Sendable, CaseIterable {
 public enum EntropyQuality: String, Sendable, CaseIterable, Comparable {
   /// Low entropy quality (suitable for non-critical applications)
   case low
-  
+
   /// Medium entropy quality (suitable for most applications)
   case medium
-  
+
   /// High entropy quality (suitable for security-critical applications)
   case high
-  
+
   /// Compares two entropy quality levels
   public static func < (lhs: EntropyQuality, rhs: EntropyQuality) -> Bool {
-    let qualities: [EntropyQuality] = [.low, .medium, .high]
-    guard let lhsIndex = qualities.firstIndex(of: lhs),
-          let rhsIndex = qualities.firstIndex(of: rhs)
+    let qualities: [EntropyQuality]=[.low, .medium, .high]
+    guard
+      let lhsIndex=qualities.firstIndex(of: lhs),
+      let rhsIndex=qualities.firstIndex(of: rhs)
     else {
       return false
     }

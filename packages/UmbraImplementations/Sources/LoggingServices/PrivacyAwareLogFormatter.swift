@@ -184,7 +184,10 @@ public final class PrivacyAwareLogFormatter: LogFormatterProtocol {
 
     // Add metadata if enabled and available
     if includeMetadata {
-      if let metadata=entry.metadata, let metadataStr=formatMetadata(metadata), !metadataStr.isEmpty {
+      if
+        let metadata=entry.metadata, let metadataStr=formatMetadata(metadata),
+        !metadataStr.isEmpty
+      {
         components.append(metadataStr)
       }
     }
@@ -205,7 +208,7 @@ public final class PrivacyAwareLogFormatter: LogFormatterProtocol {
    ```
    */
   public func formatMetadata(_ metadata: LoggingTypes.LogMetadataDTOCollection?) -> String? {
-    return formatMetadataCollection(metadata)
+    formatMetadataCollection(metadata)
   }
 
   /**
@@ -221,7 +224,7 @@ public final class PrivacyAwareLogFormatter: LogFormatterProtocol {
    ```
    */
   public func formatMetadataCollection(_ metadata: LogMetadataDTOCollection?) -> String? {
-    guard let metadata=metadata, !metadata.entries.isEmpty else {
+    guard let metadata, !metadata.entries.isEmpty else {
       return nil
     }
 
@@ -240,22 +243,30 @@ public final class PrivacyAwareLogFormatter: LogFormatterProtocol {
    */
   public func formatTimestamp(_ timestamp: LoggingTypes.TimePointAdapter) -> String {
     // Extract components directly from the timeIntervalSince1970
-    let seconds = Int(timestamp.timeIntervalSince1970)
-    let milliseconds = Int((timestamp.timeIntervalSince1970 - Double(seconds)) * 1000)
-    
+    let seconds=Int(timestamp.timeIntervalSince1970)
+    let milliseconds=Int((timestamp.timeIntervalSince1970 - Double(seconds)) * 1000)
+
     // Format date components manually
-    let year = seconds / 31536000 + 1970
-    let month = (seconds % 31536000) / 2592000 + 1
-    let day = ((seconds % 31536000) % 2592000) / 86400 + 1
-    
+    let year=seconds / 31_536_000 + 1970
+    let month=(seconds % 31_536_000) / 2_592_000 + 1
+    let day=((seconds % 31_536_000) % 2_592_000) / 86400 + 1
+
     // Format time components
-    let hour = (seconds % 86400) / 3600
-    let minute = (seconds % 3600) / 60
-    let second = seconds % 60
-    
+    let hour=(seconds % 86400) / 3600
+    let minute=(seconds % 3600) / 60
+    let second=seconds % 60
+
     // Create formatted timestamp string
-    return String(format: "%04d-%02d-%02d %02d:%02d:%02d.%03d", 
-                 year, month, day, hour, minute, second, milliseconds)
+    return String(
+      format: "%04d-%02d-%02d %02d:%02d:%02d.%03d",
+      year,
+      month,
+      day,
+      hour,
+      minute,
+      second,
+      milliseconds
+    )
   }
 
   /**
@@ -335,9 +346,10 @@ public final class PrivacyAwareLogFormatter: LogFormatterProtocol {
   /// Create a TimePointAdapter from a LogTimestamp
   /// - Parameter timestamp: The LogTimestamp to convert
   /// - Returns: A TimePointAdapter
-  private func createTimePointAdapter(from timestamp: LogTimestamp) -> LoggingTypes.TimePointAdapter {
+  private func createTimePointAdapter(from timestamp: LogTimestamp) -> LoggingTypes
+  .TimePointAdapter {
     // Extract the timestamp value from the LogTimestamp
-    let timeInterval = timestamp.secondsSinceEpoch
+    let timeInterval=timestamp.secondsSinceEpoch
 
     return LoggingTypes.TimePointAdapter(timeIntervalSince1970: timeInterval)
   }

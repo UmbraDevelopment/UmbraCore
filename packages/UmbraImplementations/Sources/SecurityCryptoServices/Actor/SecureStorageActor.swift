@@ -51,7 +51,7 @@ public actor SecureStorageActor: SecureStorageProtocol {
   private let logger: LoggingProtocol
 
   /// In-memory cache of recently used keys (identifier -> key)
-  private var keyCache: [String: [UInt8]] = [:]
+  private var keyCache: [String: [UInt8]]=[:]
 
   /// Storage location for encrypted keys
   private let storageURL: URL
@@ -70,22 +70,22 @@ public actor SecureStorageActor: SecureStorageProtocol {
   public init(
     cryptoService: CryptoServiceActor,
     logger: LoggingProtocol,
-    secureLogger: SecureLoggerActor? = nil,
-    storageLocation: URL? = nil
+    secureLogger: SecureLoggerActor?=nil,
+    storageLocation: URL?=nil
   ) {
-    self.cryptoService = cryptoService
-    self.logger = logger
-    self.secureLogger = secureLogger ?? SecureLoggerActor(
+    self.cryptoService=cryptoService
+    self.logger=logger
+    self.secureLogger=secureLogger ?? SecureLoggerActor(
       subsystem: "com.umbra.securitycryptoservices",
       category: "SecureStorage"
     )
-    self.providerType = .platform // Default provider type
+    providerType = .platform // Default provider type
 
     if let storageLocation {
-      storageURL = storageLocation
+      storageURL=storageLocation
     } else {
-      let fileManager = FileManager.default
-      let defaultURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+      let fileManager=FileManager.default
+      let defaultURL=fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         .appendingPathComponent("com.umbra.keys", isDirectory: true)
 
       // Create directory if it doesn't exist
@@ -93,7 +93,7 @@ public actor SecureStorageActor: SecureStorageProtocol {
         try? fileManager.createDirectory(at: defaultURL, withIntermediateDirectories: true)
       }
 
-      storageURL = defaultURL
+      storageURL=defaultURL
     }
   }
 
@@ -109,27 +109,27 @@ public actor SecureStorageActor: SecureStorageProtocol {
   public init(
     providerType: SecurityProviderType,
     logger: LoggingProtocol,
-    secureLogger: SecureLoggerActor? = nil,
-    storageLocation: URL? = nil
+    secureLogger: SecureLoggerActor?=nil,
+    storageLocation: URL?=nil
   ) async {
-    self.providerType = providerType
-    self.logger = logger
-    self.secureLogger = secureLogger ?? SecureLoggerActor(
+    self.providerType=providerType
+    self.logger=logger
+    self.secureLogger=secureLogger ?? SecureLoggerActor(
       subsystem: "com.umbra.securitycryptoservices",
       category: "SecureStorage"
     )
 
     // Create the crypto service with the specified provider type
-    cryptoService = await CryptoServiceFactory.createWithProvider(
+    cryptoService=await CryptoServiceFactory.createWithProvider(
       providerType: providerType,
       logger: logger
     )
 
     if let storageLocation {
-      storageURL = storageLocation
+      storageURL=storageLocation
     } else {
-      let fileManager = FileManager.default
-      let defaultURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+      let fileManager=FileManager.default
+      let defaultURL=fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         .appendingPathComponent("com.umbra.keys", isDirectory: true)
 
       // Create directory if it doesn't exist
@@ -137,7 +137,7 @@ public actor SecureStorageActor: SecureStorageProtocol {
         try? fileManager.createDirectory(at: defaultURL, withIntermediateDirectories: true)
       }
 
-      storageURL = defaultURL
+      storageURL=defaultURL
     }
 
     await secureLogger
@@ -162,10 +162,10 @@ public actor SecureStorageActor: SecureStorageProtocol {
   public func storeKey(
     _ key: [UInt8],
     withIdentifier identifier: String,
-    overwrite: Bool = false
+    overwrite: Bool=false
   ) async throws {
     // Check if key exists and we're not overwriting
-    let keyURL = storageURL.appendingPathComponent("\(identifier).key")
+    let keyURL=storageURL.appendingPathComponent("\(identifier).key")
     if FileManager.default.fileExists(atPath: keyURL.path) && !overwrite {
       await secureLogger.warning(
         "Key with identifier '\(identifier)' already exists and overwrite is false",
@@ -176,18 +176,18 @@ public actor SecureStorageActor: SecureStorageProtocol {
 
     do {
       // Generate or retrieve master key for wrapping
-      let masterKey = try await getMasterKey()
+      let masterKey=try await getMasterKey()
 
       // Use memory protection to handle the sensitive key data
       try await MemoryProtection.withSecureTemporaryData(key) { secureKey in
         // Encrypt the key
-        let encryptedKey = try await self.cryptoService.encrypt(data: secureKey, using: masterKey)
+        let encryptedKey=try await self.cryptoService.encrypt(data: secureKey, using: masterKey)
 
         // Write to storage
         try Data(encryptedKey).write(to: keyURL)
 
         // Update cache - create a copy to store in cache
-        self.keyCache[identifier] = [UInt8](secureKey)
+        self.keyCache[identifier]=[UInt8](secureKey)
       }
 
       await secureLogger.info(
@@ -197,7 +197,7 @@ public actor SecureStorageActor: SecureStorageProtocol {
     } catch {
       await secureLogger.error("Failed to store key: \(error.localizedDescription)", metadata: nil)
 
-      if let secError = error as? SecurityProtocolError {
+      if let secError=error as? SecurityProtocolError {
         throw secError
       } else {
         throw SecurityProtocolError
@@ -218,13 +218,13 @@ public actor SecureStorageActor: SecureStorageProtocol {
    */
   public func retrieveKey(withIdentifier identifier: String) async throws -> [UInt8] {
     // Check cache first
-    if let cachedKey = keyCache[identifier] {
+    if let cachedKey=keyCache[identifier] {
       // Return a copy of the cached key through secure memory handling
       return MemoryProtection.secureDataCopy(cachedKey)
     }
 
     // Construct key URL
-    let keyURL = storageURL.appendingPathComponent("\(identifier).key")
+    let keyURL=storageURL.appendingPathComponent("\(identifier).key")
 
     // Check if key exists
     guard FileManager.default.fileExists(atPath: keyURL.path) else {
@@ -234,17 +234,17 @@ public actor SecureStorageActor: SecureStorageProtocol {
 
     do {
       // Read encrypted key from storage
-      let encryptedData = try Data(contentsOf: keyURL)
-      let encryptedKey = [UInt8](encryptedData)
+      let encryptedData=try Data(contentsOf: keyURL)
+      let encryptedKey=[UInt8](encryptedData)
 
       // Retrieve master key for unwrapping
-      let masterKey = try await getMasterKey()
+      let masterKey=try await getMasterKey()
 
       // Decrypt the key with memory protection
-      let key = try await cryptoService.decrypt(data: encryptedKey, using: masterKey)
+      let key=try await cryptoService.decrypt(data: encryptedKey, using: masterKey)
 
       // Update cache with a secured copy
-      keyCache[identifier] = MemoryProtection.secureDataCopy(key)
+      keyCache[identifier]=MemoryProtection.secureDataCopy(key)
 
       await secureLogger.info(
         "Successfully retrieved key with identifier: \(identifier)",
@@ -257,7 +257,7 @@ public actor SecureStorageActor: SecureStorageProtocol {
         metadata: nil
       )
 
-      if let secError = error as? SecurityProtocolError {
+      if let secError=error as? SecurityProtocolError {
         throw secError
       } else {
         throw SecurityProtocolError
@@ -274,7 +274,7 @@ public actor SecureStorageActor: SecureStorageProtocol {
    */
   public func deleteKey(withIdentifier identifier: String) async -> Bool {
     // Construct key URL
-    let keyURL = storageURL.appendingPathComponent("\(identifier).key")
+    let keyURL=storageURL.appendingPathComponent("\(identifier).key")
 
     // Check if key exists
     guard FileManager.default.fileExists(atPath: keyURL.path) else {
@@ -290,7 +290,7 @@ public actor SecureStorageActor: SecureStorageProtocol {
       try FileManager.default.removeItem(at: keyURL)
 
       // Securely remove from cache if it exists
-      if let _ = keyCache[identifier] {
+      if let _=keyCache[identifier] {
         // Use memory protection to zero the memory before removing
         MemoryProtection.securelyZeroData(&keyCache[identifier]!)
         keyCache.removeValue(forKey: identifier)
@@ -325,33 +325,33 @@ public actor SecureStorageActor: SecureStorageProtocol {
    */
   public func rotateKey(
     withIdentifier identifier: String,
-    bitLength: Int = 256,
-    dataToReencrypt: [[UInt8]]? = nil
+    bitLength: Int=256,
+    dataToReencrypt: [[UInt8]]?=nil
   ) async throws -> [[UInt8]]? {
     // Retrieve the old key first
-    let oldKey = try await retrieveKey(withIdentifier: identifier)
+    let oldKey=try await retrieveKey(withIdentifier: identifier)
 
     // Generate a new key
-    let newKey = try await cryptoService.generateKey(bitLength: bitLength)
+    let newKey=try await cryptoService.generateKey(bitLength: bitLength)
 
     // Use memory protection for the key rotation process
     return try await MemoryProtection.withSecureTemporaryBatch([oldKey, newKey]) { protectedKeys in
-      let protectedOldKey = protectedKeys[0]
-      let protectedNewKey = protectedKeys[1]
+      let protectedOldKey=protectedKeys[0]
+      let protectedNewKey=protectedKeys[1]
 
       // Store the new key with the same identifier (overwriting the old one)
       try await self.storeKey(protectedNewKey, withIdentifier: identifier, overwrite: true)
 
       // If there are data items to re-encrypt, do that
-      if let dataItems = dataToReencrypt {
+      if let dataItems=dataToReencrypt {
         // Decrypt with old key
-        let decryptedItems = try await self.cryptoService.decryptBatch(
+        let decryptedItems=try await self.cryptoService.decryptBatch(
           dataItems: dataItems,
           using: protectedOldKey
         )
 
         // Use memory protection for handling the decrypted sensitive data
-        let reencryptedItems = try await MemoryProtection
+        let reencryptedItems=try await MemoryProtection
           .withSecureTemporaryBatch(decryptedItems) { protectedItems in
             // Re-encrypt with new key
             try await self.cryptoService.encryptBatch(
@@ -384,7 +384,7 @@ public actor SecureStorageActor: SecureStorageProtocol {
    - Returns: Success or an error
    */
   public func storeData(_ data: [UInt8], withIdentifier identifier: String) async
-    -> Result<Void, SecurityStorageError> {
+  -> Result<Void, SecurityStorageError> {
     do {
       try await storeKey(data, withIdentifier: identifier, overwrite: true)
       return .success(())
@@ -404,9 +404,9 @@ public actor SecureStorageActor: SecureStorageProtocol {
    - Returns: The retrieved data as a byte array or an error
    */
   public func retrieveData(withIdentifier identifier: String) async
-    -> Result<[UInt8], SecurityStorageError> {
+  -> Result<[UInt8], SecurityStorageError> {
     do {
-      let data = try await retrieveKey(withIdentifier: identifier)
+      let data=try await retrieveKey(withIdentifier: identifier)
       return .success(data)
     } catch {
       await secureLogger.error(
@@ -424,11 +424,11 @@ public actor SecureStorageActor: SecureStorageProtocol {
    - Returns: Success or an error
    */
   public func deleteData(withIdentifier identifier: String) async
-    -> Result<Void, SecurityStorageError> {
+  -> Result<Void, SecurityStorageError> {
     if await deleteKey(withIdentifier: identifier) {
-      return .success(())
+      .success(())
     } else {
-      return .failure(.dataNotFound)
+      .failure(.dataNotFound)
     }
   }
 
@@ -439,13 +439,16 @@ public actor SecureStorageActor: SecureStorageProtocol {
    */
   public func listDataIdentifiers() async -> Result<[String], SecurityStorageError> {
     do {
-      let fileManager = FileManager.default
-      let contents = try fileManager.contentsOfDirectory(at: storageURL, includingPropertiesForKeys: nil)
-      
-      let identifiers = contents
+      let fileManager=FileManager.default
+      let contents=try fileManager.contentsOfDirectory(
+        at: storageURL,
+        includingPropertiesForKeys: nil
+      )
+
+      let identifiers=contents
         .filter { $0.pathExtension == "key" }
         .map { $0.deletingPathExtension().lastPathComponent }
-      
+
       return .success(identifiers)
     } catch {
       await secureLogger.error(
@@ -458,30 +461,30 @@ public actor SecureStorageActor: SecureStorageProtocol {
 
   /**
    Retrieves the master encryption key or generates a new one if it doesn't exist.
-   
+
    - Returns: The master key as a byte array
    - Throws: SecurityProtocolError if key retrieval fails
    */
   private func getMasterKey() async throws -> [UInt8] {
-    let masterKeyIdentifier = "umbra.master.key"
-    let masterKeyURL = storageURL.appendingPathComponent("\(masterKeyIdentifier).key")
+    let masterKeyIdentifier="umbra.master.key"
+    let masterKeyURL=storageURL.appendingPathComponent("\(masterKeyIdentifier).key")
 
     // If master key doesn't exist, generate it
     if !FileManager.default.fileExists(atPath: masterKeyURL.path) {
       await secureLogger.info("Master key not found, generating new master key", metadata: nil)
-      
+
       // Generate a new master key
-      let newMasterKey = try await cryptoService.generateRandomBytes(count: 32)
-      
+      let newMasterKey=try await cryptoService.generateRandomBytes(count: 32)
+
       // Store the master key directly (not encrypted since it's the root key)
       try Data(newMasterKey).write(to: masterKeyURL)
-      
+
       return newMasterKey
     }
-    
+
     // Read the existing master key
     do {
-      let masterKeyData = try Data(contentsOf: masterKeyURL)
+      let masterKeyData=try Data(contentsOf: masterKeyURL)
       return [UInt8](masterKeyData)
     } catch {
       await secureLogger.error(

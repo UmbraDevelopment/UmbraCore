@@ -19,7 +19,7 @@ import UmbraErrors
 
  The loggers created by this factory implement comprehensive privacy controls
  for sensitive information, following the Alpha Dot Five architecture principles:
- 
+
  - Public information is logged normally
  - Private information is redacted in production builds
  - Sensitive information is always redacted
@@ -55,7 +55,7 @@ public enum ErrorLoggerFactory {
   public static func createDefault() async -> ErrorLoggingInterfaces
   .ErrorLoggingProtocol {
     // Get the default logging service
-    let loggingService = await LoggingServiceFactory.shared.createService(
+    let loggingService=await LoggingServiceFactory.shared.createService(
       minimumLevel: .info
     )
 
@@ -76,10 +76,10 @@ public enum ErrorLoggerFactory {
    */
   public static func createErrorLogger(
     configuration: ErrorLoggerConfiguration,
-    loggerIdentifier: String = "ErrorLogger"
+    loggerIdentifier _: String="ErrorLogger"
   ) async -> ErrorLoggingInterfaces.ErrorLoggingProtocol {
     // Get a logging service with appropriate level
-    let loggingService = await LoggingServiceFactory.shared.createService(
+    let loggingService=await LoggingServiceFactory.shared.createService(
       minimumLevel: configuration.minimumLevel.toUmbraLogLevel()
     )
 
@@ -102,10 +102,10 @@ public enum ErrorLoggerFactory {
   public static func createOSLogErrorLogger(
     subsystem: String,
     category: String,
-    configuration: ErrorLoggerConfiguration? = nil
+    configuration: ErrorLoggerConfiguration?=nil
   ) async -> ErrorLoggingInterfaces.ErrorLoggingProtocol {
     // Create an OSLog-based logger
-    let osLogger = await LoggingServiceFactory.shared.createOSLogger(
+    let osLogger=await LoggingServiceFactory.shared.createOSLogger(
       subsystem: subsystem,
       category: category,
       minimumLevel: configuration?.minimumLevel.toUmbraLogLevel() ?? .info
@@ -129,13 +129,13 @@ public enum ErrorLoggerFactory {
    */
   public static func createDebugErrorLogger() async -> ErrorLoggingInterfaces.ErrorLoggingProtocol {
     // Use the debug configuration
-    let configuration = ErrorLoggerConfiguration.debugConfiguration()
-    
+    let configuration=ErrorLoggerConfiguration.debugConfiguration()
+
     // Create a logger with debug settings
-    let loggingService = await LoggingServiceFactory.shared.createService(
+    let loggingService=await LoggingServiceFactory.shared.createService(
       minimumLevel: .debug
     )
-    
+
     // Return the configured logger
     return ErrorLoggerActor(logger: loggingService, configuration: configuration)
   }
@@ -148,15 +148,16 @@ public enum ErrorLoggerFactory {
 
    - Returns: A production-configured error logger
    */
-  public static func createProductionErrorLogger() async -> ErrorLoggingInterfaces.ErrorLoggingProtocol {
+  public static func createProductionErrorLogger() async -> ErrorLoggingInterfaces
+  .ErrorLoggingProtocol {
     // Use the production configuration
-    let configuration = ErrorLoggerConfiguration.productionConfiguration()
-    
+    let configuration=ErrorLoggerConfiguration.productionConfiguration()
+
     // Create a logger with production settings
-    let loggingService = await LoggingServiceFactory.shared.createService(
+    let loggingService=await LoggingServiceFactory.shared.createService(
       minimumLevel: configuration.minimumLevel.toUmbraLogLevel()
     )
-    
+
     // Return the configured logger
     return ErrorLoggerActor(logger: loggingService, configuration: configuration)
   }
@@ -169,15 +170,16 @@ public enum ErrorLoggerFactory {
 
    - Returns: A test-configured error logger
    */
-  public static func createTestingErrorLogger() async -> ErrorLoggingInterfaces.ErrorLoggingProtocol {
+  public static func createTestingErrorLogger() async -> ErrorLoggingInterfaces
+  .ErrorLoggingProtocol {
     // Use the testing configuration
-    let configuration = ErrorLoggerConfiguration.testingConfiguration()
-    
+    let configuration=ErrorLoggerConfiguration.testingConfiguration()
+
     // Create a logger with test settings
-    let loggingService = await LoggingServiceFactory.shared.createService(
+    let loggingService=await LoggingServiceFactory.shared.createService(
       minimumLevel: configuration.minimumLevel.toUmbraLogLevel()
     )
-    
+
     // Return the configured logger
     return ErrorLoggerActor(logger: loggingService, configuration: configuration)
   }
@@ -197,20 +199,20 @@ public enum ErrorLoggerFactory {
   public static func createDomainErrorLogger(
     domain: String,
     minimumLevel: ErrorLoggingLevel = .info,
-    configuration: ErrorLoggerConfiguration? = nil
+    configuration: ErrorLoggerConfiguration?=nil
   ) async -> ErrorLoggingInterfaces.ErrorLoggingProtocol {
     // Create a configuration that filters by domain
-    let config = configuration ?? ErrorLoggerConfiguration(
+    let config=configuration ?? ErrorLoggerConfiguration(
       minimumLevel: minimumLevel,
       includeSourceInfo: true
     )
-    
+
     // Create the base logger
-    let errorLogger = await createErrorLogger(configuration: config)
-    
+    let errorLogger=await createErrorLogger(configuration: config)
+
     // Set domain-specific filter
     await errorLogger.setLogLevel(minimumLevel, forDomain: domain)
-    
+
     return errorLogger
   }
 }
@@ -221,21 +223,21 @@ public enum ErrorLoggerFactory {
 extension ErrorLoggingLevel {
   /**
    Convert an ErrorLoggingLevel to the corresponding LogLevel.
-   
+
    - Returns: The equivalent LogLevel for this error logging level
    */
   public func toUmbraLogLevel() -> LogLevel {
     switch self {
       case .debug:
-        return .debug
+        .debug
       case .info:
-        return .info
+        .info
       case .warning:
-        return .warning
+        .warning
       case .error:
-        return .error
+        .error
       case .critical:
-        return .critical
+        .critical
     }
   }
 }

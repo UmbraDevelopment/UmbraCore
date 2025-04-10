@@ -9,16 +9,16 @@ import os
  A simple logger implementation that uses the Apple OSLog system.
  This implementation follows the Alpha Dot Five architecture's privacy-by-design
  principles, ensuring sensitive information is properly redacted in logs.
- 
+
  ## Privacy Controls
- 
+
  This logger implements comprehensive privacy controls for sensitive information:
  - Public information is logged normally
  - Private information is redacted in production builds
  - Sensitive information is always redacted
- 
+
  ## Thread Safety
- 
+
  As an actor, this implementation guarantees thread safety when used from multiple
  concurrent contexts, preventing data races in logging operations.
  */
@@ -90,7 +90,7 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
   // Modern methods using LogMetadataDTOCollection
   /**
    Log a debug message with metadata collection.
-   
+
    - Parameters:
      - message: The message to log
      - metadata: Privacy-aware metadata collection
@@ -101,7 +101,7 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
     metadata: LogMetadataDTOCollection?,
     source: String?
   ) async {
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: "KeychainServices",
       source: source,
       metadataCollection: metadata
@@ -111,7 +111,7 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
 
   /**
    Log an info message with metadata collection.
-   
+
    - Parameters:
      - message: The message to log
      - metadata: Privacy-aware metadata collection
@@ -122,7 +122,7 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
     metadata: LogMetadataDTOCollection?,
     source: String?
   ) async {
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: "KeychainServices",
       source: source,
       metadataCollection: metadata
@@ -132,7 +132,7 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
 
   /**
    Log a warning message with metadata collection.
-   
+
    - Parameters:
      - message: The message to log
      - metadata: Privacy-aware metadata collection
@@ -143,7 +143,7 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
     metadata: LogMetadataDTOCollection?,
     source: String?
   ) async {
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: "KeychainServices",
       source: source,
       metadataCollection: metadata
@@ -153,7 +153,7 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
 
   /**
    Log an error message with metadata collection.
-   
+
    - Parameters:
      - message: The message to log
      - metadata: Privacy-aware metadata collection
@@ -164,7 +164,7 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
     metadata: LogMetadataDTOCollection?,
     source: String?
   ) async {
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: "KeychainServices",
       source: source,
       metadataCollection: metadata
@@ -174,7 +174,7 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
 
   /**
    Log a critical error message with metadata collection.
-   
+
    - Parameters:
      - message: The message to log
      - metadata: Privacy-aware metadata collection
@@ -185,7 +185,7 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
     metadata: LogMetadataDTOCollection?,
     source: String?
   ) async {
-    let context = BaseLogContextDTO(
+    let context=BaseLogContextDTO(
       domainName: "KeychainServices",
       source: source,
       metadataCollection: metadata
@@ -196,13 +196,17 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
   // Legacy methods for backward compatibility
   /**
    Log a debug message (deprecated method).
-   
+
    - Parameters:
      - message: The message to log
      - metadata: Legacy privacy metadata
      - source: The source of the log message
    */
-  @available(*, deprecated, message: "Use debug(_:metadata:source:) with LogMetadataDTOCollection instead")
+  @available(
+    *,
+    deprecated,
+    message: "Use debug(_:metadata:source:) with LogMetadataDTOCollection instead"
+  )
   public func debug(
     _ message: String,
     metadata _: LoggingTypes.PrivacyMetadata?,
@@ -217,13 +221,17 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
 
   /**
    Log an info message (deprecated method).
-   
+
    - Parameters:
      - message: The message to log
      - metadata: Legacy privacy metadata
      - source: The source of the log message
    */
-  @available(*, deprecated, message: "Use info(_:metadata:source:) with LogMetadataDTOCollection instead")
+  @available(
+    *,
+    deprecated,
+    message: "Use info(_:metadata:source:) with LogMetadataDTOCollection instead"
+  )
   public func info(
     _ message: String,
     metadata _: LoggingTypes.PrivacyMetadata?,
@@ -238,13 +246,17 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
 
   /**
    Log a warning message (deprecated method).
-   
+
    - Parameters:
      - message: The message to log
      - metadata: Legacy privacy metadata
      - source: The source of the log message
    */
-  @available(*, deprecated, message: "Use warning(_:metadata:source:) with LogMetadataDTOCollection instead")
+  @available(
+    *,
+    deprecated,
+    message: "Use warning(_:metadata:source:) with LogMetadataDTOCollection instead"
+  )
   public func warning(
     _ message: String,
     metadata _: LoggingTypes.PrivacyMetadata?,
@@ -259,13 +271,17 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
 
   /**
    Log an error message (deprecated method).
-   
+
    - Parameters:
      - message: The message to log
      - metadata: Legacy privacy metadata
      - source: The source of the log message
    */
-  @available(*, deprecated, message: "Use error(_:metadata:source:) with LogMetadataDTOCollection instead")
+  @available(
+    *,
+    deprecated,
+    message: "Use error(_:metadata:source:) with LogMetadataDTOCollection instead"
+  )
   public func error(
     _ message: String,
     metadata _: LoggingTypes.PrivacyMetadata?,
@@ -280,13 +296,17 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
 
   /**
    Log a critical error message (deprecated method).
-   
+
    - Parameters:
      - message: The message to log
      - metadata: Legacy privacy metadata
      - source: The source of the log message
    */
-  @available(*, deprecated, message: "Use critical(_:metadata:source:) with LogMetadataDTOCollection instead")
+  @available(
+    *,
+    deprecated,
+    message: "Use critical(_:metadata:source:) with LogMetadataDTOCollection instead"
+  )
   public func critical(
     _ message: String,
     metadata _: LoggingTypes.PrivacyMetadata?,
@@ -308,22 +328,27 @@ private struct BaseLogContextDTO: LogContextDTO {
   let source: String?
   let correlationID: String?
   let metadataCollection: LogMetadataDTOCollection?
-  
-  init(domainName: String, source: String? = nil, correlationID: String? = nil, metadataCollection: LogMetadataDTOCollection? = nil) {
-    self.domainName = domainName
-    self.source = source
-    self.correlationID = correlationID
-    self.metadataCollection = metadataCollection
+
+  init(
+    domainName: String,
+    source: String?=nil,
+    correlationID: String?=nil,
+    metadataCollection: LogMetadataDTOCollection?=nil
+  ) {
+    self.domainName=domainName
+    self.source=source
+    self.correlationID=correlationID
+    self.metadataCollection=metadataCollection
   }
-  
+
   func getSource() -> String {
     source ?? "DefaultLogger"
   }
-  
+
   func getDomain() -> String {
     domainName
   }
-  
+
   var metadata: LogMetadataDTOCollection {
     metadataCollection ?? LogMetadataDTOCollection()
   }

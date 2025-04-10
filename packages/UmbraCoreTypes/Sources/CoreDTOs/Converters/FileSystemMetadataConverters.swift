@@ -1,5 +1,5 @@
-import Foundation
 import FileSystemCommonTypes
+import Foundation
 
 /// Extension for converting between Foundation types and FileSystemMetadataDTO
 // Import the FileSystem module to access FileSystemMetadataDTO

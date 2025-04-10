@@ -3,9 +3,9 @@ import Foundation
 
 /// Helper function to create LogMetadataDTOCollection from dictionary
 private func createMetadataCollection(_ dict: [String: String]) -> LogMetadataDTOCollection {
-  var collection = LogMetadataDTOCollection()
+  var collection=LogMetadataDTOCollection()
   for (key, value) in dict {
-    collection = collection.withPublic(key: key, value: value)
+    collection=collection.withPublic(key: key, value: value)
   }
   return collection
 }
@@ -200,14 +200,14 @@ extension SecurityProviderService {
 
 extension CoreSecurityError {
   static func invalidVerificationMethod(reason: String) -> CoreSecurityError {
-    return .invalidInput("Invalid verification method: \(reason)")
+    .invalidInput("Invalid verification method: \(reason)")
   }
-  
+
   static func verificationFailed(reason: String) -> CoreSecurityError {
-    return .authenticationFailed("Verification failed: \(reason)")
+    .authenticationFailed("Verification failed: \(reason)")
   }
-  
+
   static func notImplemented(reason: String) -> CoreSecurityError {
-    return .unsupportedOperation("Not implemented: \(reason)")
+    .unsupportedOperation("Not implemented: \(reason)")
   }
 }

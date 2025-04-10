@@ -38,22 +38,22 @@ public actor BackupServiceFactory {
   public func createDefault(
     logger: any LoggingProtocol,
     repositoryPath: String,
-    repositoryPassword: String? = nil,
-    useCache: Bool = true
+    repositoryPassword: String?=nil,
+    useCache: Bool=true
   ) async throws -> BackupServiceProtocol {
     // Create a default Restic service
-    let resticService = try await ResticServiceFactory.shared.createDefault(
+    let resticService=try await ResticServiceFactory.shared.createDefault(
       logger: logger,
       repositoryPath: repositoryPath,
       repositoryPassword: repositoryPassword
     )
-    
+
     // Create repository info
-    let repositoryInfo = RepositoryInfo(
+    let repositoryInfo=RepositoryInfo(
       location: repositoryPath,
       password: repositoryPassword
     )
-    
+
     // Create the backup service
     return await createService(
       resticService: resticService,

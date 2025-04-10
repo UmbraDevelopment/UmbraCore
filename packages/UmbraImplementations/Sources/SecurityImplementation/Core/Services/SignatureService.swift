@@ -1,15 +1,15 @@
 import CoreSecurityTypes
 import DomainSecurityTypes
 import Foundation
-import LoggingTypes
 import LoggingInterfaces
+import LoggingTypes
 import SecurityCoreInterfaces
 
 /// Helper function to create LogMetadataDTOCollection from dictionary
 private func createMetadataCollection(_ dict: [String: String]) -> LogMetadataDTOCollection {
-  var collection = LogMetadataDTOCollection()
+  var collection=LogMetadataDTOCollection()
   for (key, value) in dict {
-    collection = collection.withPublic(key: key, value: value)
+    collection=collection.withPublic(key: key, value: value)
   }
   return collection
 }
@@ -61,9 +61,9 @@ final class SignatureService: SecurityServiceBase {
     keyManagementService: KeyManagementProtocol,
     logger: LoggingProtocol
   ) {
-    self.cryptoService = cryptoService
-    self.keyManagementService = keyManagementService
-    self.logger = logger
+    self.cryptoService=cryptoService
+    self.keyManagementService=keyManagementService
+    self.logger=logger
   }
 
   /**
@@ -74,7 +74,7 @@ final class SignatureService: SecurityServiceBase {
 
    - Parameter logger: The logging service to use
    */
-  override init(logger: LoggingProtocol) {
+  override init(logger _: LoggingProtocol) {
     fatalError(
       "This initializer is not supported. Use init(cryptoService:keyManagementService:logger:) instead."
     )
@@ -89,21 +89,26 @@ final class SignatureService: SecurityServiceBase {
    - Returns: Result containing the signature or error information
    */
   func sign(config: SecurityConfigDTO) async -> SecurityResultDTO {
-    let operationID = UUID().uuidString
-    let startTime = Date()
-    let operation = SecurityOperation.sign
+    let operationID=UUID().uuidString
+    let startTime=Date()
+    let operation=SecurityOperation.sign
 
     // Create metadata for logging
-    let logMetadataCollection = LogMetadataDTOCollection()
+    let logMetadataCollection=LogMetadataDTOCollection()
       .withPublic(key: "operationId", value: operationID)
       .withPublic(key: "operation", value: operation.rawValue)
       .withPublic(key: "algorithm", value: config.algorithm)
 
-    await logger.info("Starting signing operation", metadata: logMetadataCollection, source: "SecurityImplementation", source: "SecurityImplementation")
+    await logger.info(
+      "Starting signing operation",
+      metadata: logMetadataCollection,
+      source: "SecurityImplementation",
+      source: "SecurityImplementation"
+    )
 
     do {
       // Extract required parameters from configuration
-      guard let inputData = SendableCryptoMaterial.fromBase64(config.options["data"] ?? "") else {
+      guard let inputData=SendableCryptoMaterial.fromBase64(config.options["data"] ?? "") else {
         throw SignatureError.invalidInput("Missing input data for signing")
       }
 
@@ -112,29 +117,29 @@ final class SignatureService: SecurityServiceBase {
         let signature: SendableCryptoMaterial
 
         // If keyID is provided, retrieve the key from key management
-        if let keyID = config.options["keyId"] {
+        if let keyID=config.options["keyId"] {
           // Retrieve the key from the key management service
-          let keyResult = await keyManagementService.secureStorage
+          let keyResult=await keyManagementService.secureStorage
             .retrieveMaterial(withIdentifier: keyID)
 
           switch keyResult {
-          case let .success(keyMaterial):
-            // Use the retrieved key to sign the data
-            signature = try await performSignature(
-              data: inputData,
-              key: keyMaterial,
-              algorithm: config.algorithm
-            )
+            case let .success(keyMaterial):
+              // Use the retrieved key to sign the data
+              signature=try await performSignature(
+                data: inputData,
+                key: keyMaterial,
+                algorithm: config.algorithm
+              )
 
-          case let .failure(error):
-            throw SignatureError
-              .keyManagementError("Failed to retrieve key with ID: \(keyID), error: \(error)")
+            case let .failure(error):
+              throw SignatureError
+                .keyManagementError("Failed to retrieve key with ID: \(keyID), error: \(error)")
           }
         }
         // If direct key is provided, use it
-        else if let key = SendableCryptoMaterial.fromBase64(config.options["key"] ?? "") {
+        else if let key=SendableCryptoMaterial.fromBase64(config.options["key"] ?? "") {
           // Use encrypt as a substitute for signature generation
-          signature = try await performSignature(
+          signature=try await performSignature(
             data: inputData,
             key: key,
             algorithm: config.algorithm
@@ -146,16 +151,17 @@ final class SignatureService: SecurityServiceBase {
         }
 
         // Calculate duration for performance metrics
-        let duration = Date().timeIntervalSince(startTime)
+        let duration=Date().timeIntervalSince(startTime)
 
         // Create success metadata for logging
-        let successMetadataCollection = LogMetadataDTOCollection()
+        let successMetadataCollection=LogMetadataDTOCollection()
           .withPublic(key: "duration", value: String(format: "%.3f s", duration))
           .withPublic(key: "signatureSize", value: String(signature.count))
 
         await logger.info(
-          "Signing operation completed successfully", metadata: successMetadataCollection
-        , source: "SecurityImplementation", source: "SecurityImplementation")
+          "Signing operation completed successfully", metadata: successMetadataCollection,
+          source: "SecurityImplementation", source: "SecurityImplementation"
+        )
 
         // Return successful result with signature
         return SecurityResultDTO(
@@ -169,15 +175,18 @@ final class SignatureService: SecurityServiceBase {
         )
       } catch {
         // Calculate duration before failure
-        let duration = Date().timeIntervalSince(startTime)
+        let duration=Date().timeIntervalSince(startTime)
 
         // Create failure metadata for logging
-        let errorMetadataCollection = LogMetadataDTOCollection()
+        let errorMetadataCollection=LogMetadataDTOCollection()
           .withPrivate(key: "error", value: error.localizedDescription)
           .withPublic(key: "duration", value: String(format: "%.3f s", duration))
 
-        await logger.error("Signing operation failed: \(error.localizedDescription)", metadata: errorMetadataCollection
-        , source: "SecurityImplementation")
+        await logger.error(
+          "Signing operation failed: \(error.localizedDescription)",
+          metadata: errorMetadataCollection,
+          source: "SecurityImplementation"
+        )
 
         // Return failure result
         return SecurityResultDTO(
@@ -191,15 +200,18 @@ final class SignatureService: SecurityServiceBase {
       }
     } catch {
       // Calculate duration before failure
-      let duration = Date().timeIntervalSince(startTime)
+      let duration=Date().timeIntervalSince(startTime)
 
       // Create failure metadata for logging
-      let errorMetadataCollection = LogMetadataDTOCollection()
+      let errorMetadataCollection=LogMetadataDTOCollection()
         .withPrivate(key: "error", value: error.localizedDescription)
         .withPublic(key: "duration", value: String(format: "%.3f s", duration))
 
-      await logger.error("Signing operation failed: \(error.localizedDescription)", metadata: errorMetadataCollection
-      , source: "SecurityImplementation")
+      await logger.error(
+        "Signing operation failed: \(error.localizedDescription)",
+        metadata: errorMetadataCollection,
+        source: "SecurityImplementation"
+      )
 
       // Return failure result
       return SecurityResultDTO(
@@ -220,33 +232,38 @@ final class SignatureService: SecurityServiceBase {
    - Returns: Result containing verification status or error information
    */
   func verify(config: SecurityConfigDTO) async -> SecurityResultDTO {
-    let operationID = UUID().uuidString
-    let startTime = Date()
-    let operation = SecurityOperation.verify
+    let operationID=UUID().uuidString
+    let startTime=Date()
+    let operation=SecurityOperation.verify
 
     // Create metadata for logging
-    let logMetadataCollection = LogMetadataDTOCollection()
+    let logMetadataCollection=LogMetadataDTOCollection()
       .withPublic(key: "operationId", value: operationID)
       .withPublic(key: "operation", value: operation.rawValue)
       .withPublic(key: "algorithm", value: config.algorithm)
 
-    await logger.info("Starting signature verification operation", metadata: logMetadataCollection, source: "SecurityImplementation", source: "SecurityImplementation")
+    await logger.info(
+      "Starting signature verification operation",
+      metadata: logMetadataCollection,
+      source: "SecurityImplementation",
+      source: "SecurityImplementation"
+    )
 
     do {
       // Extract required parameters from configuration
-      guard let inputData = SendableCryptoMaterial.fromBase64(config.options["data"] ?? "") else {
+      guard let inputData=SendableCryptoMaterial.fromBase64(config.options["data"] ?? "") else {
         throw SignatureError.invalidInput("Missing input data for verification")
       }
 
-      guard let signature = SendableCryptoMaterial.fromBase64(config.options["signature"] ?? "")
+      guard let signature=SendableCryptoMaterial.fromBase64(config.options["signature"] ?? "")
       else {
         throw SignatureError.invalidInput("Missing signature to verify")
       }
 
       // Check if key is provided directly in the options
-      if let key = SendableCryptoMaterial.fromBase64(config.options["key"] ?? "") {
+      if let key=SendableCryptoMaterial.fromBase64(config.options["key"] ?? "") {
         // Try to verify the signature using the provided key
-        let isValid = try await performVerification(
+        let isValid=try await performVerification(
           data: inputData,
           signature: signature,
           key: key,
@@ -254,21 +271,25 @@ final class SignatureService: SecurityServiceBase {
         )
 
         // Calculate duration for performance metrics
-        let duration = Date().timeIntervalSince(startTime)
+        let duration=Date().timeIntervalSince(startTime)
 
         // Create result metadata
-        let verificationMetadataCollection = LogMetadataDTOCollection()
+        let verificationMetadataCollection=LogMetadataDTOCollection()
           .withPublic(key: "duration", value: String(format: "%.3f s", duration))
           .withPublic(key: "isValid", value: String(isValid))
 
         if isValid {
           await logger.info(
-            "Signature verification completed: Valid signature", metadata: verificationMetadataCollection
-          , source: "SecurityImplementation", source: "SecurityImplementation")
+            "Signature verification completed: Valid signature",
+            metadata: verificationMetadataCollection,
+            source: "SecurityImplementation", source: "SecurityImplementation"
+          )
         } else {
           await logger.warning(
-            "Signature verification completed: Invalid signature", metadata: verificationMetadataCollection
-          , source: "SecurityImplementation", source: "SecurityImplementation")
+            "Signature verification completed: Invalid signature",
+            metadata: verificationMetadataCollection,
+            source: "SecurityImplementation", source: "SecurityImplementation"
+          )
         }
 
         // Return verification result
@@ -283,66 +304,73 @@ final class SignatureService: SecurityServiceBase {
         // If key not provided directly, try to retrieve from key manager
 
         // Attempt to get key ID from config
-        guard let keyID = config.options["keyId"] else {
+        guard let keyID=config.options["keyId"] else {
           throw SignatureError.invalidInput("Neither key nor keyId provided for verification")
         }
 
         // Request key from key manager
-        let keyResult = await keyManagementService.secureStorage
+        let keyResult=await keyManagementService.secureStorage
           .retrieveMaterial(withIdentifier: keyID)
 
         switch keyResult {
-        case let .success(keyMaterial):
-          // Try to verify the signature using the retrieved key
-          let isValid = try await performVerification(
-            data: inputData,
-            signature: signature,
-            key: keyMaterial,
-            algorithm: config.algorithm
-          )
+          case let .success(keyMaterial):
+            // Try to verify the signature using the retrieved key
+            let isValid=try await performVerification(
+              data: inputData,
+              signature: signature,
+              key: keyMaterial,
+              algorithm: config.algorithm
+            )
 
-          // Calculate duration for performance metrics
-          let duration = Date().timeIntervalSince(startTime)
+            // Calculate duration for performance metrics
+            let duration=Date().timeIntervalSince(startTime)
 
-          // Create result metadata
-          let verificationMetadataCollection = LogMetadataDTOCollection()
-            .withPublic(key: "duration", value: String(format: "%.3f s", duration))
-            .withPublic(key: "isValid", value: String(isValid))
+            // Create result metadata
+            let verificationMetadataCollection=LogMetadataDTOCollection()
+              .withPublic(key: "duration", value: String(format: "%.3f s", duration))
+              .withPublic(key: "isValid", value: String(isValid))
 
-          if isValid {
-            await logger.info(
-              "Signature verification completed: Valid signature", metadata: verificationMetadataCollection
-            , source: "SecurityImplementation", source: "SecurityImplementation")
-          } else {
-            await logger.warning(
-              "Signature verification completed: Invalid signature", metadata: verificationMetadataCollection
-            , source: "SecurityImplementation", source: "SecurityImplementation")
-          }
+            if isValid {
+              await logger.info(
+                "Signature verification completed: Valid signature",
+                metadata: verificationMetadataCollection,
+                source: "SecurityImplementation", source: "SecurityImplementation"
+              )
+            } else {
+              await logger.warning(
+                "Signature verification completed: Invalid signature",
+                metadata: verificationMetadataCollection,
+                source: "SecurityImplementation", source: "SecurityImplementation"
+              )
+            }
 
-          // Return verification result
-          return SecurityResultDTO(
-            status: .success,
-            metadata: createMetadataCollection([
-              "verified": "\(isValid)",
-              "algorithm": config.algorithm
-            ])
-          )
+            // Return verification result
+            return SecurityResultDTO(
+              status: .success,
+              metadata: createMetadataCollection([
+                "verified": "\(isValid)",
+                "algorithm": config.algorithm
+              ])
+            )
 
-        case let .failure(error):
-          throw SignatureError.keyManagementError("Failed to retrieve key, error: \(error)")
+          case let .failure(error):
+            throw SignatureError.keyManagementError("Failed to retrieve key, error: \(error)")
         }
       }
     } catch {
       // Calculate duration before failure
-      let duration = Date().timeIntervalSince(startTime)
+      let duration=Date().timeIntervalSince(startTime)
 
       // Create failure metadata for logging
-      let errorMetadataCollection = LogMetadataDTOCollection()
+      let errorMetadataCollection=LogMetadataDTOCollection()
         .withPrivate(key: "error", value: error.localizedDescription)
         .withPublic(key: "duration", value: String(format: "%.3f s", duration))
 
-      await logger.error("Signature verification operation failed: \(error.localizedDescription)", metadata: errorMetadataCollection
-      , source: "SecurityImplementation")
+      await logger.error(
+        "Signature verification operation failed: \(error.localizedDescription)",
+        metadata: errorMetadataCollection,
+        source: "SecurityImplementation"
+      )
 
       // Return failure result
       return SecurityResultDTO(

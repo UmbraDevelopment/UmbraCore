@@ -156,7 +156,7 @@ public final class SecureStorageAdapter: SecureStorageProtocol {
       )
 
       // Handle specific error cases
-      let nsError = error as NSError
+      let nsError=error as NSError
       if nsError.domain == NSOSStatusErrorDomain && nsError.code == errSecItemNotFound {
         return .failure(.dataNotFound)
       }
@@ -239,7 +239,7 @@ public final class SecureStorageAdapter: SecureStorageProtocol {
       )
     )
 
-    let exists = await storage.hasData(withIdentifier: identifier)
+    let exists=await storage.hasData(withIdentifier: identifier)
     return .success(exists)
   }
 

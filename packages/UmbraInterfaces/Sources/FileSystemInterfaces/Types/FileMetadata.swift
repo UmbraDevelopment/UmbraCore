@@ -1,6 +1,6 @@
+import CoreDTOs
 import FileSystemTypes
 import Foundation
-import CoreDTOs
 
 /**
  Represents metadata about a file in the file system.
@@ -25,23 +25,23 @@ public struct FileMetadata: Sendable, Equatable {
   public init(
     path: FilePathDTO,
     attributes: FileAttributes,
-    safeResourceValues: [FileResourceKey: SafeAttributeValue] = [:],
-    exists: Bool = true
+    safeResourceValues: [FileResourceKey: SafeAttributeValue]=[:],
+    exists: Bool=true
   ) {
-    self.path = path
-    self.attributes = attributes
-    self.safeResourceValues = safeResourceValues
-    self.exists = exists
+    self.path=path
+    self.attributes=attributes
+    self.safeResourceValues=safeResourceValues
+    self.exists=exists
   }
 
   /// Convenience initializer that converts legacy resource values to safe values
   public init(
     path: FilePathDTO,
     attributes: FileAttributes,
-    resourceValues: [FileResourceKey: Any] = [:],
-    exists: Bool = true
+    resourceValues: [FileResourceKey: Any]=[:],
+    exists: Bool=true
   ) {
-    let safeValues = resourceValues.compactMapValues { value in
+    let safeValues=resourceValues.compactMapValues { value in
       SafeAttributeValue(from: value)
     }
 

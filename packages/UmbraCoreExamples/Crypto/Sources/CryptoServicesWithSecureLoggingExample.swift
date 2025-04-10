@@ -57,7 +57,7 @@ public enum CryptoServicesWithSecureLoggingExample {
 
     do {
       // Step 3: Create the crypto service using the factory with secure logging
-      let cryptoService = await CryptoServiceFactory.shared.createDefault(
+      let cryptoService=await CryptoServiceFactory.shared.createDefault(
         logger: secureLogger
       )
 
@@ -230,7 +230,7 @@ public enum CryptoServicesWithSecureLoggingExample {
     )
 
     // Step 2: Create crypto service
-    let cryptoService = await CryptoServiceFactory.shared.createDefault(
+    let cryptoService=await CryptoServiceFactory.shared.createDefault(
       logger: secureLogger
     )
 

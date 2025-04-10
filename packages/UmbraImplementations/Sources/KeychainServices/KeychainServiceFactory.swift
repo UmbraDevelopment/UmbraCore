@@ -24,14 +24,14 @@ import UmbraErrors
  let customService = await KeychainServiceFactory.createService(
      serviceIdentifier: "com.example.customService"
  )
- 
+
  // Create a security service that integrates keychain and key management
  let securityService = await KeychainServiceFactory.createSecurityService()
  ```
  */
 public enum KeychainServiceFactory {
   /// Default service identifier for keychain entries
-  public static let defaultServiceIdentifier = "com.umbra.keychain"
+  public static let defaultServiceIdentifier="com.umbra.keychain"
 
   /**
    Creates a KeychainServiceProtocol implementation with default configuration.
@@ -43,19 +43,19 @@ public enum KeychainServiceFactory {
    - Returns: A configured KeychainServiceProtocol instance
    */
   public static func createService(
-    serviceIdentifier: String = defaultServiceIdentifier,
-    logger: LoggingProtocol? = nil
+    serviceIdentifier: String=defaultServiceIdentifier,
+    logger: LoggingProtocol?=nil
   ) async -> KeychainServiceProtocol {
     // Use provided logger or create a default one with appropriate identifier
-    let actualLogger: LoggingProtocol = logger ?? DefaultLogger()
-    
+    let actualLogger: LoggingProtocol=logger ?? DefaultLogger()
+
     // Create and return the keychain service
     return KeychainServiceImpl(
       serviceIdentifier: serviceIdentifier,
       logger: actualLogger
     )
   }
-  
+
   /**
    Creates a new keychain service with the specified logger.
    This method provides compatibility with the KeychainServicesFactory API.
@@ -66,8 +66,8 @@ public enum KeychainServiceFactory {
    - Returns: A new implementation of KeychainServiceProtocol
    */
   public static func createKeychainService(
-    serviceIdentifier: String? = nil,
-    logger: LoggingProtocol? = nil
+    serviceIdentifier: String?=nil,
+    logger: LoggingProtocol?=nil
   ) async -> any KeychainServiceProtocol {
     await createService(
       serviceIdentifier: serviceIdentifier ?? defaultServiceIdentifier,
@@ -85,19 +85,19 @@ public enum KeychainServiceFactory {
    - Returns: A configured in-memory KeychainServiceProtocol instance
    */
   public static func createInMemoryService(
-    serviceIdentifier: String = defaultServiceIdentifier,
-    logger: LoggingProtocol? = nil
+    serviceIdentifier: String=defaultServiceIdentifier,
+    logger: LoggingProtocol?=nil
   ) async -> KeychainServiceProtocol {
     // Use provided logger or create a default one with appropriate identifier
-    let actualLogger: LoggingProtocol = logger ?? DefaultLogger()
-    
+    let actualLogger: LoggingProtocol=logger ?? DefaultLogger()
+
     // Create and return the in-memory keychain service
     return InMemoryKeychainServiceImpl(
       serviceIdentifier: serviceIdentifier,
       logger: actualLogger
     )
   }
-  
+
   /**
    Creates a KeychainSecurityActor that integrates keychain and key management services.
 
@@ -112,29 +112,29 @@ public enum KeychainServiceFactory {
    - Returns: A configured KeychainSecurityActor
    */
   public static func createSecurityService(
-    keychainService: KeychainServiceProtocol? = nil,
-    keyManager: KeyManagementProtocol? = nil,
-    logger: LoggingProtocol? = nil
+    keychainService: KeychainServiceProtocol?=nil,
+    keyManager: KeyManagementProtocol?=nil,
+    logger: LoggingProtocol?=nil
   ) async -> any KeychainSecurityProtocol {
     // Determine which keychain service to use
-    let actualKeychainService: KeychainServiceProtocol = if let keychainService {
+    let actualKeychainService: KeychainServiceProtocol=if let keychainService {
       keychainService
     } else {
       await createService(logger: logger)
     }
 
-    let actualLogger = logger ?? DefaultLogger()
+    let actualLogger=logger ?? DefaultLogger()
 
     // For key manager, we need to dynamically load it from SecurityKeyManagement
     let actualKeyManager: (any KeyManagementProtocol)
 
     if let keyManager {
-      actualKeyManager = keyManager
+      actualKeyManager=keyManager
     } else {
       // Use a helper function to handle the async factory properly
       @MainActor
       func createKeyManager() async -> KeyManagementProtocol {
-        let factory = KeyManagerAsyncFactory.shared
+        let factory=KeyManagerAsyncFactory.shared
         if await factory.tryInitialize() {
           do {
             return try await factory.createKeyManager()
@@ -147,8 +147,8 @@ public enum KeychainServiceFactory {
           return SimpleKeyManager(logger: actualLogger)
         }
       }
-      
-      actualKeyManager = await createKeyManager()
+
+      actualKeyManager=await createKeyManager()
     }
 
     // Create the security actor with the configured dependencies
@@ -158,10 +158,10 @@ public enum KeychainServiceFactory {
       logger: actualLogger
     ) as! any KeychainSecurityProtocol
   }
-  
+
   /**
    Creates a secure keychain service with enhanced security features.
-   
+
    This implementation uses additional security measures such as key rotation
    and secure memory handling for sensitive operations.
 
@@ -173,24 +173,24 @@ public enum KeychainServiceFactory {
    - Returns: A configured secure KeychainServiceProtocol instance
    */
   public static func createSecureService(
-    serviceIdentifier: String = defaultServiceIdentifier,
-    logger: LoggingProtocol? = nil,
+    serviceIdentifier: String=defaultServiceIdentifier,
+    logger: LoggingProtocol?=nil,
     securityLevel: SecurityLevel = .high
   ) async -> KeychainServiceProtocol {
     // Use provided logger or create a default one with appropriate identifier
-    let actualLogger: LoggingProtocol = logger ?? DefaultLogger()
-    
+    let actualLogger: LoggingProtocol=logger ?? DefaultLogger()
+
     // Create the base service
-    let baseService = KeychainServiceImpl(
+    let baseService=KeychainServiceImpl(
       serviceIdentifier: serviceIdentifier,
       logger: actualLogger
     )
-    
+
     // Apply security enhancements based on the requested security level
     switch securityLevel {
       case .standard:
         return baseService
-        
+
       case .high:
         // Wrap with enhanced security features
         return SecureKeychainServiceDecorator(
@@ -205,7 +205,7 @@ public enum KeychainServiceFactory {
 public enum SecurityLevel {
   /// Standard security with basic protection
   case standard
-  
+
   /// High security with additional protection measures
   case high
 }

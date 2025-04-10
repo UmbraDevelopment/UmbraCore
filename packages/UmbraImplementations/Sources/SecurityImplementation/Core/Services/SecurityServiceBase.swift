@@ -4,9 +4,9 @@ import LoggingTypes
 
 /// Helper function to create LogMetadataDTOCollection from dictionary
 private func createMetadataCollection(_ dict: [String: String]) -> LogMetadataDTOCollection {
-  var collection = LogMetadataDTOCollection()
+  var collection=LogMetadataDTOCollection()
   for (key, value) in dict {
-    collection = collection.withPublic(key: key, value: value)
+    collection=collection.withPublic(key: key, value: value)
   }
   return collection
 }
@@ -75,7 +75,7 @@ extension SecurityServiceBase {
     operation: SecurityOperation,
     config: SecurityConfigDTO
   ) -> LoggingInterfaces.LogMetadata {
-    return createPrivacyMetadata([
+    createPrivacyMetadata([
       "operationId": operationID,
       "operation": String(describing: operation),
       "algorithm": config.algorithm,

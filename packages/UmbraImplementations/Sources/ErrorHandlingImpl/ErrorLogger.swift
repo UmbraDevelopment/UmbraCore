@@ -50,11 +50,11 @@ public actor ErrorLogger: ErrorLoggingProtocol {
   public func logError(
     _ error: some Error,
     level: ErrorLogLevel,
-    additionalContext: LogMetadataDTOCollection? = nil,
-    options: ErrorLoggingOptions? = nil
+    additionalContext: LogMetadataDTOCollection?=nil,
+    options: ErrorLoggingOptions?=nil
   ) async {
     // Create default context with source information
-    let context = ErrorContext(
+    let context=ErrorContext(
       source: ErrorSource(
         file: #file,
         function: #function,
@@ -64,7 +64,13 @@ public actor ErrorLogger: ErrorLoggingProtocol {
       timestamp: Date()
     )
 
-    await logError(error, level: level, context: context, additionalContext: additionalContext, options: options)
+    await logError(
+      error,
+      level: level,
+      context: context,
+      additionalContext: additionalContext,
+      options: options
+    )
   }
 
   /**
@@ -81,15 +87,15 @@ public actor ErrorLogger: ErrorLoggingProtocol {
     _ error: some Error,
     level: ErrorLogLevel,
     context: ErrorContext,
-    additionalContext: LogMetadataDTOCollection? = nil,
-    options: ErrorLoggingOptions? = nil
+    additionalContext: LogMetadataDTOCollection?=nil,
+    options _: ErrorLoggingOptions?=nil
   ) async {
-    let logContext = createLogContext(for: error, context: context)
-    let logLevel = mapErrorLogLevel(level)
-    
+    let logContext=createLogContext(for: error, context: context)
+    let logLevel=mapErrorLogLevel(level)
+
     // Create the final context by merging the additional context if provided
-    let finalLogContext = if let additionalContext {
-      if let logContext = logContext as? ErrorLogContext {
+    let finalLogContext=if let additionalContext {
+      if let logContext=logContext as? ErrorLogContext {
         logContext.withUpdatedMetadata(logContext.metadata.merging(with: additionalContext))
       } else {
         logContext
@@ -98,7 +104,7 @@ public actor ErrorLogger: ErrorLoggingProtocol {
       logContext
     }
 
-    if let loggableError = convertToLoggableError(error, context: context) {
+    if let loggableError=convertToLoggableError(error, context: context) {
       // If we have a LoggableErrorDTO, use the domain logger's error method
       await logger.error(
         loggableError.message,
@@ -136,15 +142,19 @@ public actor ErrorLogger: ErrorLoggingProtocol {
       - context: Contextual information about the error
       - options: Configuration options for error logging
    */
-  public func debug<E: Error>(
-    _ error: E,
+  public func debug(
+    _ error: some Error,
     context: ErrorContext?,
     options: ErrorLoggingOptions?
   ) async {
     await logError(
       error,
       level: .debug,
-      context: context ?? ErrorContext(source: ErrorSource(file: #file, function: #function, line: #line)),
+      context: context ?? ErrorContext(source: ErrorSource(
+        file: #file,
+        function: #function,
+        line: #line
+      )),
       options: options
     )
   }
@@ -157,19 +167,23 @@ public actor ErrorLogger: ErrorLoggingProtocol {
       - context: Contextual information about the error
       - options: Configuration options for error logging
    */
-  public func info<E: Error>(
-    _ error: E,
+  public func info(
+    _ error: some Error,
     context: ErrorContext?,
     options: ErrorLoggingOptions?
   ) async {
     await logError(
       error,
       level: .info,
-      context: context ?? ErrorContext(source: ErrorSource(file: #file, function: #function, line: #line)),
+      context: context ?? ErrorContext(source: ErrorSource(
+        file: #file,
+        function: #function,
+        line: #line
+      )),
       options: options
     )
   }
-  
+
   /**
    Logs an error with warning level.
 
@@ -178,19 +192,23 @@ public actor ErrorLogger: ErrorLoggingProtocol {
       - context: Contextual information about the error
       - options: Configuration options for error logging
    */
-  public func warning<E: Error>(
-    _ error: E,
+  public func warning(
+    _ error: some Error,
     context: ErrorContext?,
     options: ErrorLoggingOptions?
   ) async {
     await logError(
       error,
       level: .warning,
-      context: context ?? ErrorContext(source: ErrorSource(file: #file, function: #function, line: #line)),
+      context: context ?? ErrorContext(source: ErrorSource(
+        file: #file,
+        function: #function,
+        line: #line
+      )),
       options: options
     )
   }
-  
+
   /**
    Logs an error with error level.
 
@@ -199,19 +217,23 @@ public actor ErrorLogger: ErrorLoggingProtocol {
       - context: Contextual information about the error
       - options: Configuration options for error logging
    */
-  public func error<E: Error>(
-    _ error: E,
+  public func error(
+    _ error: some Error,
     context: ErrorContext?,
     options: ErrorLoggingOptions?
   ) async {
     await logError(
       error,
       level: .error,
-      context: context ?? ErrorContext(source: ErrorSource(file: #file, function: #function, line: #line)),
+      context: context ?? ErrorContext(source: ErrorSource(
+        file: #file,
+        function: #function,
+        line: #line
+      )),
       options: options
     )
   }
-  
+
   /**
    Logs an error with critical level.
 
@@ -220,15 +242,19 @@ public actor ErrorLogger: ErrorLoggingProtocol {
       - context: Contextual information about the error
       - options: Configuration options for error logging
    */
-  public func critical<E: Error>(
-    _ error: E,
+  public func critical(
+    _ error: some Error,
     context: ErrorContext?,
     options: ErrorLoggingOptions?
   ) async {
     await logError(
       error,
       level: .critical,
-      context: context ?? ErrorContext(source: ErrorSource(file: #file, function: #function, line: #line)),
+      context: context ?? ErrorContext(source: ErrorSource(
+        file: #file,
+        function: #function,
+        line: #line
+      )),
       options: options
     )
   }

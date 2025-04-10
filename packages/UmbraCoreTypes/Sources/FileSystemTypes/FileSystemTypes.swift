@@ -9,14 +9,14 @@
 
 /**
  # File System Types Note
- 
+
  The canonical versions of the following types have been moved to the FileSystemInterfaces module:
  - FileWriteOptions
  - FileMoveOptions
  - FileCopyOptions
  - TemporaryFileOptions
  - FileSystemError
- 
+
  Please import FileSystemInterfaces to use these types directly.
  */
 

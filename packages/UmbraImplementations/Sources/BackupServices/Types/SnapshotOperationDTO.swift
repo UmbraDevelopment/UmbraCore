@@ -91,7 +91,10 @@ public struct SnapshotListParameters: SnapshotOperationParameters {
       .withPublic(key: "tags", value: tags?.joined(separator: ", ") ?? "")
       .withPublic(key: "beforeDate", value: before?.ISO8601Format() ?? "none")
       .withPublic(key: "afterDate", value: after?.ISO8601Format() ?? "none")
-      .withSensitive(key: "sources", value: path?.path != nil ? [path!.path].joined(separator: ", ") : "none")
+      .withSensitive(
+        key: "sources",
+        value: path?.path != nil ? [path!.path].joined(separator: ", ") : "none"
+      )
       .withPublic(key: "limit", value: limit != nil ? "\(limit!)" : "none")
   }
 }
@@ -169,7 +172,10 @@ public struct SnapshotCompareParameters: SnapshotOperationParameters {
     return context
       .withPublic(key: "snapshotID1", value: snapshotID1)
       .withPublic(key: "snapshotID2", value: snapshotID2)
-      .withSensitive(key: "sources", value: path?.path != nil ? [path!.path].joined(separator: ", ") : "none")
+      .withSensitive(
+        key: "sources",
+        value: path?.path != nil ? [path!.path].joined(separator: ", ") : "none"
+      )
   }
 }
 
@@ -246,7 +252,10 @@ public struct SnapshotUpdateDescriptionParameters: SnapshotOperationParameters {
     )
 
     // Description might contain sensitive information, so mark as private
-    return context.withPrivate(key: "description", value: description.count > 30 ? "\(description.prefix(30))..." : description)
+    return context.withPrivate(
+      key: "description",
+      value: description.count > 30 ? "\(description.prefix(30))..." : description
+    )
   }
 }
 

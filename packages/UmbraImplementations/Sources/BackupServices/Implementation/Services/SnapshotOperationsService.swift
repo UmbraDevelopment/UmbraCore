@@ -60,24 +60,24 @@ public actor SnapshotOperationsService {
     cancellationToken: BackupCancellationToken?
   ) async throws -> [BackupSnapshot] {
     // Create a log context for privacy-aware logging
-    let logContext = SnapshotLogContext(
+    let logContext=SnapshotLogContext(
       operation: "listSnapshots",
       source: "SnapshotOperationsService"
     )
     .withPublic(key: "operationType", value: "listSnapshots")
-    
-    if let repositoryID = parameters.repositoryID {
+
+    if let repositoryID=parameters.repositoryID {
       logContext.withPublic(key: "repositoryID", value: repositoryID)
     }
-    
-    if let tags = parameters.tags, !tags.isEmpty {
+
+    if let tags=parameters.tags, !tags.isEmpty {
       logContext.withPublic(key: "tagsCount", value: String(tags.count))
     }
-    
-    if let path = parameters.path {
+
+    if let path=parameters.path {
       logContext.withPrivate(key: "path", value: path.path)
     }
-    
+
     try await operationExecutor.execute(
       parameters: parameters,
       progressReporter: progressReporter,

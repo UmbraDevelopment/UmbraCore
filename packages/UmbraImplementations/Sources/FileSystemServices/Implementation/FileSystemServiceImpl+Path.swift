@@ -1,8 +1,8 @@
+import CoreDTOs
 import FileSystemInterfaces
 import FileSystemTypes
 import Foundation
 import LoggingTypes
-import CoreDTOs
 
 /**
  # Path Operations Extension
@@ -28,15 +28,15 @@ extension FileSystemServiceImpl {
     }
 
     // Convert to URL for standardisation
-    let url = URL(fileURLWithPath: path.path)
+    let url=URL(fileURLWithPath: path.path)
 
     // Resolve any relative components (such as "../" or "./")
-    let standardisedURL = url.standardized
+    let standardisedURL=url.standardized
 
     do {
       // This can fail if we don't have permission to access the file system
       // Force unwrapping this is safe as we've already checked path.path is not empty
-      let resolvedURL = try FileManager.default.fileExists(atPath: standardisedURL.path)
+      let resolvedURL=try FileManager.default.fileExists(atPath: standardisedURL.path)
         ? URL(
           fileURLWithPath: FileManager.default
             .destinationOfSymbolicLink(atPath: standardisedURL.path),
@@ -76,7 +76,7 @@ extension FileSystemServiceImpl {
     }
 
     // Start with the base path
-    var fullPath = base.path
+    var fullPath=base.path
 
     // Add a path separator if needed
     if !fullPath.hasSuffix("/") && !component.hasPrefix("/") {
@@ -111,8 +111,8 @@ extension FileSystemServiceImpl {
     }
 
     // Get the directory component
-    let url = URL(fileURLWithPath: path.path)
-    let directoryURL = url.deletingLastPathComponent()
+    let url=URL(fileURLWithPath: path.path)
+    let directoryURL=url.deletingLastPathComponent()
 
     // Create and return a new FilePath
     return FilePathDTO(
@@ -124,7 +124,7 @@ extension FileSystemServiceImpl {
 
   /**
    Creates a unique filename in the specified directory.
-   
+
    - Parameters:
      - directory: The directory in which to create the unique name
      - prefix: Optional prefix for the file name
@@ -144,24 +144,24 @@ extension FileSystemServiceImpl {
         reason: "Empty directory path provided"
       )
     }
-    
+
     // Build the unique filename components
-    let filenamePrefix = prefix ?? "file"
-    let filenameExtension = `extension` != nil ? ".\(`extension`!)" : ""
-    let uniqueComponent = UUID().uuidString
-    
+    let filenamePrefix=prefix ?? "file"
+    let filenameExtension=`extension` != nil ? ".\(`extension`!)" : ""
+    let uniqueComponent=UUID().uuidString
+
     // Create the full path
-    let directoryPath = directory.hasSuffix("/") ? directory : "\(directory)/"
-    let filename = "\(filenamePrefix)_\(uniqueComponent)\(filenameExtension)"
-    let fullPath = "\(directoryPath)\(filename)"
-    
+    let directoryPath=directory.hasSuffix("/") ? directory : "\(directory)/"
+    let filename="\(filenamePrefix)_\(uniqueComponent)\(filenameExtension)"
+    let fullPath="\(directoryPath)\(filename)"
+
     // Return the new path
     return FilePathDTO(path: fullPath)
   }
 
   /**
    Gets the directory path from a file path (non-isolated helper).
-   
+
    - Parameter path: The path to extract the directory from
    - Returns: The directory path
    */
@@ -169,16 +169,16 @@ extension FileSystemServiceImpl {
     guard !path.path.isEmpty else {
       return FilePathDTO(path: "")
     }
-    
+
     // If it's already marked as a directory, return it
     if path.isDirectory {
       return path
     }
-    
+
     // Otherwise extract the directory component
-    let url = URL(fileURLWithPath: path.path)
-    let directoryURL = url.deletingLastPathComponent()
-    
+    let url=URL(fileURLWithPath: path.path)
+    let directoryURL=url.deletingLastPathComponent()
+
     return FilePathDTO(
       path: directoryURL.path,
       isDirectory: true,
@@ -188,7 +188,7 @@ extension FileSystemServiceImpl {
 
   /**
    Joins a base path with a component (non-isolated helper).
-   
+
    - Parameters:
      - base: The base path
      - component: The component to append
@@ -201,18 +201,18 @@ extension FileSystemServiceImpl {
     guard !base.path.isEmpty else {
       return FilePathDTO(path: component)
     }
-    
+
     // Start with the base path
-    var fullPath = base.path
-    
+    var fullPath=base.path
+
     // Add a path separator if needed
     if !fullPath.hasSuffix("/") && !component.hasPrefix("/") {
       fullPath += "/"
     }
-    
+
     // Append the component
     fullPath += component
-    
+
     // Create and return a new FilePath
     return FilePathDTO(
       path: fullPath,
@@ -232,8 +232,8 @@ extension FileSystemServiceImpl {
       return ""
     }
 
-    let url = URL(fileURLWithPath: path.path)
-    let fileName = url.lastPathComponent
+    let url=URL(fileURLWithPath: path.path)
+    let fileName=url.lastPathComponent
 
     await logger.debug(
       "Extracted file name",
@@ -260,9 +260,9 @@ extension FileSystemServiceImpl {
       return FilePathDTO(path: "")
     }
 
-    let url = URL(fileURLWithPath: path.path)
-    let directoryURL = url.deletingLastPathComponent()
-    let directoryPath = FilePathDTO(path: directoryURL.path)
+    let url=URL(fileURLWithPath: path.path)
+    let directoryURL=url.deletingLastPathComponent()
+    let directoryPath=FilePathDTO(path: directoryURL.path)
 
     await logger.debug(
       "Extracted directory path",
@@ -289,8 +289,8 @@ extension FileSystemServiceImpl {
       return ""
     }
 
-    let url = URL(fileURLWithPath: path.path)
-    let fileExtension = url.pathExtension
+    let url=URL(fileURLWithPath: path.path)
+    let fileExtension=url.pathExtension
 
     await logger.debug(
       "Extracted file extension",
@@ -326,19 +326,19 @@ extension FileSystemServiceImpl {
       )
     }
 
-    let url = URL(fileURLWithPath: path.path)
-    let fileName = url.deletingPathExtension().lastPathComponent
-    let directory = url.deletingLastPathComponent()
+    let url=URL(fileURLWithPath: path.path)
+    let fileName=url.deletingPathExtension().lastPathComponent
+    let directory=url.deletingLastPathComponent()
 
     // Create the new file name with the specified extension
-    let newFileName: String = if `extension`.isEmpty {
+    let newFileName: String=if `extension`.isEmpty {
       fileName
     } else {
       fileName + "." + `extension`
     }
 
-    let newURL = directory.appendingPathComponent(newFileName)
-    let newPath = FilePathDTO(path: newURL.path)
+    let newURL=directory.appendingPathComponent(newFileName)
+    let newPath=FilePathDTO(path: newURL.path)
 
     await logger.debug(
       "Changed file extension",
@@ -363,7 +363,7 @@ extension FileSystemServiceImpl {
    - Returns: The filename component
    */
   public func getFilename(_ path: String) async -> String {
-    return (path as NSString).lastPathComponent
+    (path as NSString).lastPathComponent
   }
 
   /**
@@ -373,7 +373,7 @@ extension FileSystemServiceImpl {
    - Returns: The extension
    */
   public func getExtension(_ path: String) async -> String {
-    return (path as NSString).pathExtension
+    (path as NSString).pathExtension
   }
 
   /**
@@ -383,7 +383,7 @@ extension FileSystemServiceImpl {
    - Returns: The directory name component
    */
   public func getDirectoryName(_ path: String) async -> String {
-    return (path as NSString).deletingLastPathComponent
+    (path as NSString).deletingLastPathComponent
   }
 
   // MARK: - Non-Isolated Path Methods (Protocol Conformance)
@@ -399,7 +399,7 @@ extension FileSystemServiceImpl {
       return ""
     }
 
-    let url = URL(fileURLWithPath: path.path)
+    let url=URL(fileURLWithPath: path.path)
     return url.lastPathComponent
   }
 
@@ -414,8 +414,8 @@ extension FileSystemServiceImpl {
       return FilePathDTO(path: "")
     }
 
-    let url = URL(fileURLWithPath: path.path)
-    let directoryURL = url.deletingLastPathComponent()
+    let url=URL(fileURLWithPath: path.path)
+    let directoryURL=url.deletingLastPathComponent()
     return FilePathDTO(path: directoryURL.path)
   }
 
@@ -435,11 +435,11 @@ extension FileSystemServiceImpl {
       return base
     }
 
-    var url = URL(fileURLWithPath: base.path)
+    var url=URL(fileURLWithPath: base.path)
 
     for component in components {
       if !component.isEmpty {
-        url = url.appendingPathComponent(component)
+        url=url.appendingPathComponent(component)
       }
     }
 
@@ -462,8 +462,8 @@ extension FileSystemServiceImpl {
       return false
     }
 
-    let pathComponents = URL(fileURLWithPath: path.path).standardized.pathComponents
-    let dirComponents = URL(fileURLWithPath: directory.path).standardized.pathComponents
+    let pathComponents=URL(fileURLWithPath: path.path).standardized.pathComponents
+    let dirComponents=URL(fileURLWithPath: directory.path).standardized.pathComponents
 
     // If directory has more components than path, path cannot be a subpath
     if dirComponents.count > pathComponents.count {

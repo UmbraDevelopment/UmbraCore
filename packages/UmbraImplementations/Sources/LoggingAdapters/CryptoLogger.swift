@@ -37,7 +37,7 @@ public actor CryptoLogger: DomainLoggerProtocol {
   /// Log a message with the specified level and context
   public func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
     let formattedMessage="[\(domainName)] \(message)"
-    let metadata = context.metadata
+    let metadata=context.metadata
 
     // Log with the main logging service
     if let loggingService=loggingService as? LoggingProtocol {

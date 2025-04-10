@@ -377,13 +377,13 @@ public struct BackupCommandFactory {
     secondSnapshotID: String,
     options: [String]?
   ) -> ResticCommand {
-    var args = ["diff", firstSnapshotID, secondSnapshotID, "--json"]
-    
+    var args=["diff", firstSnapshotID, secondSnapshotID, "--json"]
+
     // Add any additional options
-    if let options = options {
+    if let options {
       args.append(contentsOf: options)
     }
-    
+
     return ResticCommandImpl(arguments: args)
   }
 
@@ -397,15 +397,15 @@ public struct BackupCommandFactory {
    */
   public func createSnapshotInfoCommand(
     snapshotID: String,
-    includeStats: Bool = false
+    includeStats: Bool=false
   ) -> ResticCommand {
-    var args = ["snapshot", snapshotID, "--json"]
-    
+    var args=["snapshot", snapshotID, "--json"]
+
     // Add statistics flag if requested
     if includeStats {
       args.append("--detailed")
     }
-    
+
     return ResticCommandImpl(arguments: args)
   }
 }

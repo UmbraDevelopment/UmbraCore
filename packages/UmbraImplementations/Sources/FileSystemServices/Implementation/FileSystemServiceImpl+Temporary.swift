@@ -1,8 +1,8 @@
+import CoreDTOs
 import FileSystemInterfaces
 import FileSystemTypes
 import Foundation
 import LoggingTypes
-import CoreDTOs
 
 /**
  # Temporary File Operations Extension
@@ -31,18 +31,18 @@ extension FileSystemServiceImpl {
   public nonisolated func withTemporaryFile<T>(
     prefix: String,
     suffix: String,
-    data: [UInt8]? = nil,
+    data: [UInt8]?=nil,
     task: (FilePathDTO) async throws -> T
   ) async throws -> T {
-    let tempDirectory = FileManager.default.temporaryDirectory
-    let tempFileName = "\(prefix)\(UUID().uuidString)\(suffix)"
-    let tempURL = tempDirectory.appendingPathComponent(tempFileName)
-    let tempPath = FilePathDTO(path: tempURL.path)
+    let tempDirectory=FileManager.default.temporaryDirectory
+    let tempFileName="\(prefix)\(UUID().uuidString)\(suffix)"
+    let tempURL=tempDirectory.appendingPathComponent(tempFileName)
+    let tempPath=FilePathDTO(path: tempURL.path)
 
     // Create the file and write initial data if provided
-    if let initialData = data {
+    if let initialData=data {
       do {
-        let data = Data(initialData)
+        let data=Data(initialData)
         try data.write(to: tempURL)
       } catch {
         // Convert to domain-specific error
@@ -63,7 +63,7 @@ extension FileSystemServiceImpl {
 
     do {
       // Perform the task with the temporary file
-      let result = try await task(tempPath)
+      let result=try await task(tempPath)
 
       // Clean up the temporary file
       try? FileManager.default.removeItem(at: tempURL)
@@ -97,10 +97,10 @@ extension FileSystemServiceImpl {
     prefix: String,
     task: (FilePathDTO) async throws -> T
   ) async throws -> T {
-    let tempDirectory = FileManager.default.temporaryDirectory
-    let tempDirName = "\(prefix)\(UUID().uuidString)"
-    let tempURL = tempDirectory.appendingPathComponent(tempDirName)
-    let tempPath = FilePathDTO(path: tempURL.path, isDirectory: true)
+    let tempDirectory=FileManager.default.temporaryDirectory
+    let tempDirName="\(prefix)\(UUID().uuidString)"
+    let tempURL=tempDirectory.appendingPathComponent(tempDirName)
+    let tempPath=FilePathDTO(path: tempURL.path, isDirectory: true)
 
     // Create the directory
     do {
@@ -114,7 +114,7 @@ extension FileSystemServiceImpl {
 
     do {
       // Perform the task with the temporary directory
-      let result = try await task(tempPath)
+      let result=try await task(tempPath)
 
       // Clean up the temporary directory
       try? FileManager.default.removeItem(at: tempURL)
@@ -141,10 +141,10 @@ extension FileSystemServiceImpl {
   public func createTemporaryFile(
     options: TemporaryFileOptions?
   ) async throws -> FilePathDTO {
-    let tempDirectory = FileManager.default.temporaryDirectory
-    let tempFileName = "\(options?.prefix ?? "tmp")\(UUID().uuidString)\(options?.suffix ?? "")"
-    let tempURL = tempDirectory.appendingPathComponent(tempFileName)
-    let tempPath = FilePathDTO(path: tempURL.path)
+    let tempDirectory=FileManager.default.temporaryDirectory
+    let tempFileName="\(options?.prefix ?? "tmp")\(UUID().uuidString)\(options?.suffix ?? "")"
+    let tempURL=tempDirectory.appendingPathComponent(tempFileName)
+    let tempPath=FilePathDTO(path: tempURL.path)
 
     await logger.debug(
       "Creating temporary file",
@@ -159,7 +159,7 @@ extension FileSystemServiceImpl {
 
     // Create the file
     if !FileManager.default.createFile(atPath: tempURL.path, contents: nil) {
-      let errorMetadata = LogMetadataDTOCollection()
+      let errorMetadata=LogMetadataDTOCollection()
         .withPublic(key: "tempFileName", value: tempFileName)
 
       await logger.error(
@@ -203,10 +203,10 @@ extension FileSystemServiceImpl {
   public func createTemporaryDirectory(
     options: TemporaryFileOptions?
   ) async throws -> FilePathDTO {
-    let tempDirectory = FileManager.default.temporaryDirectory
-    let tempDirName = "\(options?.prefix ?? "tmp")\(UUID().uuidString)"
-    let tempURL = tempDirectory.appendingPathComponent(tempDirName)
-    let tempPath = FilePathDTO(path: tempURL.path, isDirectory: true)
+    let tempDirectory=FileManager.default.temporaryDirectory
+    let tempDirName="\(options?.prefix ?? "tmp")\(UUID().uuidString)"
+    let tempURL=tempDirectory.appendingPathComponent(tempDirName)
+    let tempPath=FilePathDTO(path: tempURL.path, isDirectory: true)
 
     await logger.debug(
       "Creating temporary directory",
@@ -223,7 +223,7 @@ extension FileSystemServiceImpl {
     do {
       try FileManager.default.createDirectory(at: tempURL, withIntermediateDirectories: true)
     } catch {
-      let errorMetadata = LogMetadataDTOCollection()
+      let errorMetadata=LogMetadataDTOCollection()
         .withPublic(key: "tempDirName", value: tempDirName)
         .withPublic(key: "errorType", value: "\(type(of: error))")
         .withPrivate(key: "errorMessage", value: error.localizedDescription)

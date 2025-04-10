@@ -4,7 +4,7 @@ import LoggingTypes
 
 /**
  # Domain-specific Logger for Cryptographic Operations
- 
+
  This class implements the PrivacyAwareLoggingProtocol and provides
  specialised logging for cryptographic operations. It ensures that all
  sensitive cryptographic information is properly classified and logged
@@ -15,9 +15,9 @@ import LoggingTypes
  - Provides domain-specific methods for common crypto operations
  - Ensures consistent taxonomy of log entries
  - Maintains thread safety through actor isolation
- 
+
  ## Privacy Controls
- 
+
  This logger implements comprehensive privacy controls for sensitive information:
  - Public information is logged normally
  - Private information is redacted in production builds
@@ -46,15 +46,15 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
    - Parameter baseLogger: The underlying logger to use
    */
   public init(baseLogger: PrivacyAwareLoggingProtocol) async {
-    self.baseLogger = baseLogger
-    _loggingActor = await baseLogger.loggingActor
+    self.baseLogger=baseLogger
+    _loggingActor=await baseLogger.loggingActor
   }
 
   // MARK: - PrivacyAwareLoggingProtocol Implementation
 
   /**
    Log a message at the specified level with context.
-   
+
    - Parameters:
      - level: The log level
      - message: The privacy-aware message
@@ -66,20 +66,20 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
 
   /**
    Log a message with context using a standard string (will be treated as public).
-   
+
    - Parameters:
      - level: The log level
      - message: The message to log
      - context: The log context
    */
   public func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
-    let privacyString = PrivacyString(stringLiteral: message)
+    let privacyString=PrivacyString(stringLiteral: message)
     await baseLogger.log(level, privacyString, context: context)
   }
 
   /**
    Log sensitive information with explicit metadata collection.
-   
+
    - Parameters:
      - level: The log level
      - message: The message to log
@@ -93,27 +93,25 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
     context: LogContextDTO
   ) async {
     // Create a new context that includes our metadata
-    let updatedContext: LogContextDTO
-    
-    if let cryptoContext = context as? CryptoLogContext {
+    let updatedContext: LogContextDTO=if let cryptoContext=context as? CryptoLogContext {
       // If it's already a CryptoLogContext, merge the metadata
-      updatedContext = cryptoContext.withMergedMetadata(metadata)
+      cryptoContext.withMergedMetadata(metadata)
     } else {
       // Otherwise, create a new CryptoLogContext with the metadata
-      updatedContext = CryptoLogContext(
+      CryptoLogContext(
         operation: "generic",
         source: context.source,
         correlationID: context.correlationID,
         metadata: metadata
       )
     }
-    
+
     await log(level, message, context: updatedContext)
   }
 
   /**
    Log an error with context.
-   
+
    - Parameters:
      - error: The error to log
      - context: The log context
@@ -124,7 +122,7 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
 
   /**
    Log an error with specific privacy level and context.
-   
+
    - Parameters:
      - error: The error to log
      - privacyLevel: The privacy level for the error
@@ -140,7 +138,7 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
 
   /**
    Log a debug message with context.
-   
+
    - Parameters:
      - message: The message to log
      - context: The log context
@@ -151,7 +149,7 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
 
   /**
    Log an info message with context.
-   
+
    - Parameters:
      - message: The message to log
      - context: The log context
@@ -162,7 +160,7 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
 
   /**
    Log a warning message with context.
-   
+
    - Parameters:
      - message: The message to log
      - context: The log context
@@ -173,7 +171,7 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
 
   /**
    Log an error message with context.
-   
+
    - Parameters:
      - message: The message to log
      - context: The log context
@@ -184,7 +182,7 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
 
   /**
    Log a critical message with context.
-   
+
    - Parameters:
      - message: The message to log
      - context: The log context
@@ -195,10 +193,10 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
 
   /**
    Log sensitive information with appropriate redaction using context.
-   
+
    This method ensures that sensitive cryptographic values are properly handled
    with appropriate privacy controls.
-   
+
    - Parameters:
      - level: The severity level of the log
      - message: The basic message without sensitive content
@@ -212,19 +210,19 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
     context: LogContextDTO
   ) async {
     // Create a crypto-specific context with the sensitive values
-    let cryptoContext = CryptoLogContext(
+    let cryptoContext=CryptoLogContext(
       operation: "sensitive_operation",
       source: context.source,
       correlationID: context.correlationID,
       metadata: context.metadata
     )
-    
+
     // Add sensitive values with proper privacy classification
-    var enhancedContext = cryptoContext
+    var enhancedContext=cryptoContext
     for (key, value) in sensitiveValues.asDictionary {
-      enhancedContext = enhancedContext.withMetadata(key: key, value: value, privacy: .sensitive)
+      enhancedContext=enhancedContext.withMetadata(key: key, value: value, privacy: .sensitive)
     }
-    
+
     // Delegate to the base logger
     await baseLogger.log(level, message, context: enhancedContext)
   }
@@ -245,26 +243,26 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
     _ message: String,
     dataIdentifier: String,
     keyIdentifier: String,
-    algorithm: String? = nil,
-    metadata: LogMetadataDTOCollection? = nil
+    algorithm: String?=nil,
+    metadata: LogMetadataDTOCollection?=nil
   ) async {
-    var contextMetadata = metadata ?? LogMetadataDTOCollection()
-    
+    var contextMetadata=metadata ?? LogMetadataDTOCollection()
+
     // Add standard encryption metadata
-    contextMetadata = contextMetadata
+    contextMetadata=contextMetadata
       .withPublic(key: "dataIdentifier", value: dataIdentifier)
       .withPrivate(key: "keyIdentifier", value: keyIdentifier)
-    
+
     if let algorithm {
-      contextMetadata = contextMetadata.withPublic(key: "algorithm", value: algorithm)
+      contextMetadata=contextMetadata.withPublic(key: "algorithm", value: algorithm)
     }
-    
-    let context = CryptoLogContext(
+
+    let context=CryptoLogContext(
       operation: "encrypt",
       identifier: dataIdentifier,
       metadata: contextMetadata
     )
-    
+
     await info(message, context: context)
   }
 
@@ -282,26 +280,26 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
     _ message: String,
     dataIdentifier: String,
     keyIdentifier: String,
-    algorithm: String? = nil,
-    metadata: LogMetadataDTOCollection? = nil
+    algorithm: String?=nil,
+    metadata: LogMetadataDTOCollection?=nil
   ) async {
-    var contextMetadata = metadata ?? LogMetadataDTOCollection()
-    
+    var contextMetadata=metadata ?? LogMetadataDTOCollection()
+
     // Add standard decryption metadata
-    contextMetadata = contextMetadata
+    contextMetadata=contextMetadata
       .withPublic(key: "dataIdentifier", value: dataIdentifier)
       .withPrivate(key: "keyIdentifier", value: keyIdentifier)
-    
+
     if let algorithm {
-      contextMetadata = contextMetadata.withPublic(key: "algorithm", value: algorithm)
+      contextMetadata=contextMetadata.withPublic(key: "algorithm", value: algorithm)
     }
-    
-    let context = CryptoLogContext(
+
+    let context=CryptoLogContext(
       operation: "decrypt",
       identifier: dataIdentifier,
       metadata: contextMetadata
     )
-    
+
     await info(message, context: context)
   }
 
@@ -318,21 +316,21 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
     _ message: String,
     keyIdentifier: String,
     keyType: String,
-    metadata: LogMetadataDTOCollection? = nil
+    metadata: LogMetadataDTOCollection?=nil
   ) async {
-    var contextMetadata = metadata ?? LogMetadataDTOCollection()
-    
+    var contextMetadata=metadata ?? LogMetadataDTOCollection()
+
     // Add standard key generation metadata
-    contextMetadata = contextMetadata
+    contextMetadata=contextMetadata
       .withSensitive(key: "keyIdentifier", value: keyIdentifier)
       .withPublic(key: "keyType", value: keyType)
-    
-    let context = CryptoLogContext(
+
+    let context=CryptoLogContext(
       operation: "generateKey",
       identifier: keyIdentifier,
       metadata: contextMetadata
     )
-    
+
     await info(message, context: context)
   }
 
@@ -349,21 +347,21 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
     _ message: String,
     dataIdentifier: String,
     storageType: String,
-    metadata: LogMetadataDTOCollection? = nil
+    metadata: LogMetadataDTOCollection?=nil
   ) async {
-    var contextMetadata = metadata ?? LogMetadataDTOCollection()
-    
+    var contextMetadata=metadata ?? LogMetadataDTOCollection()
+
     // Add standard data storage metadata
-    contextMetadata = contextMetadata
+    contextMetadata=contextMetadata
       .withPublic(key: "dataIdentifier", value: dataIdentifier)
       .withPublic(key: "storageType", value: storageType)
-    
-    let context = CryptoLogContext(
+
+    let context=CryptoLogContext(
       operation: "storeData",
       identifier: dataIdentifier,
       metadata: contextMetadata
     )
-    
+
     await info(message, context: context)
   }
 
@@ -379,25 +377,25 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
   public func logHashing(
     _ message: String,
     dataIdentifier: String,
-    algorithm: String? = nil,
-    metadata: LogMetadataDTOCollection? = nil
+    algorithm: String?=nil,
+    metadata: LogMetadataDTOCollection?=nil
   ) async {
-    var contextMetadata = metadata ?? LogMetadataDTOCollection()
-    
+    var contextMetadata=metadata ?? LogMetadataDTOCollection()
+
     // Add standard hashing metadata
-    contextMetadata = contextMetadata
+    contextMetadata=contextMetadata
       .withPublic(key: "dataIdentifier", value: dataIdentifier)
-    
+
     if let algorithm {
-      contextMetadata = contextMetadata.withPublic(key: "algorithm", value: algorithm)
+      contextMetadata=contextMetadata.withPublic(key: "algorithm", value: algorithm)
     }
-    
-    let context = CryptoLogContext(
+
+    let context=CryptoLogContext(
       operation: "hash",
       identifier: dataIdentifier,
       metadata: contextMetadata
     )
-    
+
     await info(message, context: context)
   }
 
@@ -416,22 +414,22 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
     dataIdentifier: String,
     signatureIdentifier: String,
     keyIdentifier: String,
-    metadata: LogMetadataDTOCollection? = nil
+    metadata: LogMetadataDTOCollection?=nil
   ) async {
-    var contextMetadata = metadata ?? LogMetadataDTOCollection()
-    
+    var contextMetadata=metadata ?? LogMetadataDTOCollection()
+
     // Add standard signature verification metadata
-    contextMetadata = contextMetadata
+    contextMetadata=contextMetadata
       .withPublic(key: "dataIdentifier", value: dataIdentifier)
       .withPublic(key: "signatureIdentifier", value: signatureIdentifier)
       .withPrivate(key: "keyIdentifier", value: keyIdentifier)
-    
-    let context = CryptoLogContext(
+
+    let context=CryptoLogContext(
       operation: "verifySignature",
       identifier: dataIdentifier,
       metadata: contextMetadata
     )
-    
+
     await info(message, context: context)
   }
 
@@ -449,26 +447,26 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
     _ message: String,
     dataIdentifier: String,
     keyIdentifier: String,
-    algorithm: String? = nil,
-    metadata: LogMetadataDTOCollection? = nil
+    algorithm: String?=nil,
+    metadata: LogMetadataDTOCollection?=nil
   ) async {
-    var contextMetadata = metadata ?? LogMetadataDTOCollection()
-    
+    var contextMetadata=metadata ?? LogMetadataDTOCollection()
+
     // Add standard signing metadata
-    contextMetadata = contextMetadata
+    contextMetadata=contextMetadata
       .withPublic(key: "dataIdentifier", value: dataIdentifier)
       .withPrivate(key: "keyIdentifier", value: keyIdentifier)
-    
+
     if let algorithm {
-      contextMetadata = contextMetadata.withPublic(key: "algorithm", value: algorithm)
+      contextMetadata=contextMetadata.withPublic(key: "algorithm", value: algorithm)
     }
-    
-    let context = CryptoLogContext(
+
+    let context=CryptoLogContext(
       operation: "sign",
       identifier: dataIdentifier,
       metadata: contextMetadata
     )
-    
+
     await info(message, context: context)
   }
 }

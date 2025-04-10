@@ -140,14 +140,14 @@ public actor SecureCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
       return .failure(.keyNotFound)
     }
 
-    let encryptedData = await cryptoProvider.encrypt(
-      data: Data(data), 
+    let encryptedData=await cryptoProvider.encrypt(
+      data: Data(data),
       key: Data(key),
       options: nil
     )
 
     switch encryptedData {
-      case .success(let encryptedDataResult):
+      case let .success(encryptedDataResult):
         let encryptedIdentifier="encrypted_\(UUID().uuidString)"
         let storeResult=await secureStorage.storeData(
           [UInt8](encryptedDataResult),
@@ -184,7 +184,7 @@ public actor SecureCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
         )
 
         return .success(encryptedIdentifier)
-      case .failure(let error):
+      case let .failure(error):
         let errorContext=CryptoLogContext(
           operation: "encrypt",
           additionalContext: LogMetadataDTOCollection().withPrivate(
@@ -270,14 +270,14 @@ public actor SecureCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
       return .failure(.keyNotFound)
     }
 
-    let decryptedData = await cryptoProvider.decrypt(
-      data: Data(encryptedData), 
+    let decryptedData=await cryptoProvider.decrypt(
+      data: Data(encryptedData),
       key: Data(key),
       options: nil
     )
 
     switch decryptedData {
-      case .success(let decryptedDataResult):
+      case let .success(decryptedDataResult):
         let decryptedIdentifier="decrypted_\(UUID().uuidString)"
         let storeResult=await secureStorage.storeData(
           [UInt8](decryptedDataResult),
@@ -314,7 +314,7 @@ public actor SecureCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
         )
 
         return .success(decryptedIdentifier)
-      case .failure(let error):
+      case let .failure(error):
         let errorContext=CryptoLogContext(
           operation: "decrypt",
           additionalContext: LogMetadataDTOCollection().withPrivate(
@@ -550,11 +550,11 @@ public actor SecureCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
     let keyIdentifier="key_\(UUID().uuidString)"
 
     // Generate random key data
-    let keyDataResult = await cryptoProvider.generateRandomData(length: length)
-    
-    guard case let .success(keyData) = keyDataResult else {
-      if case let .failure(error) = keyDataResult {
-        let errorContext = CryptoLogContext(
+    let keyDataResult=await cryptoProvider.generateRandomData(length: length)
+
+    guard case let .success(keyData)=keyDataResult else {
+      if case let .failure(error)=keyDataResult {
+        let errorContext=CryptoLogContext(
           operation: "generateKey",
           additionalContext: LogMetadataDTOCollection().withPrivate(
             key: "error",
@@ -574,7 +574,7 @@ public actor SecureCryptoServiceImpl: @preconcurrency CryptoServiceProtocol {
     )
 
     guard case .success=storeResult else {
-      if case let .failure(error) = storeResult {
+      if case let .failure(error)=storeResult {
         return .failure(error)
       }
       return .failure(.operationFailed("Failed to store key"))

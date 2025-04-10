@@ -19,7 +19,7 @@ import os.log
 
  // Log with privacy-enhanced context
  await coreLogger.info("Service initialised", context: coreLogContext)
- 
+
  // Create a logger with subsystem and category (OSLog style)
  let osLogger = LoggerFactory.createOSLogger(
      subsystem: "com.example.myapp",
@@ -29,7 +29,7 @@ import os.log
  */
 public enum LoggerFactory {
   /// Shared logging service instance for all loggers
-  private static let sharedLoggingService = DefaultLoggingService()
+  private static let sharedLoggingService=DefaultLoggingService()
 
   /**
    Creates a domain logger for core framework operations
@@ -38,7 +38,7 @@ public enum LoggerFactory {
    - Returns: A privacy-aware domain logger for core operations
    */
   public static func createCoreLogger(source: String) -> DomainLogger {
-    let metadata = LogMetadataDTOCollection()
+    let metadata=LogMetadataDTOCollection()
       .withPublic(key: "source", value: source)
       .withPublic(key: "moduleVersion", value: "1.0.0")
 
@@ -56,7 +56,7 @@ public enum LoggerFactory {
    - Returns: A privacy-aware domain logger for crypto operations
    */
   public static func createCryptoLogger(source: String) -> DomainLogger {
-    let metadata = LogMetadataDTOCollection()
+    let metadata=LogMetadataDTOCollection()
       .withPublic(key: "source", value: source)
       .withPublic(key: "securityLevel", value: "HIGH")
 
@@ -74,7 +74,7 @@ public enum LoggerFactory {
    - Returns: A privacy-aware domain logger for security operations
    */
   public static func createSecurityLogger(source: String) -> DomainLogger {
-    let metadata = LogMetadataDTOCollection()
+    let metadata=LogMetadataDTOCollection()
       .withPublic(key: "source", value: source)
       .withPublic(key: "securityDomain", value: "CORE_SECURITY")
 
@@ -92,7 +92,7 @@ public enum LoggerFactory {
    - Returns: A privacy-aware domain logger for key management
    */
   public static func createKeyManagementLogger(source: String) -> DomainLogger {
-    let metadata = LogMetadataDTOCollection()
+    let metadata=LogMetadataDTOCollection()
       .withPublic(key: "source", value: source)
       .withPublic(key: "component", value: "KeyManagement")
 
@@ -102,18 +102,18 @@ public enum LoggerFactory {
       source: source
     )
   }
-  
+
   /**
    Creates a domain logger for network operations
-   
+
    - Parameter source: The source component creating the logger
    - Returns: A privacy-aware domain logger for network operations
    */
   public static func createNetworkLogger(source: String) -> DomainLogger {
-    let metadata = LogMetadataDTOCollection()
+    let metadata=LogMetadataDTOCollection()
       .withPublic(key: "source", value: source)
       .withPublic(key: "component", value: "Network")
-    
+
     return createDomainLoggerInternal(
       domainName: "Network",
       metadata: metadata,
@@ -128,7 +128,7 @@ public enum LoggerFactory {
    - Returns: A privacy-aware domain logger for file system operations
    */
   public static func createFileSystemLogger(source: String) -> DomainLogger {
-    let metadata = LogMetadataDTOCollection()
+    let metadata=LogMetadataDTOCollection()
       .withPublic(key: "source", value: source)
 
     return createDomainLoggerInternal(domainName: "FileSystem", metadata: metadata, source: source)
@@ -143,15 +143,15 @@ public enum LoggerFactory {
    - Returns: A privacy-aware domain logger for the specified domain
    */
   public static func createDomainLogger(domainName: String, source: String) -> DomainLogger {
-    let metadata = LogMetadataDTOCollection()
+    let metadata=LogMetadataDTOCollection()
       .withPublic(key: "source", value: source)
 
     return createDomainLoggerInternal(domainName: domainName, metadata: metadata, source: source)
   }
-  
+
   /**
    Creates a logger with the specified subsystem and category using OSLog.
-   
+
    This method provides compatibility with the APIServices logger style.
 
    - Parameters:
@@ -171,10 +171,10 @@ public enum LoggerFactory {
       defaultPrivacyLevel: privacyLevel
     )
   }
-  
+
   /**
    Creates a logger with the specified configuration.
-   
+
    This method provides compatibility with the APIServices logger style.
 
    - Parameters:
@@ -209,12 +209,12 @@ public enum LoggerFactory {
    - Returns: A new SecureLoggerActor instance integrated with the default logging service
    */
   public static func createIntegratedSecureLogger(
-    subsystem: String = "com.umbra.security",
+    subsystem: String="com.umbra.security",
     category: String,
-    includeTimestamps: Bool = true
+    includeTimestamps: Bool=true
   ) async -> SecureLoggerActor {
     // Create a logging service actor
-    let loggingServiceActor = await LoggingServiceFactory.shared.createDefault()
+    let loggingServiceActor=await LoggingServiceFactory.shared.createDefault()
 
     // Create a secure logger that integrates with the logging service
     return SecureLoggerActor(
@@ -228,10 +228,10 @@ public enum LoggerFactory {
   static func createDomainLoggerInternal(
     domainName: String,
     metadata: LogMetadataDTOCollection,
-    source: String
+    source _: String
   ) -> DomainLogger {
     // Create a logging protocol to pass to the BaseDomainLogger
-    let loggingProtocol = BasicLoggingProtocol(
+    let loggingProtocol=BasicLoggingProtocol(
       service: sharedLoggingService,
       domainName: domainName,
       metadata: metadata
@@ -250,12 +250,16 @@ public enum LoggerFactory {
 public final class DefaultLoggingService: LoggingServiceProtocol {
   /// The minimum log level to display
   private let minimumLogLevel: UmbraLogLevel = .info
-  
+
   public init() {}
 
   // Implementing required protocol methods from LoggingServiceProtocol
 
-  public func verbose(_ message: String, metadata: LogMetadataDTOCollection?, source: String?) async {
+  public func verbose(
+    _ message: String,
+    metadata: LogMetadataDTOCollection?,
+    source: String?
+  ) async {
     await logWithLevel(.verbose, message: message, metadata: metadata, source: source)
   }
 
@@ -267,7 +271,11 @@ public final class DefaultLoggingService: LoggingServiceProtocol {
     await logWithLevel(.info, message: message, metadata: metadata, source: source)
   }
 
-  public func warning(_ message: String, metadata: LogMetadataDTOCollection?, source: String?) async {
+  public func warning(
+    _ message: String,
+    metadata: LogMetadataDTOCollection?,
+    source: String?
+  ) async {
     await logWithLevel(.warning, message: message, metadata: metadata, source: source)
   }
 
@@ -275,7 +283,11 @@ public final class DefaultLoggingService: LoggingServiceProtocol {
     await logWithLevel(.error, message: message, metadata: metadata, source: source)
   }
 
-  public func critical(_ message: String, metadata: LogMetadataDTOCollection?, source: String?) async {
+  public func critical(
+    _ message: String,
+    metadata: LogMetadataDTOCollection?,
+    source: String?
+  ) async {
     await logWithLevel(.critical, message: message, metadata: metadata, source: source)
   }
 
@@ -319,40 +331,40 @@ public final class DefaultLoggingService: LoggingServiceProtocol {
     }
 
     // Format the message with metadata
-    let formattedMessage = formatMessage(message, metadata: metadata, source: source)
-    
+    let formattedMessage=formatMessage(message, metadata: metadata, source: source)
+
     // Print to console (in a real implementation, this would go to the configured destinations)
     print("[\(level)] \(formattedMessage)")
   }
-  
+
   /// Format a log message with metadata
   private func formatMessage(
     _ message: String,
     metadata: LogMetadataDTOCollection?,
     source: String?
   ) -> String {
-    var result = message
-    
+    var result=message
+
     // Add source if available
-    if let source = source, !source.isEmpty {
-      result = "[\(source)] \(result)"
+    if let source, !source.isEmpty {
+      result="[\(source)] \(result)"
     }
-    
+
     // Add metadata if available
-    if let metadata = metadata, !metadata.entries.isEmpty {
-      result = "\(result) \(formatMetadata(metadata))"
+    if let metadata, !metadata.entries.isEmpty {
+      result="\(result) \(formatMetadata(metadata))"
     }
-    
+
     return result
   }
-  
+
   /// Format metadata as a string
   private func formatMetadata(_ metadata: LogMetadataDTOCollection) -> String {
-    var parts: [String] = []
-    
+    var parts: [String]=[]
+
     for entry in metadata.entries {
       // Format based on privacy level
-      let value = switch entry.privacyLevel {
+      let value=switch entry.privacyLevel {
         case .public:
           entry.value
         case .private:
@@ -364,10 +376,10 @@ public final class DefaultLoggingService: LoggingServiceProtocol {
         case .auto:
           "<auto-redacted>"
       }
-      
+
       parts.append("\(entry.key)=\(value)")
     }
-    
+
     return "{\(parts.joined(separator: ", "))}"
   }
 }
@@ -389,40 +401,48 @@ public actor BasicLoggingProtocol: LoggingProtocol, CoreLoggingProtocol {
     domainName: String,
     metadata: LogMetadataDTOCollection
   ) {
-    self.service = service
-    self.domainName = domainName
-    self.baseMetadata = metadata
-    self.loggingActor = LoggingActor(destinations: [], minimumLogLevel: .info)
+    self.service=service
+    self.domainName=domainName
+    baseMetadata=metadata
+    loggingActor=LoggingActor(destinations: [], minimumLogLevel: .info)
   }
 
-  public func debug(_ message: String, context: LogContextDTO? = nil) async {
-    let metadata = createMetadata(context)
+  public func debug(_ message: String, context: LogContextDTO?=nil) async {
+    let metadata=createMetadata(context)
     await service.debug(message, metadata: metadata, source: context?.source ?? domainName)
   }
 
-  public func info(_ message: String, context: LogContextDTO? = nil) async {
-    let metadata = createMetadata(context)
+  public func info(_ message: String, context: LogContextDTO?=nil) async {
+    let metadata=createMetadata(context)
     await service.info(message, metadata: metadata, source: context?.source ?? domainName)
   }
 
-  public func warning(_ message: String, context: LogContextDTO? = nil) async {
-    let metadata = createMetadata(context)
+  public func warning(_ message: String, context: LogContextDTO?=nil) async {
+    let metadata=createMetadata(context)
     await service.warning(message, metadata: metadata, source: context?.source ?? domainName)
   }
 
-  public func error(_ message: String, context: LogContextDTO? = nil) async {
-    let metadata = createMetadata(context)
+  public func error(_ message: String, context: LogContextDTO?=nil) async {
+    let metadata=createMetadata(context)
     await service.error(message, metadata: metadata, source: context?.source ?? domainName)
   }
 
-  public func critical(_ message: String, context: LogContextDTO? = nil) async {
-    let metadata = createMetadata(context)
+  public func critical(_ message: String, context: LogContextDTO?=nil) async {
+    let metadata=createMetadata(context)
     await service.critical(message, metadata: metadata, source: context?.source ?? domainName)
   }
 
-  public func trace(_ message: String, context: LogContextDTO? = nil) async {
+  public func trace(_ message: String, context: LogContextDTO?=nil) async {
     // For trace, we use debug level but add additional context
-    await log(.trace, message, context: context ?? BaseLogContextDTO(domainName: domainName, source: domainName, metadata: baseMetadata))
+    await log(
+      .trace,
+      message,
+      context: context ?? BaseLogContextDTO(
+        domainName: domainName,
+        source: domainName,
+        metadata: baseMetadata
+      )
+    )
   }
 
   /// Core logging method required by CoreLoggingProtocol
@@ -431,33 +451,33 @@ public actor BasicLoggingProtocol: LoggingProtocol, CoreLoggingProtocol {
   ///   - message: The message to log
   ///   - context: The context information for the log as DTO
   public func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
-    let metadata = createMetadata(context)
-    
+    let metadata=createMetadata(context)
+
     switch level {
-    case .trace:
-      await service.verbose(message, metadata: metadata, source: context.source)
-    case .debug:
-      await service.debug(message, metadata: metadata, source: context.source)
-    case .info:
-      await service.info(message, metadata: metadata, source: context.source)
-    case .warning:
-      await service.warning(message, metadata: metadata, source: context.source)
-    case .error:
-      await service.error(message, metadata: metadata, source: context.source)
-    case .critical:
-      await service.critical(message, metadata: metadata, source: context.source)
+      case .trace:
+        await service.verbose(message, metadata: metadata, source: context.source)
+      case .debug:
+        await service.debug(message, metadata: metadata, source: context.source)
+      case .info:
+        await service.info(message, metadata: metadata, source: context.source)
+      case .warning:
+        await service.warning(message, metadata: metadata, source: context.source)
+      case .error:
+        await service.error(message, metadata: metadata, source: context.source)
+      case .critical:
+        await service.critical(message, metadata: metadata, source: context.source)
     }
   }
 
   private func createMetadata(_ context: LogContextDTO?) -> LogMetadataDTOCollection {
-    var metadata: LogMetadataDTOCollection = baseMetadata
+    var metadata: LogMetadataDTOCollection=baseMetadata
 
     // Add context metadata if available
-    if let context = context {
-      metadata = metadata
+    if let context {
+      metadata=metadata
         .withPublic(key: "domain", value: domainName)
-      if let correlationID = context.correlationID {
-        metadata = metadata.withPublic(key: "correlationID", value: correlationID)
+      if let correlationID=context.correlationID {
+        metadata=metadata.withPublic(key: "correlationID", value: correlationID)
       }
     }
 
@@ -477,7 +497,7 @@ public actor OSLoggerAdapter: LoggingProtocol, CoreLoggingProtocol {
 
   /// Default privacy level for this logger
   private let defaultPrivacyLevel: LogPrivacyLevel
-  
+
   /// Actor for async operations
   public let loggingActor: LoggingActor
 
@@ -494,77 +514,81 @@ public actor OSLoggerAdapter: LoggingProtocol, CoreLoggingProtocol {
     category: String,
     defaultPrivacyLevel: LogPrivacyLevel = .private
   ) {
-    self.logger = OSLog(subsystem: subsystem, category: category)
-    self.defaultPrivacyLevel = defaultPrivacyLevel
-    self.loggingActor = LoggingActor(destinations: [], minimumLogLevel: .info)
+    logger=OSLog(subsystem: subsystem, category: category)
+    self.defaultPrivacyLevel=defaultPrivacyLevel
+    loggingActor=LoggingActor(destinations: [], minimumLogLevel: .info)
   }
-  
+
   /// Core logging method required by CoreLoggingProtocol
   /// - Parameters:
   ///   - level: The severity level of the log
   ///   - message: The message to log
   ///   - context: The context information for the log as DTO
   public func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
-    let osLogType = convertToOSLogType(level)
-    let source = context.source
-    let metadata = context.metadata
-    
+    let osLogType=convertToOSLogType(level)
+    let source=context.source
+    let metadata=context.metadata
+
     // Format the log message
-    let formattedMessage = formatLogMessage(message, source: source, metadata: metadata)
-    
+    let formattedMessage=formatLogMessage(message, source: source, metadata: metadata)
+
     // Log to OS log
     os_log("%{public}@", log: logger, type: osLogType, formattedMessage)
   }
-  
+
   /// Convert LogLevel to OSLogType
   private func convertToOSLogType(_ level: LogLevel) -> OSLogType {
     switch level {
       case .trace, .debug:
-        return .debug
+        .debug
       case .info:
-        return .info
+        .info
       case .warning:
-        return .default
+        .default
       case .error:
-        return .error
+        .error
       case .critical:
-        return .fault
+        .fault
     }
   }
-  
+
   /// Format a log message with source and metadata
-  private func formatLogMessage(_ message: String, source: String?, metadata: LogMetadataDTOCollection?) -> String {
-    var components: [String] = []
-    
+  private func formatLogMessage(
+    _ message: String,
+    source: String?,
+    metadata: LogMetadataDTOCollection?
+  ) -> String {
+    var components: [String]=[]
+
     // Add source if available
-    if let source = source, !source.isEmpty {
+    if let source, !source.isEmpty {
       components.append("[\(source)]")
     }
-    
+
     // Add message
     components.append(message)
-    
+
     // Format metadata if available
-    if let metadataCollection = metadata {
-      let metadataString = formatMetadata(metadataCollection)
+    if let metadataCollection=metadata {
+      let metadataString=formatMetadata(metadataCollection)
       if !metadataString.isEmpty {
         components.append(metadataString)
       }
     }
-    
+
     return components.joined(separator: " ")
   }
-  
+
   /// Format metadata to a string
   private func formatMetadata(_ metadata: LogMetadataDTOCollection) -> String {
     guard !metadata.isEmpty else {
       return ""
     }
-    
-    let parts: [String] = metadata.entries.map { entry in
+
+    let parts: [String]=metadata.entries.map { entry in
       "\(entry.key)=\(entry.value)"
     }
-    
+
     return "{ " + parts.joined(separator: ", ") + " }"
   }
 }

@@ -190,12 +190,14 @@ public enum BackupServiceFactory {
     // based on configuration, environment, etc.
     fatalError("BackupServiceFactory.createService() not implemented")
   }
-  
+
   public static func createDefault(
     logger _: Logger,
     repositoryPath _: String
   ) throws -> BackupServiceProtocol {
-    fatalError("BackupServiceFactory.createDefault() not implemented: unable to create default backup service")
+    fatalError(
+      "BackupServiceFactory.createDefault() not implemented: unable to create default backup service"
+    )
   }
 }
 

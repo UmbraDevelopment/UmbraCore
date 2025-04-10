@@ -156,7 +156,7 @@ public actor LoggingServiceFactory {
       return cachedLogger
     }
 
-    let filePath = logDirectoryPath + "/" + logFileName
+    let filePath=logDirectoryPath + "/" + logFileName
 
     let consoleDestination=ConsoleLogDestination(
       identifier: "console-prod",
@@ -294,7 +294,7 @@ public actor LoggingServiceFactory {
       return cachedLogger
     }
 
-    let filePath = logDirectoryPath + "/" + logFileName
+    let filePath=logDirectoryPath + "/" + logFileName
 
     let consoleDestination=ConsoleLogDestination(
       identifier: "console-comprehensive",
@@ -431,7 +431,7 @@ public actor LoggingServiceFactory {
     )
 
     // Create file destination for persistent logs
-    let filePath = logDirectoryPath + "/" + "\(subsystem)-\(category).log"
+    let filePath=logDirectoryPath + "/" + "\(subsystem)-\(category).log"
     let fileDestination=FileLogDestination(
       identifier: "privacy-comp-file",
       filePath: filePath,

@@ -1,6 +1,6 @@
+import Foundation
 import LoggingInterfaces
 import LoggingTypes
-import Foundation
 
 /// Protocol defining domain-specific logging capabilities
 public protocol DomainLoggerProtocol: Sendable {
@@ -81,8 +81,8 @@ public actor BaseDomainLogger: DomainLoggerProtocol {
   /// Log a message with the specified level and context
   public func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
     let formattedMessage="[\(domainName)] \(message)"
-    let metadata = context.metadata
-    
+    let metadata=context.metadata
+
     // Choose the appropriate logging method based on level
     switch level {
       case .trace:
@@ -171,16 +171,16 @@ public actor BaseDomainLogger: DomainLoggerProtocol {
   public func logError(_ error: Error, context: LogContextDTO) async {
     if let loggableError=error as? LoggableErrorProtocol {
       // Use the error's built-in metadata collection
-      let metadataCollection = loggableError.createMetadataCollection()
-      let formattedMessage = "[\(domainName)] \(loggableError.getLogMessage())"
-      let source = "\(loggableError.getSource()) via \(domainName)"
+      let metadataCollection=loggableError.createMetadataCollection()
+      let formattedMessage="[\(domainName)] \(loggableError.getLogMessage())"
+      let source="\(loggableError.getSource()) via \(domainName)"
 
       // The logging service expects LogMetadataDTOCollection
       await loggingService.error(formattedMessage, metadata: metadataCollection, source: source)
     } else {
       // Handle standard errors with the provided privacy level
-      let formattedMessage = "[\(domainName)] \(error.localizedDescription)"
-      let metadata = context.metadata
+      let formattedMessage="[\(domainName)] \(error.localizedDescription)"
+      let metadata=context.metadata
 
       await loggingService.error(formattedMessage, metadata: metadata, source: domainName)
     }

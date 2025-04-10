@@ -88,97 +88,121 @@ public enum KeyManagementFactory {
  */
 private actor DefaultLoggingService: LoggingServiceProtocol, PrivacyAwareLoggingProtocol {
   // MARK: - Properties
-  
+
   private var minimumLogLevel: LogLevel = .info
-  private var destinations: [String: any LogDestination] = [:]
+  private var destinations: [String: any LogDestination]=[:]
   private let actor: LoggingActor
-  
+
   // MARK: - Initializer
-  
+
   init() {
-    self.actor = LoggingActor(destinations: [], minimumLogLevel: .info)
+    actor=LoggingActor(destinations: [], minimumLogLevel: .info)
   }
-  
+
   // MARK: - LoggingProtocol Properties
-  
+
   nonisolated var loggingActor: LoggingActor {
     actor
   }
-  
+
   // MARK: - LoggingProtocol Methods
-  
-  func verbose(_ message: String, metadata: LogMetadataDTOCollection? = nil, source: String? = nil) async {
+
+  func verbose(
+    _ message: String,
+    metadata: LogMetadataDTOCollection?=nil,
+    source: String?=nil
+  ) async {
     await log(.trace, message, context: BaseLogContextDTO(
       domainName: "SecurityKeyManagement",
       source: source,
       metadataCollection: metadata
     ))
   }
-  
-  func trace(_ message: String, metadata: LogMetadataDTOCollection? = nil, source: String? = nil) async {
+
+  func trace(
+    _ message: String,
+    metadata: LogMetadataDTOCollection?=nil,
+    source: String?=nil
+  ) async {
     await log(.trace, message, context: BaseLogContextDTO(
       domainName: "SecurityKeyManagement",
       source: source,
       metadataCollection: metadata
     ))
   }
-  
-  func debug(_ message: String, metadata: LogMetadataDTOCollection? = nil, source: String? = nil) async {
+
+  func debug(
+    _ message: String,
+    metadata: LogMetadataDTOCollection?=nil,
+    source: String?=nil
+  ) async {
     await log(.debug, message, context: BaseLogContextDTO(
       domainName: "SecurityKeyManagement",
       source: source,
       metadataCollection: metadata
     ))
   }
-  
-  func info(_ message: String, metadata: LogMetadataDTOCollection? = nil, source: String? = nil) async {
+
+  func info(_ message: String, metadata: LogMetadataDTOCollection?=nil, source: String?=nil) async {
     await log(.info, message, context: BaseLogContextDTO(
       domainName: "SecurityKeyManagement",
       source: source,
       metadataCollection: metadata
     ))
   }
-  
-  func warning(_ message: String, metadata: LogMetadataDTOCollection? = nil, source: String? = nil) async {
+
+  func warning(
+    _ message: String,
+    metadata: LogMetadataDTOCollection?=nil,
+    source: String?=nil
+  ) async {
     await log(.warning, message, context: BaseLogContextDTO(
       domainName: "SecurityKeyManagement",
       source: source,
       metadataCollection: metadata
     ))
   }
-  
-  func error(_ message: String, metadata: LogMetadataDTOCollection? = nil, source: String? = nil) async {
+
+  func error(
+    _ message: String,
+    metadata: LogMetadataDTOCollection?=nil,
+    source: String?=nil
+  ) async {
     await log(.error, message, context: BaseLogContextDTO(
       domainName: "SecurityKeyManagement",
       source: source,
       metadataCollection: metadata
     ))
   }
-  
-  func critical(_ message: String, metadata: LogMetadataDTOCollection? = nil, source: String? = nil) async {
+
+  func critical(
+    _ message: String,
+    metadata: LogMetadataDTOCollection?=nil,
+    source: String?=nil
+  ) async {
     await log(.critical, message, context: BaseLogContextDTO(
       domainName: "SecurityKeyManagement",
       source: source,
       metadataCollection: metadata
     ))
   }
-  
-  func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
+
+  func log(_: LogLevel, _: String, context _: LogContextDTO) async {
     // Simple empty implementation - doesn't actually log anything
   }
-  
+
   // MARK: - LoggingServiceProtocol Methods
-  
+
   func addDestination(_ destination: any LogDestination) {
-    let identifier = destination.identifier
-    destinations[identifier] = destination
+    let identifier=destination.identifier
+    destinations[identifier]=destination
   }
-  
+
   func removeDestination(_ destination: any LogDestination) {
-    let identifier = destination.identifier
+    let identifier=destination.identifier
     destinations.removeValue(forKey: identifier)
   }
-  
+
   func removeDestination(withIdentifier identifier: String) async -> Bool {
     if destinations[identifier] != nil {
       destinations.removeValue(forKey: identifier)
@@ -186,63 +210,63 @@ private actor DefaultLoggingService: LoggingServiceProtocol, PrivacyAwareLogging
     }
     return false
   }
-  
+
   func setMinimumLogLevel(_ level: UmbraLogLevel) async {
     // Map UmbraLogLevel to LogLevel
     switch level {
-    case .verbose:
-      minimumLogLevel = .trace
-    case .debug:
-      minimumLogLevel = .debug
-    case .info:
-      minimumLogLevel = .info
-    case .warning:
-      minimumLogLevel = .warning
-    case .error:
-      minimumLogLevel = .error
-    case .critical:
-      minimumLogLevel = .critical
+      case .verbose:
+        minimumLogLevel = .trace
+      case .debug:
+        minimumLogLevel = .debug
+      case .info:
+        minimumLogLevel = .info
+      case .warning:
+        minimumLogLevel = .warning
+      case .error:
+        minimumLogLevel = .error
+      case .critical:
+        minimumLogLevel = .critical
     }
   }
-  
+
   func getMinimumLogLevel() async -> UmbraLogLevel {
     // Map LogLevel to UmbraLogLevel
     switch minimumLogLevel {
-    case .trace:
-      return .verbose
-    case .debug:
-      return .debug
-    case .info:
-      return .info
-    case .warning:
-      return .warning
-    case .error:
-      return .error
-    case .critical:
-      return .critical
+      case .trace:
+        .verbose
+      case .debug:
+        .debug
+      case .info:
+        .info
+      case .warning:
+        .warning
+      case .error:
+        .error
+      case .critical:
+        .critical
     }
   }
-  
+
   func flushAllDestinations() async throws {
     // No-op in this simple implementation
   }
-  
+
   // MARK: - PrivacyAwareLoggingProtocol Methods
-  
-  func log(_ level: LogLevel, _ message: PrivacyString, context: LogContextDTO) async {
+
+  func log(_: LogLevel, _: PrivacyString, context _: LogContextDTO) async {
     // Simple empty implementation - doesn't actually log anything
   }
-  
+
   func logSensitive(
-    _ level: LogLevel,
-    _ message: String,
-    sensitiveValues: LogMetadata,
-    context: LogContextDTO
+    _: LogLevel,
+    _: String,
+    sensitiveValues _: LogMetadata,
+    context _: LogContextDTO
   ) async {
     // Simple empty implementation - doesn't actually log anything
   }
-  
-  func logError(_ error: Error, privacyLevel: LogPrivacyLevel, context: LogContextDTO) async {
+
+  func logError(_: Error, privacyLevel _: LogPrivacyLevel, context _: LogContextDTO) async {
     // Simple empty implementation - doesn't actually log anything
   }
 }
@@ -255,35 +279,35 @@ private struct BaseLogContextDTO: LogContextDTO {
   let source: String?
   let correlationID: String?
   let metadata: LogMetadataDTOCollection
-  
+
   init(
     domainName: String,
-    source: String? = nil,
-    correlationID: String? = nil,
-    metadataCollection: LogMetadataDTOCollection? = nil
+    source: String?=nil,
+    correlationID: String?=nil,
+    metadataCollection: LogMetadataDTOCollection?=nil
   ) {
-    self.domainName = domainName
-    self.source = source
-    self.correlationID = correlationID
-    self.metadata = metadataCollection ?? LogMetadataDTOCollection()
+    self.domainName=domainName
+    self.source=source
+    self.correlationID=correlationID
+    metadata=metadataCollection ?? LogMetadataDTOCollection()
   }
-  
+
   func getSource() -> String {
-    return source ?? "SecurityKeyManagement"
+    source ?? "SecurityKeyManagement"
   }
-  
+
   func getDomain() -> String {
-    return domainName
+    domainName
   }
-  
+
   func createMetadataCollection() -> LogMetadataDTOCollection {
-    var collection = metadata
-    collection = collection.withPublic(key: "domain", value: domainName)
-    if let source = source {
-      collection = collection.withPublic(key: "source", value: source)
+    var collection=metadata
+    collection=collection.withPublic(key: "domain", value: domainName)
+    if let source {
+      collection=collection.withPublic(key: "source", value: source)
     }
-    if let correlationID = correlationID {
-      collection = collection.withPublic(key: "correlationID", value: correlationID)
+    if let correlationID {
+      collection=collection.withPublic(key: "correlationID", value: correlationID)
     }
     return collection
   }

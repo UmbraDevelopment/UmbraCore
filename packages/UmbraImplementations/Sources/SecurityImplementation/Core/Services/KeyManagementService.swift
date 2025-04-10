@@ -5,9 +5,9 @@ import LoggingTypes
 
 /// Helper function to create LogMetadataDTOCollection from dictionary
 private func createMetadataCollection(_ dict: [String: String]) -> LogMetadataDTOCollection {
-  var collection = LogMetadataDTOCollection()
+  var collection=LogMetadataDTOCollection()
   for (key, value) in dict {
-    collection = collection.withPublic(key: key, value: value)
+    collection=collection.withPublic(key: key, value: value)
   }
   return collection
 }
@@ -95,13 +95,13 @@ final class KeyManagementService: SecurityServiceBase {
     let operation="generateKey"
 
     // Create metadata for logging with privacy annotations
-    let logMetadata = LogMetadataDTOCollection()
+    let logMetadata=LogMetadataDTOCollection()
       .withPublic(key: "operationId", value: operationID)
       .withPublic(key: "operation", value: operation)
       .withPublic(key: "config", value: "\(config)")
 
     // Create a proper context with privacy-aware metadata
-    let context = SecurityLogContext(
+    let context=SecurityLogContext(
       operation: operation,
       source: "SecurityImplementation",
       metadata: logMetadata
@@ -144,7 +144,7 @@ final class KeyManagementService: SecurityServiceBase {
       ])
 
       // Create a proper context with privacy-aware metadata
-      let successContext = SecurityLogContext(
+      let successContext=SecurityLogContext(
         operation: operation,
         source: "KeyManagementService.generateKey",
         metadata: successMetadata
@@ -172,7 +172,7 @@ final class KeyManagementService: SecurityServiceBase {
       ])
 
       // Create a proper context with privacy-aware metadata
-      let errorContext = SecurityLogContext(
+      let errorContext=SecurityLogContext(
         operation: operation,
         source: "KeyManagementService.generateKey",
         metadata: errorMetadata
@@ -201,18 +201,18 @@ final class KeyManagementService: SecurityServiceBase {
    - Returns: Result containing the generated random data or error information
    */
   func generateRandomData(length: Int, config _: SecurityConfigDTO) async -> SecurityResultDTO {
-    let operationID = UUID().uuidString
-    let startTime = Date()
+    let operationID=UUID().uuidString
+    let startTime=Date()
 
     // Create metadata for logging with privacy annotations
-    let logMetadata = LogMetadataDTOCollection()
+    let logMetadata=LogMetadataDTOCollection()
       .withPublic(key: "operationId", value: operationID)
       .withPublic(key: "operation", value: "generateRandomData")
       .withPublic(key: "length", value: "\(length)")
       .withPublic(key: "timestamp", value: "\(Date())")
 
     // Create a proper context with privacy-aware metadata
-    let context = SecurityLogContext(
+    let context=SecurityLogContext(
       operation: "generateRandomData",
       source: "SecurityImplementation",
       metadata: logMetadata
@@ -240,7 +240,7 @@ final class KeyManagementService: SecurityServiceBase {
       ])
 
       // Create a proper context with privacy-aware metadata
-      let successContext = SecurityLogContext(
+      let successContext=SecurityLogContext(
         operation: "generateRandomData",
         source: "KeyManagementService.generateRandomData",
         metadata: successMetadata
@@ -268,7 +268,7 @@ final class KeyManagementService: SecurityServiceBase {
       ])
 
       // Create a proper context with privacy-aware metadata
-      let errorContext = SecurityLogContext(
+      let errorContext=SecurityLogContext(
         operation: "generateRandomData",
         source: "KeyManagementService.generateRandomData",
         metadata: errorMetadata
@@ -289,16 +289,4 @@ final class KeyManagementService: SecurityServiceBase {
   }
 }
 
-extension CoreSecurityError {
-  static func invalidVerificationMethod(reason: String) -> CoreSecurityError {
-    return .general(code: "INVALID_VERIFICATION_METHOD", message: reason)
-  }
-  
-  static func verificationFailed(reason: String) -> CoreSecurityError {
-    return .general(code: "VERIFICATION_FAILED", message: reason)
-  }
-  
-  static func notImplemented(reason: String) -> CoreSecurityError {
-    return .general(code: "NOT_IMPLEMENTED", message: reason)
-  }
-}
+// Note: CoreSecurityError extension has been moved to SecurityProvider+Validation.swift

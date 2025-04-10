@@ -40,10 +40,10 @@ public enum SecurityStorageError: Error, Sendable {
 
   /// Invalid input provided to the operation
   case invalidInput(String)
-  
+
   /// Operation was rate limited for security purposes
   case operationRateLimited
-  
+
   /// Generic storage error
   case storageError
 

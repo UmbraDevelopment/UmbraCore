@@ -93,7 +93,7 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
     guard let metadata, !metadata.isEmpty else { return "{}" }
 
     // Format the keys and values from the metadata entries
-    let entries = metadata.entries.map { entry in
+    let entries=metadata.entries.map { entry in
       "\(entry.key)=\(entry.value)"
     }
 
@@ -109,13 +109,13 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
   ///   - context: The logging context containing metadata and source information
   public func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
     // Log locally
-    log(LoggingTypes.LogEntry(
+    await log(LoggingTypes.LogEntry(
       level: LoggingTypes.LogLevel(rawValue: level.rawValue) ?? .info,
       message: message,
       metadata: context.metadata,
       source: context.source ?? "Unknown",
       entryID: nil,
-      timestamp: await LogTimestamp.now()
+      timestamp: LogTimestamp.now()
     ))
 
     // Also log to the actor (actor expects proper underscore-prefixed parameters)
@@ -126,85 +126,85 @@ public actor LoggerImplementation: LoggingProtocol, CoreLoggingProtocol {
 
   public func debug(
     _ message: String,
-    context: LogContextDTO? = nil
+    context: LogContextDTO?=nil
   ) async {
     // Log locally
-    log(LoggingTypes.LogEntry(
+    await log(LoggingTypes.LogEntry(
       level: .debug,
       message: message,
       metadata: context?.metadata,
       source: context?.source ?? "",
-      timestamp: await LogTimestamp.now()
+      timestamp: LogTimestamp.now()
     ))
   }
 
   public func info(
     _ message: String,
-    context: LogContextDTO? = nil
+    context: LogContextDTO?=nil
   ) async {
     // Log locally
-    log(LoggingTypes.LogEntry(
+    await log(LoggingTypes.LogEntry(
       level: .info,
       message: message,
       metadata: context?.metadata,
       source: context?.source ?? "",
-      timestamp: await LogTimestamp.now()
+      timestamp: LogTimestamp.now()
     ))
   }
 
   public func warning(
     _ message: String,
-    context: LogContextDTO? = nil
+    context: LogContextDTO?=nil
   ) async {
     // Log locally
-    log(LoggingTypes.LogEntry(
+    await log(LoggingTypes.LogEntry(
       level: .warning,
       message: message,
       metadata: context?.metadata,
       source: context?.source ?? "",
-      timestamp: await LogTimestamp.now()
+      timestamp: LogTimestamp.now()
     ))
   }
 
   public func error(
     _ message: String,
-    context: LogContextDTO? = nil
+    context: LogContextDTO?=nil
   ) async {
     // Log locally
-    log(LoggingTypes.LogEntry(
+    await log(LoggingTypes.LogEntry(
       level: .error,
       message: message,
       metadata: context?.metadata,
       source: context?.source ?? "",
-      timestamp: await LogTimestamp.now()
+      timestamp: LogTimestamp.now()
     ))
   }
 
   public func critical(
     _ message: String,
-    context: LogContextDTO? = nil
+    context: LogContextDTO?=nil
   ) async {
     // Log locally
-    log(LoggingTypes.LogEntry(
+    await log(LoggingTypes.LogEntry(
       level: .critical,
       message: message,
       metadata: context?.metadata,
       source: context?.source ?? "",
-      timestamp: await LogTimestamp.now()
+      timestamp: LogTimestamp.now()
     ))
   }
 
   public func trace(
     _ message: String,
-    context: LogContextDTO? = nil
+    context: LogContextDTO?=nil
   ) async {
     // Log locally
-    log(LoggingTypes.LogEntry(
+    await log(LoggingTypes.LogEntry(
       level: .trace,
       message: message,
       metadata: context?.metadata,
       source: context?.source ?? "",
-      timestamp: await LogTimestamp.now()
+      timestamp: LogTimestamp.now()
     ))
   }
 

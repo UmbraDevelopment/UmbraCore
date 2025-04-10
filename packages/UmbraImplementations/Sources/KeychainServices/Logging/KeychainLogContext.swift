@@ -4,21 +4,21 @@ import LoggingTypes
 
 /**
  # Keychain Log Context
- 
+
  A keychain-specific log context for structured logging of keychain operations.
- 
+
  This provides metadata tailored for keychain operations including operation type,
  account information, and status with appropriate privacy controls.
- 
+
  ## Privacy Controls
- 
+
  This context implements comprehensive privacy controls for sensitive information:
  - Public information (like status) is logged normally
  - Private information (like operation type) is redacted in production builds
  - Sensitive information (like account identifiers) is always redacted
- 
+
  ## Alpha Dot Five Compliance
- 
+
  This implementation follows the Alpha Dot Five architecture principles by:
  1. Using proper British spelling in documentation
  2. Providing comprehensive privacy controls for sensitive data
@@ -49,7 +49,7 @@ public struct KeychainLogContext: LogContextDTO {
 
   /**
    Creates a new keychain log context.
-   
+
    - Parameters:
      - account: The account identifier (will be treated as sensitive)
      - operation: The type of keychain operation
@@ -62,34 +62,34 @@ public struct KeychainLogContext: LogContextDTO {
   public init(
     account: String,
     operation: String,
-    status: String = "started",
-    source: String? = "KeychainServices",
-    domainName: String = "Keychain",
-    correlationID: String? = nil,
-    metadata: LogMetadataDTOCollection = LogMetadataDTOCollection()
+    status: String="started",
+    source: String?="KeychainServices",
+    domainName: String="Keychain",
+    correlationID: String?=nil,
+    metadata: LogMetadataDTOCollection=LogMetadataDTOCollection()
   ) {
-    self.operation = operation
-    self.account = account
-    self.status = status
-    self.source = source
-    self.domainName = domainName
-    self.correlationID = correlationID
+    self.operation=operation
+    self.account=account
+    self.status=status
+    self.source=source
+    self.domainName=domainName
+    self.correlationID=correlationID
 
     // Create a new metadata collection with keychain-specific fields
     // Account is sensitive information
-    var enhancedMetadata = metadata
-    enhancedMetadata = enhancedMetadata.withSensitive(key: "account", value: account)
+    var enhancedMetadata=metadata
+    enhancedMetadata=enhancedMetadata.withSensitive(key: "account", value: account)
     // Operation is private information
-    enhancedMetadata = enhancedMetadata.withPrivate(key: "operation", value: operation)
+    enhancedMetadata=enhancedMetadata.withPrivate(key: "operation", value: operation)
     // Status is public information
-    enhancedMetadata = enhancedMetadata.withPublic(key: "status", value: status)
+    enhancedMetadata=enhancedMetadata.withPublic(key: "status", value: status)
 
-    self.metadata = enhancedMetadata
+    self.metadata=enhancedMetadata
   }
 
   /**
    Creates an updated copy of this context with new metadata.
-   
+
    - Parameter metadata: The new metadata collection
    - Returns: A new context with updated metadata
    */
@@ -107,7 +107,7 @@ public struct KeychainLogContext: LogContextDTO {
 
   /**
    Creates an updated copy of this context with a new status.
-   
+
    - Parameter status: The new status
    - Returns: A new context with updated status
    */
@@ -125,16 +125,16 @@ public struct KeychainLogContext: LogContextDTO {
 
   /**
    Returns the source of the log entry.
-   
+
    - Returns: The source string
    */
   public func getSource() -> String {
     source ?? "KeychainServices"
   }
-  
+
   /**
    Returns the domain name for the log.
-   
+
    - Returns: The domain name
    */
   public func getDomain() -> String {
@@ -143,25 +143,26 @@ public struct KeychainLogContext: LogContextDTO {
 
   /**
    Creates a metadata collection for this context.
-   
+
    - Returns: A LogMetadataDTOCollection with privacy-aware metadata
    */
   public func createMetadataCollection() -> LogMetadataDTOCollection {
     // The metadata property already contains all the necessary information
     // with proper privacy annotations
-    return metadata
+    metadata
   }
 
   /**
    Creates a new context with additional metadata entries.
-   
+
    - Parameter additionalMetadata: The additional metadata to add
    - Returns: A new context with combined metadata
    */
-  public func withAdditionalMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> KeychainLogContext {
+  public func withAdditionalMetadata(_ additionalMetadata: LogMetadataDTOCollection)
+  -> KeychainLogContext {
     // Use the merging method to combine metadata collections
-    let combinedMetadata = createMetadataCollection().merging(with: additionalMetadata)
-    
+    let combinedMetadata=createMetadataCollection().merging(with: additionalMetadata)
+
     return KeychainLogContext(
       account: account,
       operation: operation,
@@ -172,18 +173,18 @@ public struct KeychainLogContext: LogContextDTO {
       metadata: combinedMetadata
     )
   }
-  
+
   /**
    Adds a public metadata entry to the context.
-   
+
    - Parameters:
      - key: The metadata key
      - value: The metadata value
    - Returns: A new context with the added metadata
    */
   public func withPublicMetadata(key: String, value: String) -> KeychainLogContext {
-    let updatedMetadata = createMetadataCollection().withPublic(key: key, value: value)
-    
+    let updatedMetadata=createMetadataCollection().withPublic(key: key, value: value)
+
     return KeychainLogContext(
       account: account,
       operation: operation,
@@ -194,18 +195,18 @@ public struct KeychainLogContext: LogContextDTO {
       metadata: updatedMetadata
     )
   }
-  
+
   /**
    Adds a private metadata entry to the context.
-   
+
    - Parameters:
      - key: The metadata key
      - value: The metadata value
    - Returns: A new context with the added metadata
    */
   public func withPrivateMetadata(key: String, value: String) -> KeychainLogContext {
-    let updatedMetadata = createMetadataCollection().withPrivate(key: key, value: value)
-    
+    let updatedMetadata=createMetadataCollection().withPrivate(key: key, value: value)
+
     return KeychainLogContext(
       account: account,
       operation: operation,
@@ -216,18 +217,18 @@ public struct KeychainLogContext: LogContextDTO {
       metadata: updatedMetadata
     )
   }
-  
+
   /**
    Adds a sensitive metadata entry to the context.
-   
+
    - Parameters:
      - key: The metadata key
      - value: The metadata value
    - Returns: A new context with the added metadata
    */
   public func withSensitiveMetadata(key: String, value: String) -> KeychainLogContext {
-    let updatedMetadata = createMetadataCollection().withSensitive(key: key, value: value)
-    
+    let updatedMetadata=createMetadataCollection().withSensitive(key: key, value: value)
+
     return KeychainLogContext(
       account: account,
       operation: operation,

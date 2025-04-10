@@ -4,9 +4,9 @@ import Foundation
 
 /// Helper function to create LogMetadataDTOCollection from dictionary
 private func createMetadataCollection(_ dict: [String: String]) -> LogMetadataDTOCollection {
-  var collection = LogMetadataDTOCollection()
+  var collection=LogMetadataDTOCollection()
   for (key, value) in dict {
-    collection = collection.withPublic(key: key, value: value)
+    collection=collection.withPublic(key: key, value: value)
   }
   return collection
 }
@@ -67,7 +67,8 @@ extension SecurityProviderService {
         useHardwareAcceleration: config.options?.useHardwareAcceleration ?? true,
         operationTimeoutSeconds: config.options?.operationTimeoutSeconds ?? 30.0,
         verifyOperations: config.options?.verifyOperations ?? true,
-        metadata: createMetadataCollection(["location": config.options?.metadata?["storeLocation"] ?? "default",
+        metadata: createMetadataCollection([
+          "location": config.options?.metadata?["storeLocation"] ?? "default",
           "identifier": config.options?.metadata?["storeIdentifier"] ?? UUID().uuidString,
           "data": encryptResult.resultData?.base64EncodedString() ?? ""
         ])
@@ -81,9 +82,13 @@ extension SecurityProviderService {
 
     await logger.info(
       "Storing encrypted data in secure storage",
-      metadata: createMetadataCollection(["location": config.options?.metadata?["storeLocation"] ?? "default"]),
-      source: "SecurityProvider+Operations.encryptAndStore"
-    , source: "SecurityImplementation", source: "SecurityImplementation")
+      metadata: createMetadataCollection([
+        "location": config.options?
+          .metadata?["storeLocation"] ?? "default"
+      ]),
+      source: "SecurityProvider+Operations.encryptAndStore",
+      source: "SecurityImplementation", source: "SecurityImplementation"
+    )
 
     return storeResult
   }
@@ -115,7 +120,8 @@ extension SecurityProviderService {
         useHardwareAcceleration: config.options?.useHardwareAcceleration ?? true,
         operationTimeoutSeconds: config.options?.operationTimeoutSeconds ?? 30.0,
         verifyOperations: config.options?.verifyOperations ?? true,
-        metadata: createMetadataCollection(["location": config.options?.metadata?["storeLocation"] ?? "default",
+        metadata: createMetadataCollection([
+          "location": config.options?.metadata?["storeLocation"] ?? "default",
           "identifier": identifier
         ])
       )
@@ -129,9 +135,13 @@ extension SecurityProviderService {
 
     await logger.info(
       "Retrieving encrypted data from secure storage",
-      metadata: createMetadataCollection(["location": config.options?.metadata?["storeLocation"] ?? "default"]),
-      source: "SecurityProvider+Operations.retrieveAndDecrypt"
-    , source: "SecurityImplementation", source: "SecurityImplementation")
+      metadata: createMetadataCollection([
+        "location": config.options?
+          .metadata?["storeLocation"] ?? "default"
+      ]),
+      source: "SecurityProvider+Operations.retrieveAndDecrypt",
+      source: "SecurityImplementation", source: "SecurityImplementation"
+    )
 
     // If retrieval failed, return that error immediately
     if !retrieveResult.successful {
@@ -143,7 +153,8 @@ extension SecurityProviderService {
       // Log and return error
       await logger.error(
         "Retrieved data was nil", metadata: LogMetadataDTOCollection([
-          "identifier": (value: identifier, privacy: .public, source: "SecurityImplementation", source: "SecurityImplementation")
+          "identifier": (value: identifier, privacy: .public, source: "SecurityImplementation",
+                         source: "SecurityImplementation")
         ]),
         source: "SecurityProvider+Operations.retrieveAndDecrypt"
       )
@@ -151,7 +162,8 @@ extension SecurityProviderService {
       return SecurityResultDTO.failure(
         errorDetails: "Retrieved data was nil",
         executionTimeMs: 0,
-        metadata: createMetadataCollection(["identifier": identifier
+        metadata: createMetadataCollection([
+          "identifier": identifier
         ])
       )
     }
@@ -197,15 +209,16 @@ extension SecurityProviderService {
     config: SecurityConfigDTO
   ) async -> [SecurityResultDTO] {
     let operationID=UUID().uuidString
-    let metadataCollection = LogMetadataDTOCollection()
+    let metadataCollection=LogMetadataDTOCollection()
       .withPublic(key: "itemCount", value: String(dataItems.count))
       .withPublic(key: "operationId", value: operationID)
 
     await logger.info(
-      "Starting batch encryption operation", 
+      "Starting batch encryption operation",
       metadata: metadataCollection,
-      source: "SecurityProvider+Operations.batchEncrypt"
-    , source: "SecurityImplementation", source: "SecurityImplementation")
+      source: "SecurityProvider+Operations.batchEncrypt",
+      source: "SecurityImplementation", source: "SecurityImplementation"
+    )
 
     var results=[SecurityResultDTO]()
     for (index, data) in dataItems.enumerated() {
@@ -255,14 +268,16 @@ extension SecurityProviderService {
       await logger.debug(
         "Processing batch encryption item",
         metadata: createMetadataCollection(["itemIndex": String(index)]),
-        source: "SecurityProvider+Operations.batchEncrypt"
-      , source: "SecurityImplementation", source: "SecurityImplementation")
+        source: "SecurityProvider+Operations.batchEncrypt",
+        source: "SecurityImplementation", source: "SecurityImplementation"
+      )
     }
 
     await logger.info(
       "Completed batch encryption operation", metadata: metadataCollection,
-      source: "SecurityProvider+Operations.batchEncrypt"
-    , source: "SecurityImplementation", source: "SecurityImplementation")
+      source: "SecurityProvider+Operations.batchEncrypt",
+      source: "SecurityImplementation", source: "SecurityImplementation"
+    )
 
     return results
   }
@@ -283,15 +298,16 @@ extension SecurityProviderService {
     config: SecurityConfigDTO
   ) async -> [SecurityResultDTO] {
     let operationID=UUID().uuidString
-    let metadataCollection = LogMetadataDTOCollection()
+    let metadataCollection=LogMetadataDTOCollection()
       .withPublic(key: "itemCount", value: String(dataItems.count))
       .withPublic(key: "operationId", value: operationID)
 
     await logger.info(
-      "Starting batch decryption operation", 
+      "Starting batch decryption operation",
       metadata: metadataCollection,
-      source: "SecurityProvider+Operations.batchDecrypt"
-    , source: "SecurityImplementation", source: "SecurityImplementation")
+      source: "SecurityProvider+Operations.batchDecrypt",
+      source: "SecurityImplementation", source: "SecurityImplementation"
+    )
 
     var results=[SecurityResultDTO]()
     for (index, data) in dataItems.enumerated() {
@@ -341,14 +357,16 @@ extension SecurityProviderService {
       await logger.debug(
         "Processing batch decryption item",
         metadata: createMetadataCollection(["itemIndex": String(index)]),
-        source: "SecurityProvider+Operations.batchDecrypt"
-      , source: "SecurityImplementation", source: "SecurityImplementation")
+        source: "SecurityProvider+Operations.batchDecrypt",
+        source: "SecurityImplementation", source: "SecurityImplementation"
+      )
     }
 
     await logger.info(
       "Completed batch decryption operation", metadata: metadataCollection,
-      source: "SecurityProvider+Operations.batchDecrypt"
-    , source: "SecurityImplementation", source: "SecurityImplementation")
+      source: "SecurityProvider+Operations.batchDecrypt",
+      source: "SecurityImplementation", source: "SecurityImplementation"
+    )
 
     return results
   }
@@ -383,8 +401,9 @@ extension SecurityProviderService {
     else {
       await logger.error(
         "Missing or invalid length parameter for random data generation", metadata: privacyMetadata,
-        source: "SecurityProvider+Operations.generateSecureRandom"
-      , source: "SecurityImplementation", source: "SecurityImplementation")
+        source: "SecurityProvider+Operations.generateSecureRandom",
+        source: "SecurityImplementation", source: "SecurityImplementation"
+      )
 
       return SecurityResultDTO.failure(
         errorDetails: "Missing or invalid length parameter for random data generation",
@@ -433,8 +452,9 @@ extension SecurityProviderService {
 
     await logger.info(
       "Random data generation completed successfully", metadata: privacyMetadata,
-      source: "SecurityProvider+Operations.generateSecureRandom"
-    , source: "SecurityImplementation", source: "SecurityImplementation")
+      source: "SecurityProvider+Operations.generateSecureRandom",
+      source: "SecurityImplementation", source: "SecurityImplementation"
+    )
 
     // Return success result
     return SecurityResultDTO.success(

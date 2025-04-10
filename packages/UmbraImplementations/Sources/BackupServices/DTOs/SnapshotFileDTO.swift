@@ -97,7 +97,7 @@ public struct SnapshotFileDTO: Sendable, Equatable {
    */
   public func toBackupFile() -> BackupInterfaces.BackupFile {
     // Create the backup file
-    return BackupInterfaces.BackupFile(
+    BackupInterfaces.BackupFile(
       path: path,
       size: size,
       modifiedTime: modificationTime,

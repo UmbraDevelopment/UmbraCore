@@ -176,16 +176,16 @@ public actor SecureLoggerActor: SecureLoggingProtocol {
     var logMessage=message
     if includeTimestamps {
       // Use the architecture's LogTimestamp instead of Foundation's Date
-      let timestamp = await LogTimestamp.now()
-      
+      let timestamp=await LogTimestamp.now()
+
       // Format the timestamp using secondsSinceEpoch
-      let seconds = Int(timestamp.secondsSinceEpoch)
-      let milliseconds = Int((timestamp.secondsSinceEpoch - Double(seconds)) * 1000)
-      
+      let seconds=Int(timestamp.secondsSinceEpoch)
+      let milliseconds=Int((timestamp.secondsSinceEpoch - Double(seconds)) * 1000)
+
       // Create formatted timestamp string
-      let date = "\(seconds / 31536000 + 1970)-\(String(format: "%02d", (seconds % 31536000) / 2592000 + 1))-\(String(format: "%02d", ((seconds % 31536000) % 2592000) / 86400 + 1))"
-      let time = "\(String(format: "%02d", (seconds % 86400) / 3600)):\(String(format: "%02d", (seconds % 3600) / 60)):\(String(format: "%02d", seconds % 60)).\(String(format: "%03d", milliseconds))"
-      
+      let date="\(seconds / 31_536_000 + 1970)-\(String(format: "%02d", (seconds % 31_536_000) / 2_592_000 + 1))-\(String(format: "%02d", ((seconds % 31_536_000) % 2_592_000) / 86400 + 1))"
+      let time="\(String(format: "%02d", (seconds % 86400) / 3600)):\(String(format: "%02d", (seconds % 3600) / 60)):\(String(format: "%02d", seconds % 60)).\(String(format: "%03d", milliseconds))"
+
       logMessage="[\(date) \(time)] \(message)"
     }
 
@@ -208,7 +208,7 @@ public actor SecureLoggerActor: SecureLoggingProtocol {
       // Convert metadata to the format expected by the logging service
       var convertedMetadata: LoggingTypes.LogMetadataDTOCollection?
       if let metadata {
-        var metadataCollection = LoggingTypes.LogMetadataDTOCollection()
+        var metadataCollection=LoggingTypes.LogMetadataDTOCollection()
         for (key, value) in metadata {
           // Extract the actual value from our strongly-typed enum
           let stringValue: String=switch value.value {
@@ -222,37 +222,64 @@ public actor SecureLoggerActor: SecureLoggingProtocol {
 
           switch value.privacyLevel {
             case .public:
-              metadataCollection = metadataCollection.withPublic(key: key, value: stringValue)
+              metadataCollection=metadataCollection.withPublic(key: key, value: stringValue)
             case .private:
-              metadataCollection = metadataCollection.withPrivate(key: key, value: stringValue)
+              metadataCollection=metadataCollection.withPrivate(key: key, value: stringValue)
             case .sensitive:
-              metadataCollection = metadataCollection.withSensitive(key: key, value: stringValue)
+              metadataCollection=metadataCollection.withSensitive(key: key, value: stringValue)
             case .hash:
               // For hashed values, we store them as private with a note that they're hashed
-              metadataCollection = metadataCollection.withPrivate(key: key + ".hash", value: stringValue)
+              metadataCollection=metadataCollection.withPrivate(
+                key: key + ".hash",
+                value: stringValue
+              )
             case .auto:
               // For auto-detected sensitive data, treat as sensitive
-              metadataCollection = metadataCollection.withSensitive(key: key, value: stringValue)
+              metadataCollection=metadataCollection.withSensitive(key: key, value: stringValue)
           }
         }
-        convertedMetadata = metadataCollection
+        convertedMetadata=metadataCollection
       }
 
       // Forward to the logging service actor with the appropriate level
       Task {
         switch level {
           case .verbose:
-            await loggingServiceActor.verbose(logMessage, metadata: convertedMetadata, source: category)
+            await loggingServiceActor.verbose(
+              logMessage,
+              metadata: convertedMetadata,
+              source: category
+            )
           case .debug:
-            await loggingServiceActor.debug(logMessage, metadata: convertedMetadata, source: category)
+            await loggingServiceActor.debug(
+              logMessage,
+              metadata: convertedMetadata,
+              source: category
+            )
           case .info:
-            await loggingServiceActor.info(logMessage, metadata: convertedMetadata, source: category)
+            await loggingServiceActor.info(
+              logMessage,
+              metadata: convertedMetadata,
+              source: category
+            )
           case .warning:
-            await loggingServiceActor.warning(logMessage, metadata: convertedMetadata, source: category)
+            await loggingServiceActor.warning(
+              logMessage,
+              metadata: convertedMetadata,
+              source: category
+            )
           case .error:
-            await loggingServiceActor.error(logMessage, metadata: convertedMetadata, source: category)
+            await loggingServiceActor.error(
+              logMessage,
+              metadata: convertedMetadata,
+              source: category
+            )
           case .critical:
-            await loggingServiceActor.critical(logMessage, metadata: convertedMetadata, source: category)
+            await loggingServiceActor.critical(
+              logMessage,
+              metadata: convertedMetadata,
+              source: category
+            )
         }
       }
     }

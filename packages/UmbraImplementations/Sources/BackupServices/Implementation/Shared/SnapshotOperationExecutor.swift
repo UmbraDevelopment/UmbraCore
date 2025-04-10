@@ -85,20 +85,20 @@ public actor SnapshotOperationExecutor {
     let snapshotID=getSnapshotID(from: parameters)
 
     // Create log context for privacy-aware logging
-    let logContext = SnapshotLogContext(
+    let logContext=SnapshotLogContext(
       operation: parameters.operationType.rawValue,
       source: "SnapshotOperationExecutor"
     )
     .withPublic(key: "operation_type", value: parameters.operationType.rawValue)
     .withPublic(key: "operation_id", value: parameters.operationID)
-    
+
     // Add snapshot ID if available
-    if let snapshotID = snapshotID, !snapshotID.isEmpty {
+    if let snapshotID, !snapshotID.isEmpty {
       logContext.withPublic(key: "snapshot_id", value: snapshotID)
     }
-    
+
     // Add repository ID if available
-    if let repositoryID = parameters.repositoryID, !repositoryID.isEmpty {
+    if let repositoryID=parameters.repositoryID, !repositoryID.isEmpty {
       logContext.withPublic(key: "repository_id", value: repositoryID)
     }
 

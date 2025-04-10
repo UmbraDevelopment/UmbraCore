@@ -6,11 +6,11 @@ import LoggingTypes
 
 /**
  # OSLog Privacy Backend
- 
+
  Logging backend that uses Apple's OSLog system with privacy annotations.
  This backend applies the privacy controls defined in LogPrivacyLevel
  to the OSLog privacy annotations.
- 
+
  This implementation follows the Alpha Dot Five architecture principles by:
  1. Using proper British spelling in documentation
  2. Providing comprehensive privacy controls for sensitive data
@@ -23,7 +23,7 @@ public struct OSLogPrivacyBackend: LoggingBackend {
 
   /**
    Creates a new OSLog backend with the specified subsystem.
-   
+
    - Parameter subsystem: The subsystem identifier to use for logs
    */
   public init(subsystem: String) {
@@ -32,7 +32,7 @@ public struct OSLogPrivacyBackend: LoggingBackend {
 
   /**
    Writes a log message to OSLog with appropriate privacy annotations.
-   
+
    - Parameters:
      - level: The severity level of the log
      - message: The message to log
@@ -83,7 +83,7 @@ public struct OSLogPrivacyBackend: LoggingBackend {
 
   /**
    Formats metadata with appropriate privacy annotations for OSLog.
-   
+
    - Parameter metadata: The metadata collection with privacy annotations
    - Returns: A formatted string with OSLog privacy qualifiers
    */
@@ -92,18 +92,19 @@ public struct OSLogPrivacyBackend: LoggingBackend {
 
     // Iterate through each entry in the collection
     for entry in metadata.entries {
-      let key = entry.key
-      let value = entry.value
-      let privacyLevel = entry.privacyLevel
+      let key=entry.key
+      let value=entry.value
+      let privacyLevel=entry.privacyLevel
 
-      let privacyAnnotation: String
+      let privacyAnnotation
 
-      // Apply appropriate privacy annotation based on the privacy level
-      switch privacyLevel {
+        // Apply appropriate privacy annotation based on the privacy level
+        = switch privacyLevel
+      {
         case .public:
-          privacyAnnotation="%{public}"
+          "%{public}"
         case .private, .sensitive, .hash, .auto:
-          privacyAnnotation="%{private}"
+          "%{private}"
       }
 
       parts.append("\(key): \(privacyAnnotation)\(value)")
@@ -114,11 +115,15 @@ public struct OSLogPrivacyBackend: LoggingBackend {
 
   /**
    Formats metadata with appropriate privacy annotations for OSLog (deprecated method).
-   
+
    - Parameter metadata: The metadata with privacy annotations
    - Returns: A formatted string with OSLog privacy qualifiers
    */
-  @available(*, deprecated, message: "Use formatMetadataWithPrivacy with LogMetadataDTOCollection instead")
+  @available(
+    *,
+    deprecated,
+    message: "Use formatMetadataWithPrivacy with LogMetadataDTOCollection instead"
+  )
   private func formatMetadataWithPrivacy(_ metadata: PrivacyMetadata) -> String {
     var parts: [String]=[]
 
@@ -145,7 +150,7 @@ public struct OSLogPrivacyBackend: LoggingBackend {
 
   /**
    Determines if a log should be processed based on its level.
-   
+
    - Parameters:
      - level: The log level to check
      - minimumLevel: The minimum log level to process

@@ -740,16 +740,16 @@ struct SnapshotResultParser {
     secondSnapshotID: String
   ) -> BackupInterfaces.BackupSnapshotComparisonResult {
     // Convert the files to BackupFile objects
-    let addedFiles = dto.addedFiles?.map { $0.toBackupFile() } ?? []
-    let removedFiles = dto.removedFiles?.map { $0.toBackupFile() } ?? []
-    let modifiedFiles = dto.modifiedFiles?.map { $0.toBackupFile() } ?? []
-    
+    let addedFiles=dto.addedFiles?.map { $0.toBackupFile() } ?? []
+    let removedFiles=dto.removedFiles?.map { $0.toBackupFile() } ?? []
+    let modifiedFiles=dto.modifiedFiles?.map { $0.toBackupFile() } ?? []
+
     // Calculate total change size
-    let changeSize = UInt64(
+    let changeSize=UInt64(
       (dto.addedFiles ?? []).reduce(0) { $0 + $1.size } +
-      (dto.modifiedFiles ?? []).reduce(0) { $0 + $1.size }
+        (dto.modifiedFiles ?? []).reduce(0) { $0 + $1.size }
     )
-    
+
     // Create the result
     return BackupInterfaces.BackupSnapshotComparisonResult(
       firstSnapshotID: firstSnapshotID,

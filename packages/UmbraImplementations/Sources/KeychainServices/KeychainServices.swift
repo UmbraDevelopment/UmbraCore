@@ -143,24 +143,24 @@ public struct SimpleKeyManager: KeyManagementProtocol {
 
   /**
    Create a metadata collection with privacy controls.
-   
+
    - Parameter dict: Dictionary of string key-value pairs to convert to metadata
    - Returns: A privacy-aware metadata collection
    */
   private func createMetadataCollection(from dict: [String: String]) -> LogMetadataDTOCollection {
-    var collection = LogMetadataDTOCollection()
-    
+    var collection=LogMetadataDTOCollection()
+
     for (key, value) in dict {
       // In KeychainServices, we treat all metadata as private by default
-      collection = collection.withPrivate(key: key, value: value)
+      collection=collection.withPrivate(key: key, value: value)
     }
-    
+
     return collection
   }
 
   /**
    Convert a dictionary to PrivacyMetadata (deprecated method).
-   
+
    - Parameter dict: Dictionary of string key-value pairs to convert
    - Returns: Legacy privacy metadata object
    */
@@ -189,7 +189,10 @@ public struct SimpleKeyManager: KeyManagementProtocol {
       context: KeychainLogContext(
         account: "key_generation",
         operation: "generateKey",
-        additionalContext: createMetadataCollection(from: ["keyType": "\(type.rawValue)", "size": "\(size)"])
+        additionalContext: createMetadataCollection(from: [
+          "keyType": "\(type.rawValue)",
+          "size": "\(size)"
+        ])
       )
     )
 

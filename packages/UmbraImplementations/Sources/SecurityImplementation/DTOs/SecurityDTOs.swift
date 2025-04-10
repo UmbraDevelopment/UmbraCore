@@ -138,14 +138,14 @@ public struct SecurityContextDTO: Sendable, Equatable {
     operationType: SecurityOperationTypeDTO,
     securityLevel: CoreSecurityTypes.SecurityLevelDTO = .standard,
     keyIdentifier: String,
-    cryptoOptions: [String: String] = [:],
-    metadata: LogMetadataDTOCollection = LogMetadataDTOCollection()
+    cryptoOptions: [String: String]=[:],
+    metadata: LogMetadataDTOCollection=LogMetadataDTOCollection()
   ) {
-    self.operationType = operationType
-    self.securityLevel = securityLevel
-    self.keyIdentifier = keyIdentifier
-    self.cryptoOptions = cryptoOptions
-    self.metadata = metadata
+    self.operationType=operationType
+    self.securityLevel=securityLevel
+    self.keyIdentifier=keyIdentifier
+    self.cryptoOptions=cryptoOptions
+    self.metadata=metadata
   }
 }
 

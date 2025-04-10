@@ -401,12 +401,12 @@ public actor SecureCryptoStorage {
   public func hasData(withIdentifier identifier: String) async -> Bool {
     // Currently we just attempt to retrieve the data and check if it exists
     // This could be optimized in a real implementation to avoid loading the data
-    let result = await secureStorage.retrieveData(withIdentifier: identifier)
+    let result=await secureStorage.retrieveData(withIdentifier: identifier)
     switch result {
-    case .success:
-      return true
-    case .failure:
-      return false
+      case .success:
+        return true
+      case .failure:
+        return false
     }
   }
 }

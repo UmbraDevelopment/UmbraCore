@@ -117,7 +117,11 @@ public actor DefaultLogger: LoggingProtocol {
   }
 
   /// Log warning message
-  public func warning(_ message: String, metadata: LogMetadataDTOCollection?, source: String) async {
+  public func warning(
+    _ message: String,
+    metadata: LogMetadataDTOCollection?,
+    source: String
+  ) async {
     await log(.warning, message, metadata: metadata, source: source)
   }
 
@@ -127,7 +131,11 @@ public actor DefaultLogger: LoggingProtocol {
   }
 
   /// Log critical message
-  public func critical(_ message: String, metadata: LogMetadataDTOCollection?, source: String) async {
+  public func critical(
+    _ message: String,
+    metadata: LogMetadataDTOCollection?,
+    source: String
+  ) async {
     await log(.critical, message, metadata: metadata, source: source)
   }
 }

@@ -9,7 +9,7 @@ public actor ResticLogger {
 
   /// Create a new Restic logger
   public init(logger: any LoggingProtocol) {
-    underlyingLogger = logger
+    underlyingLogger=logger
   }
 
   /// Log a message with debug level
@@ -18,7 +18,7 @@ public actor ResticLogger {
   ///   - message: The message to log
   ///   - context: The logging context with metadata
   public func debug(
-    _ message: String, 
+    _ message: String,
     context: LogContextDTO
   ) async {
     await underlyingLogger.debug(message, context: context)
@@ -30,7 +30,7 @@ public actor ResticLogger {
   ///   - message: The message to log
   ///   - context: The logging context with metadata
   public func info(
-    _ message: String, 
+    _ message: String,
     context: LogContextDTO
   ) async {
     await underlyingLogger.info(message, context: context)
@@ -42,7 +42,7 @@ public actor ResticLogger {
   ///   - message: The message to log
   ///   - context: The logging context with metadata
   public func warning(
-    _ message: String, 
+    _ message: String,
     context: LogContextDTO
   ) async {
     await underlyingLogger.warning(message, context: context)
@@ -54,7 +54,7 @@ public actor ResticLogger {
   ///   - message: The message to log
   ///   - context: The logging context with metadata
   public func error(
-    _ message: String, 
+    _ message: String,
     context: LogContextDTO
   ) async {
     await underlyingLogger.error(message, context: context)
@@ -66,7 +66,7 @@ public actor ResticLogger {
   ///   - message: The message to log
   ///   - context: The logging context with metadata
   public func critical(
-    _ message: String, 
+    _ message: String,
     context: LogContextDTO
   ) async {
     await underlyingLogger.critical(message, context: context)

@@ -7,9 +7,9 @@ import SecurityCoreInterfaces
 
 /// Helper function to create LogMetadataDTOCollection from dictionary
 private func createMetadataCollection(_ dict: [String: String]) -> LogMetadataDTOCollection {
-  var collection = LogMetadataDTOCollection()
+  var collection=LogMetadataDTOCollection()
   for (key, value) in dict {
-    collection = collection.withPublic(key: key, value: value)
+    collection=collection.withPublic(key: key, value: value)
   }
   return collection
 }
@@ -45,29 +45,29 @@ extension SecurityProviderService {
      - source: The source of the log entry (default: "SecurityProvider")
    */
   func logOperationStart(
-    operation: SecurityOperation, 
+    operation: SecurityOperation,
     config: SecurityConfigDTO,
-    source: String = "SecurityProvider"
+    source: String="SecurityProvider"
   ) async {
     // Create a safe version of config - don't log auth data
-    let safeConfig = "Algorithm: \(config.encryptionAlgorithm), Mode: \(config.options?["mode"] ?? "none")"
+    let safeConfig="Algorithm: \(config.encryptionAlgorithm), Mode: \(config.options?["mode"] ?? "none")"
 
-    var metadata = LogMetadataDTOCollection()
-    metadata = metadata.withPublic(key: "operation", value: operation.rawValue)
-    metadata = metadata.withPublic(key: "status", value: "started")
-    metadata = metadata.withPublic(key: "config", value: safeConfig)
-    
-    if let operationId = config.operationId {
-      metadata = metadata.withPublic(key: "operationId", value: operationId)
+    var metadata=LogMetadataDTOCollection()
+    metadata=metadata.withPublic(key: "operation", value: operation.rawValue)
+    metadata=metadata.withPublic(key: "status", value: "started")
+    metadata=metadata.withPublic(key: "config", value: safeConfig)
+
+    if let operationID=config.operationID {
+      metadata=metadata.withPublic(key: "operationId", value: operationID)
     }
-    
+
     await logger.info(
       "Security operation started: \(operation.description)",
       metadata: metadata,
       source: source
     )
   }
-  
+
   /**
    Logs the successful completion of a security operation with privacy-aware metadata.
 
@@ -77,22 +77,22 @@ extension SecurityProviderService {
      - source: The source of the log entry (default: "SecurityProvider")
    */
   func logOperationSuccess(
-    operation: SecurityOperation, 
+    operation: SecurityOperation,
     durationMs: Double,
-    source: String = "SecurityProvider"
+    source: String="SecurityProvider"
   ) async {
-    var metadata = LogMetadataDTOCollection()
-    metadata = metadata.withPublic(key: "operation", value: operation.rawValue)
-    metadata = metadata.withPublic(key: "status", value: "success")
-    metadata = metadata.withPublic(key: "durationMs", value: String(format: "%.2f", durationMs))
-    
+    var metadata=LogMetadataDTOCollection()
+    metadata=metadata.withPublic(key: "operation", value: operation.rawValue)
+    metadata=metadata.withPublic(key: "status", value: "success")
+    metadata=metadata.withPublic(key: "durationMs", value: String(format: "%.2f", durationMs))
+
     await logger.info(
       "Security operation completed successfully: \(operation.description)",
       metadata: metadata,
       source: source
     )
   }
-  
+
   /**
    Logs the failure of a security operation with privacy-aware metadata.
 
@@ -103,35 +103,35 @@ extension SecurityProviderService {
      - source: The source of the log entry (default: "SecurityProvider")
    */
   func logOperationFailure(
-    operation: SecurityOperation, 
-    error: Error, 
+    operation: SecurityOperation,
+    error: Error,
     durationMs: Double,
-    source: String = "SecurityProvider"
+    source: String="SecurityProvider"
   ) async {
-    var metadata = LogMetadataDTOCollection()
-    metadata = metadata.withPublic(key: "operation", value: operation.rawValue)
-    metadata = metadata.withPublic(key: "status", value: "failure")
-    metadata = metadata.withPublic(key: "errorType", value: String(describing: type(of: error)))
-    metadata = metadata.withPublic(key: "durationMs", value: String(format: "%.2f", durationMs))
-    
+    var metadata=LogMetadataDTOCollection()
+    metadata=metadata.withPublic(key: "operation", value: operation.rawValue)
+    metadata=metadata.withPublic(key: "status", value: "failure")
+    metadata=metadata.withPublic(key: "errorType", value: String(describing: type(of: error)))
+    metadata=metadata.withPublic(key: "durationMs", value: String(format: "%.2f", durationMs))
+
     // Add error details with appropriate privacy level
-    if let securityError = error as? SecurityError {
-      metadata = metadata.withPublic(key: "errorCode", value: securityError.code)
-      metadata = metadata.withPrivate(key: "errorMessage", value: securityError.message)
-    } else if let coreError = error as? CoreSecurityError {
-      metadata = metadata.withPublic(key: "errorCode", value: String(describing: coreError))
-      metadata = metadata.withPrivate(key: "errorMessage", value: coreError.localizedDescription)
+    if let securityError=error as? SecurityError {
+      metadata=metadata.withPublic(key: "errorCode", value: securityError.code)
+      metadata=metadata.withPrivate(key: "errorMessage", value: securityError.message)
+    } else if let coreError=error as? CoreSecurityError {
+      metadata=metadata.withPublic(key: "errorCode", value: String(describing: coreError))
+      metadata=metadata.withPrivate(key: "errorMessage", value: coreError.localizedDescription)
     } else {
-      metadata = metadata.withPrivate(key: "errorMessage", value: error.localizedDescription)
+      metadata=metadata.withPrivate(key: "errorMessage", value: error.localizedDescription)
     }
-    
+
     await logger.error(
       "Security operation failed: \(operation.description)",
       metadata: metadata,
       source: source
     )
   }
-  
+
   /**
    Logs a key management operation with privacy-aware metadata.
 
@@ -141,21 +141,21 @@ extension SecurityProviderService {
      - source: The source of the log entry (default: "KeyManagement")
    */
   func logKeyManagementOperation(
-    operation: String, 
+    operation: String,
     keyType: String,
-    source: String = "KeyManagement"
+    source: String="KeyManagement"
   ) async {
-    var metadata = LogMetadataDTOCollection()
-    metadata = metadata.withPublic(key: "operation", value: operation)
-    metadata = metadata.withPublic(key: "keyType", value: keyType)
-    
+    var metadata=LogMetadataDTOCollection()
+    metadata=metadata.withPublic(key: "operation", value: operation)
+    metadata=metadata.withPublic(key: "keyType", value: keyType)
+
     await logger.info(
       "Key management operation: \(operation) for \(keyType)",
       metadata: metadata,
       source: source
     )
   }
-  
+
   /**
    Logs a security policy check with privacy-aware metadata.
 
@@ -165,21 +165,21 @@ extension SecurityProviderService {
      - source: The source of the log entry (default: "SecurityPolicy")
    */
   func logPolicyCheck(
-    policyName: String, 
+    policyName: String,
     result: Bool,
-    source: String = "SecurityPolicy"
+    source: String="SecurityPolicy"
   ) async {
-    var metadata = LogMetadataDTOCollection()
-    metadata = metadata.withPublic(key: "policy", value: policyName)
-    metadata = metadata.withPublic(key: "result", value: result ? "pass" : "fail")
-    
+    var metadata=LogMetadataDTOCollection()
+    metadata=metadata.withPublic(key: "policy", value: policyName)
+    metadata=metadata.withPublic(key: "result", value: result ? "pass" : "fail")
+
     await logger.info(
       "Security policy check: \(policyName) - \(result ? "Passed" : "Failed")",
       metadata: metadata,
       source: source
     )
   }
-  
+
   /**
    Logs a sensitive security event with appropriate privacy controls.
 
@@ -193,13 +193,13 @@ extension SecurityProviderService {
      - source: The source of the log entry (default: "SecurityEvent")
    */
   func logSecurityEvent(
-    event: String, 
+    event: String,
     level: LogLevel = .info,
-    metadata: [String: String] = [:],
-    source: String = "SecurityEvent"
+    metadata: [String: String]=[:],
+    source: String="SecurityEvent"
   ) async {
-    let metadataCollection = createMetadataCollection(metadata)
-    
+    let metadataCollection=createMetadataCollection(metadata)
+
     switch level {
       case .debug:
         await logger.debug(event, metadata: metadataCollection, source: source)

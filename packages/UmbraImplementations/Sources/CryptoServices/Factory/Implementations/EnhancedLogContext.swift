@@ -5,22 +5,22 @@ import LoggingTypes
 
 /**
  # Enhanced Log Context for Crypto Operations
- 
+
  Enhanced log context for crypto operations, conforming to LogContextDTO.
- 
+
  This context provides structured metadata for cryptographic operations with
  comprehensive privacy controls following the Alpha Dot Five architecture.
- 
+
  ## Privacy Controls
- 
+
  This context implements comprehensive privacy controls for sensitive information:
  - Public information is logged normally
  - Private information is redacted in production builds
  - Sensitive information is always redacted
  - Hash values are specially marked
- 
+
  ## Functional Updates
- 
+
  Following the Alpha Dot Five architecture, this context uses functional methods
  that return new instances rather than mutating existing ones, ensuring thread
  safety and immutability.
@@ -54,44 +54,44 @@ public struct EnhancedLogContext: LogContextDTO {
   public init(
     domainName: String,
     operationName: String,
-    source: String? = nil,
-    correlationID: String? = nil,
-    metadata: LogMetadataDTOCollection = LogMetadataDTOCollection()
+    source: String?=nil,
+    correlationID: String?=nil,
+    metadata: LogMetadataDTOCollection=LogMetadataDTOCollection()
   ) {
-    self.domainName = domainName
-    self.operationName = operationName
-    self.source = source
-    self.correlationID = correlationID
-    self.metadata = metadata
+    self.domainName=domainName
+    self.operationName=operationName
+    self.source=source
+    self.correlationID=correlationID
+    self.metadata=metadata
   }
-  
+
   // MARK: - LogContextDTO Protocol Implementation
-  
+
   /// Get the domain name for the log entry
   public func getDomainName() -> String {
     domainName
   }
-  
+
   /// Get the source for the log entry
   public func getSource() -> String {
     source ?? domainName
   }
-  
+
   /// Get the correlation ID for the log entry
   public func getCorrelationID() -> String? {
     correlationID
   }
-  
+
   /// Get metadata as a collection
   public func getMetadata() -> LogMetadataDTOCollection {
     metadata
   }
-  
+
   // MARK: - Functional Update Methods
-  
+
   /**
    Creates a new context with the specified source.
-   
+
    - Parameter source: The new source value
    - Returns: A new context with the updated source
    */
@@ -104,10 +104,10 @@ public struct EnhancedLogContext: LogContextDTO {
       metadata: metadata
     )
   }
-  
+
   /**
    Creates a new context with the specified correlation ID.
-   
+
    - Parameter correlationID: The new correlation ID value
    - Returns: A new context with the updated correlation ID
    */
@@ -120,10 +120,10 @@ public struct EnhancedLogContext: LogContextDTO {
       metadata: metadata
     )
   }
-  
+
   /**
    Creates a new context with additional public metadata.
-   
+
    - Parameters:
      - key: The metadata key
      - value: The metadata value
@@ -138,10 +138,10 @@ public struct EnhancedLogContext: LogContextDTO {
       metadata: metadata.withPublic(key: key, value: value)
     )
   }
-  
+
   /**
    Creates a new context with additional private metadata.
-   
+
    - Parameters:
      - key: The metadata key
      - value: The metadata value
@@ -156,10 +156,10 @@ public struct EnhancedLogContext: LogContextDTO {
       metadata: metadata.withPrivate(key: key, value: value)
     )
   }
-  
+
   /**
    Creates a new context with additional sensitive metadata.
-   
+
    - Parameters:
      - key: The metadata key
      - value: The metadata value
@@ -174,10 +174,10 @@ public struct EnhancedLogContext: LogContextDTO {
       metadata: metadata.withSensitive(key: key, value: value)
     )
   }
-  
+
   /**
    Creates a new context with additional hashed metadata.
-   
+
    - Parameters:
      - key: The metadata key
      - value: The metadata value
@@ -192,33 +192,33 @@ public struct EnhancedLogContext: LogContextDTO {
       metadata: metadata.withHashed(key: key, value: value)
     )
   }
-  
+
   /**
    Creates a new context with merged metadata.
-   
+
    - Parameter newMetadata: The metadata collection to merge
    - Returns: A new context with the merged metadata
    */
   public func withMergedMetadata(_ newMetadata: LogMetadataDTOCollection) -> EnhancedLogContext {
     // Create a new metadata collection with all entries from both collections
-    var mergedMetadata = metadata
-    
+    var mergedMetadata=metadata
+
     for entry in newMetadata.entries {
       switch entry.privacyLevel {
         case .public:
-          mergedMetadata = mergedMetadata.withPublic(key: entry.key, value: entry.value)
+          mergedMetadata=mergedMetadata.withPublic(key: entry.key, value: entry.value)
         case .private:
-          mergedMetadata = mergedMetadata.withPrivate(key: entry.key, value: entry.value)
+          mergedMetadata=mergedMetadata.withPrivate(key: entry.key, value: entry.value)
         case .sensitive:
-          mergedMetadata = mergedMetadata.withSensitive(key: entry.key, value: entry.value)
+          mergedMetadata=mergedMetadata.withSensitive(key: entry.key, value: entry.value)
         case .hash:
-          mergedMetadata = mergedMetadata.withHashed(key: entry.key, value: entry.value)
+          mergedMetadata=mergedMetadata.withHashed(key: entry.key, value: entry.value)
         case .auto:
           // For auto, default to private
-          mergedMetadata = mergedMetadata.withPrivate(key: entry.key, value: entry.value)
+          mergedMetadata=mergedMetadata.withPrivate(key: entry.key, value: entry.value)
       }
     }
-    
+
     return EnhancedLogContext(
       domainName: domainName,
       operationName: operationName,
@@ -251,7 +251,7 @@ public struct EnhancedLogContext: LogContextDTO {
           return .private
       }
     }
-    
+
     // Default to auto if not found
     return .auto
   }
@@ -263,19 +263,19 @@ public struct EnhancedLogContext: LogContextDTO {
    - Returns: A new context with the updated metadata
    */
   public func withUpdatedMetadata(_ metadataUpdates: [String: PrivacyLevel]) -> EnhancedLogContext {
-    var updatedMetadata = metadata
-    
+    var updatedMetadata=metadata
+
     for (key, privacyValue) in metadataUpdates {
       switch privacyValue {
         case let .public(value):
-          updatedMetadata = updatedMetadata.withPublic(key: key, value: value)
+          updatedMetadata=updatedMetadata.withPublic(key: key, value: value)
         case let .private(value):
-          updatedMetadata = updatedMetadata.withPrivate(key: key, value: value)
+          updatedMetadata=updatedMetadata.withPrivate(key: key, value: value)
         case let .hash(value):
-          updatedMetadata = updatedMetadata.withHashed(key: key, value: value)
+          updatedMetadata=updatedMetadata.withHashed(key: key, value: value)
       }
     }
-    
+
     return EnhancedLogContext(
       domainName: domainName,
       operationName: operationName,
@@ -284,7 +284,7 @@ public struct EnhancedLogContext: LogContextDTO {
       metadata: updatedMetadata
     )
   }
-  
+
   /**
    @deprecated Use withUpdatedMetadata(_:) instead.
    Updates metadata values with new values.
@@ -293,21 +293,21 @@ public struct EnhancedLogContext: LogContextDTO {
    */
   @available(*, deprecated, message: "Use withUpdatedMetadata(_:) instead")
   public mutating func updateMetadata(_ metadataUpdates: [String: PrivacyLevel]) {
-    var updatedMetadata = metadata
-    
+    var updatedMetadata=metadata
+
     for (key, privacyValue) in metadataUpdates {
       switch privacyValue {
         case let .public(value):
-          updatedMetadata = updatedMetadata.withPublic(key: key, value: value)
+          updatedMetadata=updatedMetadata.withPublic(key: key, value: value)
         case let .private(value):
-          updatedMetadata = updatedMetadata.withPrivate(key: key, value: value)
+          updatedMetadata=updatedMetadata.withPrivate(key: key, value: value)
         case let .hash(value):
-          updatedMetadata = updatedMetadata.withHashed(key: key, value: value)
+          updatedMetadata=updatedMetadata.withHashed(key: key, value: value)
       }
     }
-    
+
     // This is not ideal as it mutates state, but needed for backward compatibility
-    self = EnhancedLogContext(
+    self=EnhancedLogContext(
       domainName: domainName,
       operationName: operationName,
       source: source,

@@ -26,8 +26,8 @@ extension FileSystemServiceImpl {
     }
 
     do {
-      let data = try Data(contentsOf: URL(fileURLWithPath: path.path))
-      let bytes = [UInt8](data)
+      let data=try Data(contentsOf: URL(fileURLWithPath: path.path))
+      let bytes=[UInt8](data)
 
       await logger.debug(
         "Read \(bytes.count) bytes from \(path.path)",
@@ -89,9 +89,9 @@ extension FileSystemServiceImpl {
     }
 
     do {
-      let data = try Data(contentsOf: URL(fileURLWithPath: path.path))
+      let data=try Data(contentsOf: URL(fileURLWithPath: path.path))
 
-      guard let string = String(data: data, encoding: encoding) else {
+      guard let string=String(data: data, encoding: encoding) else {
         throw FileSystemInterfaces.FileSystemError.readError(
           path: path.path,
           reason: "Failed to decode content with encoding \(encoding)"
@@ -142,7 +142,7 @@ extension FileSystemServiceImpl {
   public func writeFile(
     bytes: [UInt8],
     to path: FilePathDTO,
-    createDirectories: Bool = true
+    createDirectories: Bool=true
   ) async throws {
     guard !path.path.isEmpty else {
       throw FileSystemInterfaces.FileSystemError.invalidPath(
@@ -151,11 +151,11 @@ extension FileSystemServiceImpl {
       )
     }
 
-    let url = URL(fileURLWithPath: path.path)
+    let url=URL(fileURLWithPath: path.path)
 
     // Create parent directory if it doesn't exist
     if createDirectories {
-      let directory = url.deletingLastPathComponent()
+      let directory=url.deletingLastPathComponent()
       do {
         try fileManager.createDirectory(
           atPath: directory.path,
@@ -181,7 +181,7 @@ extension FileSystemServiceImpl {
     }
 
     do {
-      let data = Data(bytes)
+      let data=Data(bytes)
       try data.write(to: url)
 
       await logger.debug(
@@ -222,7 +222,7 @@ extension FileSystemServiceImpl {
   public func writeData(
     _ data: [UInt8],
     to path: FilePathDTO,
-    overwrite: Bool = true
+    overwrite: Bool=true
   ) async throws {
     if !overwrite && fileManager.fileExists(atPath: path.path) {
       throw FileSystemInterfaces.FileSystemError.pathAlreadyExists(path: path.path)
@@ -247,7 +247,7 @@ extension FileSystemServiceImpl {
     text: String,
     to path: FilePathDTO,
     encoding: String.Encoding = .utf8,
-    createDirectories: Bool = true
+    createDirectories: Bool=true
   ) async throws {
     guard !path.path.isEmpty else {
       throw FileSystemInterfaces.FileSystemError.invalidPath(
@@ -256,7 +256,7 @@ extension FileSystemServiceImpl {
       )
     }
 
-    guard let data = text.data(using: encoding) else {
+    guard let data=text.data(using: encoding) else {
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: path.path,
         reason: "Failed to encode text with encoding \(encoding)"
@@ -291,7 +291,7 @@ extension FileSystemServiceImpl {
       )
     }
 
-    let url = URL(fileURLWithPath: path.path)
+    let url=URL(fileURLWithPath: path.path)
 
     // Check if the file exists
     if !fileManager.fileExists(atPath: path.path) {
@@ -299,7 +299,7 @@ extension FileSystemServiceImpl {
     }
 
     do {
-      let fileHandle = try FileHandle(forWritingTo: url)
+      let fileHandle=try FileHandle(forWritingTo: url)
       defer {
         try? fileHandle.close()
       }
@@ -308,7 +308,7 @@ extension FileSystemServiceImpl {
       try fileHandle.seekToEnd()
 
       // Write the data
-      let fileData = Data(data)
+      let fileData=Data(data)
       try fileHandle.write(contentsOf: fileData)
 
       await logger.debug(
@@ -359,7 +359,7 @@ extension FileSystemServiceImpl {
       )
     }
 
-    guard let data = text.data(using: encoding) else {
+    guard let data=text.data(using: encoding) else {
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: path.path,
         reason: "Failed to encode text with encoding \(encoding)"
@@ -386,8 +386,8 @@ extension FileSystemServiceImpl {
     }
 
     // Check if it exists and is not a directory
-    var isDir: ObjCBool = false
-    let exists = fileManager.fileExists(atPath: path.path, isDirectory: &isDir)
+    var isDir: ObjCBool=false
+    let exists=fileManager.fileExists(atPath: path.path, isDirectory: &isDir)
 
     if !exists {
       await logger.warning(
@@ -460,8 +460,8 @@ extension FileSystemServiceImpl {
   public func copyFile(
     from sourcePath: FilePathDTO,
     to destinationPath: FilePathDTO,
-    overwrite: Bool = false,
-    preserveAttributes _: Bool = true
+    overwrite: Bool=false,
+    preserveAttributes _: Bool=true
   ) async throws {
     guard !sourcePath.path.isEmpty && !destinationPath.path.isEmpty else {
       throw FileSystemInterfaces.FileSystemError.invalidPath(
@@ -471,8 +471,8 @@ extension FileSystemServiceImpl {
     }
 
     // Check if source exists and is a file
-    var isSourceDir: ObjCBool = false
-    let sourceExists = fileManager.fileExists(atPath: sourcePath.path, isDirectory: &isSourceDir)
+    var isSourceDir: ObjCBool=false
+    let sourceExists=fileManager.fileExists(atPath: sourcePath.path, isDirectory: &isSourceDir)
 
     if !sourceExists {
       await logger.warning(
@@ -520,8 +520,8 @@ extension FileSystemServiceImpl {
     }
 
     // Create parent directory if needed
-    let destinationURL = URL(fileURLWithPath: destinationPath.path)
-    let destinationDir = destinationURL.deletingLastPathComponent()
+    let destinationURL=URL(fileURLWithPath: destinationPath.path)
+    let destinationDir=destinationURL.deletingLastPathComponent()
     if !fileManager.fileExists(atPath: destinationDir.path) {
       try? fileManager.createDirectory(
         at: destinationDir,
@@ -580,7 +580,7 @@ extension FileSystemServiceImpl {
   public func moveFile(
     from sourcePath: FilePathDTO,
     to destinationPath: FilePathDTO,
-    overwrite: Bool = false
+    overwrite: Bool=false
   ) async throws {
     guard !sourcePath.path.isEmpty && !destinationPath.path.isEmpty else {
       throw FileSystemInterfaces.FileSystemError.invalidPath(
@@ -590,8 +590,8 @@ extension FileSystemServiceImpl {
     }
 
     // Similar to copyFile, but using moveItem instead
-    var isSourceDir: ObjCBool = false
-    let sourceExists = fileManager.fileExists(atPath: sourcePath.path, isDirectory: &isSourceDir)
+    var isSourceDir: ObjCBool=false
+    let sourceExists=fileManager.fileExists(atPath: sourcePath.path, isDirectory: &isSourceDir)
 
     if !sourceExists {
       await logger.warning(
@@ -637,8 +637,8 @@ extension FileSystemServiceImpl {
     }
 
     // Create parent directory if needed
-    let destinationURL = URL(fileURLWithPath: destinationPath.path)
-    let destinationDir = destinationURL.deletingLastPathComponent()
+    let destinationURL=URL(fileURLWithPath: destinationPath.path)
+    let destinationDir=destinationURL.deletingLastPathComponent()
     if !fileManager.fileExists(atPath: destinationDir.path) {
       try? fileManager.createDirectory(
         at: destinationDir,

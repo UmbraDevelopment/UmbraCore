@@ -1,5 +1,5 @@
-import Foundation
 import FileSystemCommonTypes
+import Foundation
 
 /// Represents a file system item type
 public enum FileSystemItemType: String, Sendable, Equatable, Hashable {
@@ -40,10 +40,10 @@ public struct FileSystemMetadata: Sendable, Equatable, Hashable {
     creationDate: Date?,
     modificationDate: Date?
   ) {
-    self.path = path
-    self.itemType = itemType
-    self.size = size
-    self.creationDate = creationDate
-    self.modificationDate = modificationDate
+    self.path=path
+    self.itemType=itemType
+    self.size=size
+    self.creationDate=creationDate
+    self.modificationDate=modificationDate
   }
 }

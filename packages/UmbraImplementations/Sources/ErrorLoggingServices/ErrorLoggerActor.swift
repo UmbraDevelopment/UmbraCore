@@ -222,18 +222,18 @@ public actor ErrorLoggerActor: ErrorLoggingProtocol {
 
   /**
    Set the minimum logging level for a specific error domain.
-   
+
    - Parameters:
      - level: The minimum logging level for the domain
      - domain: The error domain to filter
    */
   public func setLogLevel(_ level: ErrorLoggingLevel, forDomain domain: String) async {
-    domainFilters[domain] = level
+    domainFilters[domain]=level
   }
-  
+
   /**
    Clear all domain-specific filters.
-   
+
    Removes all domain-specific log level filters, returning to
    global minimum level filtering only.
    */
@@ -310,17 +310,17 @@ public actor ErrorLoggerActor: ErrorLoggingProtocol {
   private func mapSeverityToLevel(_ severity: ErrorSeverity) -> ErrorLoggingLevel {
     switch severity {
       case .trace:
-        return .debug  // Map trace to debug since ErrorLoggingLevel doesn't have trace
+        .debug // Map trace to debug since ErrorLoggingLevel doesn't have trace
       case .debug:
-        return .debug
+        .debug
       case .info:
-        return .info
+        .info
       case .warning:
-        return .warning
+        .warning
       case .error:
-        return .error
+        .error
       case .critical:
-        return .critical
+        .critical
     }
   }
 
@@ -370,60 +370,67 @@ public actor ErrorLoggerActor: ErrorLoggingProtocol {
      - context: Additional context for the error
    - Returns: Privacy-aware metadata collection for logging
    */
-  private func constructMetadataCollection(from error: Error, context: ErrorContext) -> LogMetadataDTOCollection {
-    var collection = LogMetadataDTOCollection()
+  private func constructMetadataCollection(
+    from error: Error,
+    context: ErrorContext
+  ) -> LogMetadataDTOCollection {
+    var collection=LogMetadataDTOCollection()
 
     // Add basic error type information - public information
-    collection = collection.withPublic(key: "errorType", value: String(describing: type(of: error)))
+    collection=collection.withPublic(key: "errorType", value: String(describing: type(of: error)))
 
     // Add domain and other context info if available
-    if let source = context.source {
-      collection = collection.withPublic(key: "domain", value: source)
+    if let source=context.source {
+      collection=collection.withPublic(key: "domain", value: source)
     }
 
-    if let operation = context.operation {
-      collection = collection.withPublic(key: "operation", value: operation)
+    if let operation=context.operation {
+      collection=collection.withPublic(key: "operation", value: operation)
     }
 
     // Add source information if configured
     if configuration.includeSourceInfo {
-      collection = collection.withPublic(key: "file", value: context.file)
-      collection = collection.withPublic(key: "function", value: context.function)
-      collection = collection.withPublic(key: "line", value: String(context.line))
+      collection=collection.withPublic(key: "file", value: context.file)
+      collection=collection.withPublic(key: "function", value: context.function)
+      collection=collection.withPublic(key: "line", value: String(context.line))
     }
 
     // Add contextual information from the error - some as private
-    let nsError = error as NSError
-    collection = collection.withPublic(key: "errorCode", value: String(nsError.code))
+    let nsError=error as NSError
+    collection=collection.withPublic(key: "errorCode", value: String(nsError.code))
 
-    // Add user info keys that might be relevant - as private since they may contain sensitive details
-    if let failureReason = nsError.localizedFailureReason {
-      collection = collection.withPrivate(key: "failureReason", value: failureReason)
+    // Add user info keys that might be relevant - as private since they may contain sensitive
+    // details
+    if let failureReason=nsError.localizedFailureReason {
+      collection=collection.withPrivate(key: "failureReason", value: failureReason)
     }
-    if let recoverySuggestion = nsError.localizedRecoverySuggestion {
-      collection = collection.withPrivate(key: "recoverySuggestion", value: recoverySuggestion)
+    if let recoverySuggestion=nsError.localizedRecoverySuggestion {
+      collection=collection.withPrivate(key: "recoverySuggestion", value: recoverySuggestion)
     }
 
     // Add additional metadata from the context using value(for:)
     // Use appropriate privacy levels based on the type of information
-    if let userId = context.value(for: "userId") {
-      collection = collection.withSensitive(key: "userId", value: String(describing: userId))
+    if let userID=context.value(for: "userId") {
+      collection=collection.withSensitive(key: "userId", value: String(describing: userID))
     }
-    
-    if let sessionId = context.value(for: "sessionId") {
-      collection = collection.withPrivate(key: "sessionId", value: String(describing: sessionId))
+
+    if let sessionID=context.value(for: "sessionId") {
+      collection=collection.withPrivate(key: "sessionId", value: String(describing: sessionID))
     }
-    
-    if let documentId = context.value(for: "documentId") {
-      collection = collection.withPrivate(key: "documentId", value: String(describing: documentId))
+
+    if let documentID=context.value(for: "documentId") {
+      collection=collection.withPrivate(key: "documentId", value: String(describing: documentID))
     }
-    
-    if let errorCode = context.value(for: "errorCode") {
-      collection = collection.withPublic(key: "contextErrorCode", value: String(describing: errorCode))
+
+    if let errorCode=context.value(for: "errorCode") {
+      collection=collection.withPublic(
+        key: "contextErrorCode",
+        value: String(describing: errorCode)
+      )
     }
-    
-    if let attemptCount = context.value(for: "attemptCount") {
-      collection = collection.withPublic(key: "attemptCount", value: String(describing: attemptCount))
+
+    if let attemptCount=context.value(for: "attemptCount") {
+      collection=collection.withPublic(key: "attemptCount", value: String(describing: attemptCount))
     }
 
     return collection

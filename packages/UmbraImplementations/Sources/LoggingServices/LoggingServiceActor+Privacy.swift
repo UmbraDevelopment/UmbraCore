@@ -16,12 +16,12 @@ extension LoggingServiceActor {
     source: String?=nil
   ) async {
     // Create a privacy-enhanced metadata
-    var metadataCollection = metadata ?? LogMetadataDTOCollection()
-    
+    var metadataCollection=metadata ?? LogMetadataDTOCollection()
+
     // Add privacy annotations
-    metadataCollection = metadataCollection
+    metadataCollection=metadataCollection
       .withPrivate(key: "__privacy_message", value: message.privacy.description)
-    
+
     // Use the standard log method with string message
     await log(level: level, message: message.content, metadata: metadataCollection, source: source)
   }

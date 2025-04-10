@@ -9,7 +9,7 @@ import SecurityInterfaces
 
 /**
  Creates a log context from a metadata dictionary.
- 
+
  - Parameter metadata: Dictionary of metadata values
  - Parameter domain: Domain name for the log context
  - Parameter source: Source identifier for the log context
@@ -17,22 +17,22 @@ import SecurityInterfaces
  */
 private func createLogContext(
   _ metadata: [String: (value: String, privacy: LogPrivacyLevel)],
-  domain: String = "SecurityServices",
-  source: String = "EncryptionService"
+  domain: String="SecurityServices",
+  source: String="EncryptionService"
 ) -> BaseLogContextDTO {
-  var collection = LogMetadataDTOCollection()
-  
+  var collection=LogMetadataDTOCollection()
+
   for (key, data) in metadata {
     switch data.privacy {
-    case .public:
-      collection = collection.withPublic(key: key, value: data.value)
-    case .private:
-      collection = collection.withPrivate(key: key, value: data.value)
-    case .sensitive:
-      collection = collection.withSensitive(key: key, value: data.value)
+      case .public:
+        collection=collection.withPublic(key: key, value: data.value)
+      case .private:
+        collection=collection.withPrivate(key: key, value: data.value)
+      case .sensitive:
+        collection=collection.withSensitive(key: key, value: data.value)
     }
   }
-  
+
   return BaseLogContextDTO(
     domainName: domain,
     source: source,
@@ -71,7 +71,7 @@ final class EncryptionService: SecurityServiceBase {
    The logger instance for recording general operation details
    */
   let logger: LoggingInterfaces.LoggingProtocol
-    
+
   /**
    The secure storage for handling sensitive data
    */
@@ -81,7 +81,7 @@ final class EncryptionService: SecurityServiceBase {
 
   /**
    Initialises the service with all required dependencies
-     
+
    - Parameters:
      - cryptoService: Service for performing cryptographic operations
      - logger: Service for logging operations
@@ -90,23 +90,23 @@ final class EncryptionService: SecurityServiceBase {
     cryptoService: SecurityCoreInterfaces.CryptoServiceProtocol,
     logger: LoggingInterfaces.LoggingProtocol
   ) {
-    self.cryptoService = cryptoService
-    self.logger = logger
-    secureStorage = SecureStorage()
+    self.cryptoService=cryptoService
+    self.logger=logger
+    secureStorage=SecureStorage()
   }
-    
+
   /**
    Initialises the service with just a logger
-     
+
    This initializer is required to conform to SecurityServiceBase protocol,
    but it's not intended for direct use.
-     
+
    - Parameter logger: The logging service to use
    */
   init(logger: LoggingInterfaces.LoggingProtocol) {
-    self.logger = logger
-    self.cryptoService = DefaultCryptoServiceImpl()
-      
+    self.logger=logger
+    cryptoService=DefaultCryptoServiceImpl()
+
     // Log warning that this initializer shouldn't be used directly
     Task {
       await logger.warning(
@@ -115,7 +115,7 @@ final class EncryptionService: SecurityServiceBase {
         source: "SecurityImplementation"
       )
     }
-    secureStorage = SecureStorage()
+    secureStorage=SecureStorage()
   }
 
   // MARK: - Encryption Operations
@@ -128,16 +128,16 @@ final class EncryptionService: SecurityServiceBase {
    - Throws: SecurityError if encryption fails
    */
   func encrypt(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    let operationID = UUID().uuidString
-    let startTime = Date()
-    let operation = SecurityOperation.encrypt
+    let operationID=UUID().uuidString
+    let startTime=Date()
+    let operation=SecurityOperation.encrypt
 
     // Log start of operation
-    let startContext = createLogContext([
+    let startContext=createLogContext([
       "operation": (value: operation.rawValue, privacy: .public),
       "operationID": (value: operationID, privacy: .public)
     ])
-    
+
     await logger.debug(
       "Starting encryption operation",
       context: startContext
@@ -145,31 +145,31 @@ final class EncryptionService: SecurityServiceBase {
 
     do {
       // Validate inputs
-      guard let inputData = config.inputData else {
+      guard let inputData=config.inputData else {
         throw SecurityError.invalidInput("No input data provided for encryption")
       }
 
       // Get or generate key
-      let keyData = try await getKeyData(for: config)
+      let keyData=try await getKeyData(for: config)
 
       // Perform encryption
-      let result = try await encryptData(
+      let result=try await encryptData(
         data: inputData,
         key: keyData,
         options: config.options
       )
 
       // Calculate duration for metrics
-      let duration = Date().timeIntervalSince(startTime)
+      let duration=Date().timeIntervalSince(startTime)
 
       // Log success
-      let successContext = createLogContext([
+      let successContext=createLogContext([
         "operationID": (value: operationID, privacy: .public),
         "durationMs": (value: String(Int(duration * 1000)), privacy: .public),
         "inputSize": (value: String(inputData.count), privacy: .public),
         "outputSize": (value: String(result.count), privacy: .public)
       ])
-      
+
       await logger.debug(
         "Encryption completed successfully",
         context: successContext
@@ -184,22 +184,22 @@ final class EncryptionService: SecurityServiceBase {
       )
     } catch {
       // Calculate duration for metrics
-      let duration = Date().timeIntervalSince(startTime)
+      let duration=Date().timeIntervalSince(startTime)
 
       // Log failure
-      let errorContext = createLogContext([
+      let errorContext=createLogContext([
         "operationID": (value: operationID, privacy: .public),
         "error": (value: error.localizedDescription, privacy: .private),
         "durationMs": (value: String(Int(duration * 1000)), privacy: .public)
       ])
-      
+
       await logger.error(
         "Encryption operation failed",
         context: errorContext
       )
 
       // Map to security error
-      if let secError = error as? SecurityError {
+      if let secError=error as? SecurityError {
         throw secError
       } else {
         throw SecurityError.encryptionError("Encryption failed: \(error.localizedDescription)")
@@ -215,16 +215,16 @@ final class EncryptionService: SecurityServiceBase {
    - Throws: SecurityError if decryption fails
    */
   func decrypt(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
-    let operationID = UUID().uuidString
-    let startTime = Date()
-    let operation = SecurityOperation.decrypt
+    let operationID=UUID().uuidString
+    let startTime=Date()
+    let operation=SecurityOperation.decrypt
 
     // Log start of operation
-    let startContext = createLogContext([
+    let startContext=createLogContext([
       "operation": (value: operation.rawValue, privacy: .public),
       "operationID": (value: operationID, privacy: .public)
     ])
-    
+
     await logger.debug(
       "Starting decryption operation",
       context: startContext
@@ -232,31 +232,31 @@ final class EncryptionService: SecurityServiceBase {
 
     do {
       // Validate inputs
-      guard let inputData = config.inputData else {
+      guard let inputData=config.inputData else {
         throw SecurityError.invalidInput("No input data provided for decryption")
       }
 
       // Get key
-      let keyData = try await getKeyData(for: config)
+      let keyData=try await getKeyData(for: config)
 
       // Perform decryption
-      let result = try await decryptData(
+      let result=try await decryptData(
         data: inputData,
         key: keyData,
         options: config.options
       )
 
       // Calculate duration for metrics
-      let duration = Date().timeIntervalSince(startTime)
+      let duration=Date().timeIntervalSince(startTime)
 
       // Log success
-      let successContext = createLogContext([
+      let successContext=createLogContext([
         "operationID": (value: operationID, privacy: .public),
         "durationMs": (value: String(Int(duration * 1000)), privacy: .public),
         "inputSize": (value: String(inputData.count), privacy: .public),
         "outputSize": (value: String(result.count), privacy: .public)
       ])
-      
+
       await logger.debug(
         "Decryption completed successfully",
         context: successContext
@@ -271,22 +271,22 @@ final class EncryptionService: SecurityServiceBase {
       )
     } catch {
       // Calculate duration for metrics
-      let duration = Date().timeIntervalSince(startTime)
+      let duration=Date().timeIntervalSince(startTime)
 
       // Log failure with secure logger
-      let errorContext = createLogContext([
+      let errorContext=createLogContext([
         "operationID": (value: operationID, privacy: .public),
         "error": (value: error.localizedDescription, privacy: .private),
         "durationMs": (value: String(Int(duration * 1000)), privacy: .public)
       ])
-      
+
       await logger.error(
         "Decryption operation failed",
         context: errorContext
       )
 
       // Map to security error
-      if let secError = error as? SecurityError {
+      if let secError=error as? SecurityError {
         throw secError
       } else {
         throw SecurityError.decryptionError("Decryption failed: \(error.localizedDescription)")
@@ -303,11 +303,11 @@ final class EncryptionService: SecurityServiceBase {
    - Returns: The key data
    - Throws: SecurityError if key retrieval fails
    */
-  private func getKeyData(for config: SecurityConfigDTO) async throws -> Data {
+  private func getKeyData(for _: SecurityConfigDTO) async throws -> Data {
     // Implementation details...
     // This would retrieve key data from a keychain or other secure source
     // For now, just return empty data as a placeholder
-    return Data()
+    Data()
   }
 
   /**
@@ -322,13 +322,13 @@ final class EncryptionService: SecurityServiceBase {
    */
   private func encryptData(
     data: Data,
-    key: Data,
-    options: SecurityConfigOptions?
+    key _: Data,
+    options _: SecurityConfigOptions?
   ) async throws -> Data {
     // Implementation details...
     // This would perform the actual encryption using the cryptoService
     // For now, just return the input data as a placeholder
-    return data
+    data
   }
 
   /**
@@ -343,13 +343,13 @@ final class EncryptionService: SecurityServiceBase {
    */
   private func decryptData(
     data: Data,
-    key: Data,
-    options: SecurityConfigOptions?
+    key _: Data,
+    options _: SecurityConfigOptions?
   ) async throws -> Data {
     // Implementation details...
     // This would perform the actual decryption using the cryptoService
     // For now, just return the input data as a placeholder
-    return data
+    data
   }
 }
 

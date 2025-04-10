@@ -212,20 +212,20 @@ public actor SecurityLogger: DomainLoggerProtocol {
    */
   public func auditLog(
     _ message: String,
-    metadata: LogMetadataDTOCollection? = nil,
-    source: String? = nil
+    metadata: LogMetadataDTOCollection?=nil,
+    source: String?=nil
   ) async {
     // Add domain tagging
-    let formattedMessage = "[\(domainName)] [AUDIT] \(message)"
-    let auditSource = source ?? domainName
+    let formattedMessage="[\(domainName)] [AUDIT] \(message)"
+    let auditSource=source ?? domainName
 
     // Create a proper context with privacy-aware metadata
-    var metadataCollection = metadata ?? LogMetadataDTOCollection()
-    metadataCollection = metadataCollection.withPublic(key: "operation", value: "audit")
-    metadataCollection = metadataCollection.withPublic(key: "source", value: auditSource)
-    
+    var metadataCollection=metadata ?? LogMetadataDTOCollection()
+    metadataCollection=metadataCollection.withPublic(key: "operation", value: "audit")
+    metadataCollection=metadataCollection.withPublic(key: "source", value: auditSource)
+
     // Create the context with the required parameters
-    let context = SecurityLogContext(
+    let context=SecurityLogContext(
       operation: "audit",
       resource: auditSource,
       status: "logged"
@@ -263,31 +263,31 @@ public actor SecurityLogger: DomainLoggerProtocol {
     status: AccessStatus,
     subject: String,
     resource: String,
-    metadata: LogMetadataDTOCollection? = nil
+    metadata: LogMetadataDTOCollection?=nil
   ) async {
-    let statusString = switch status {
+    let statusString=switch status {
       case .granted: "granted"
       case .denied: "denied"
     }
 
     // Create a base metadata collection with privacy annotations
-    var metadataCollection = metadata ?? LogMetadataDTOCollection()
-    metadataCollection = metadataCollection.withPublic(key: "operation", value: "access_control")
-    metadataCollection = metadataCollection.withPublic(key: "source", value: domainName)
-    metadataCollection = metadataCollection.withPublic(key: "subject", value: subject)
-    metadataCollection = metadataCollection.withPublic(key: "resource", value: resource)
-    metadataCollection = metadataCollection.withPublic(key: "status", value: statusString)
-    
+    var metadataCollection=metadata ?? LogMetadataDTOCollection()
+    metadataCollection=metadataCollection.withPublic(key: "operation", value: "access_control")
+    metadataCollection=metadataCollection.withPublic(key: "source", value: domainName)
+    metadataCollection=metadataCollection.withPublic(key: "subject", value: subject)
+    metadataCollection=metadataCollection.withPublic(key: "resource", value: resource)
+    metadataCollection=metadataCollection.withPublic(key: "status", value: statusString)
+
     // Create the context with the required parameters
-    let context = SecurityLogContext(
+    let context=SecurityLogContext(
       operation: "access_control",
       resource: resource,
       status: statusString
     )
 
     // Constructed message with key details
-    let message = "Access \(statusString) for subject '\(subject)' to resource '\(resource)'"
-    
+    let message="Access \(statusString) for subject '\(subject)' to resource '\(resource)'"
+
     // Log at appropriate level based on status
     if status == .granted {
       await info("[\(domainName)] \(message)", context: context)
@@ -330,7 +330,7 @@ public actor SecurityLogger: DomainLoggerProtocol {
 
     // All Swift errors can be bridged to NSError, so no need for a check
     // We're not using NSError details in this context
-    
+
     // Log through secure logger with enhanced privacy controls
     await secureLogger.securityEvent(
       action: "error_logged",
@@ -555,7 +555,7 @@ private struct SecurityLogContext: LogContextDTO {
       )
 
       // All Swift errors can be bridged to NSError
-      let nsError = error as NSError
+      let nsError=error as NSError
       metadataBuilder=metadataBuilder.withPublic(key: "errorCode", value: String(nsError.code))
       metadataBuilder=metadataBuilder.withPublic(key: "errorDomain", value: nsError.domain)
     }

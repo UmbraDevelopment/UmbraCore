@@ -52,7 +52,7 @@ public struct FileInfo: Sendable, Equatable, Hashable {
     permissions: BackupInterfaces.FilePermissions,
     owner: String,
     group: String,
-    contentHash: String? = nil
+    contentHash: String?=nil
   ) {
     self.path=path
     self.size=size

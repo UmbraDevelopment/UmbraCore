@@ -5,20 +5,20 @@ import SecurityCoreInterfaces
 
 /**
  # LoggingCryptoServiceImpl
- 
+
  An implementation of CryptoServiceProtocol that adds logging for
  all operations before delegating to the wrapped implementation.
- 
+
  ## Privacy Controls
- 
+
  This implementation ensures comprehensive privacy controls for sensitive information:
  - Public information is logged normally
  - Private information is redacted in production builds
  - Sensitive information is always redacted
  - Hash values are specially marked
- 
+
  ## Thread Safety
- 
+
  As an actor, this implementation guarantees thread safety when used from multiple
  concurrent contexts, preventing data races in cryptographic operations.
  */
@@ -43,9 +43,9 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
     wrapped: CryptoServiceProtocol,
     logger: LoggingInterfaces.LoggingProtocol
   ) {
-    self.wrapped = wrapped
-    self.logger = logger
-    secureStorage = wrapped.secureStorage
+    self.wrapped=wrapped
+    self.logger=logger
+    secureStorage=wrapped.secureStorage
   }
 
   /**
@@ -60,19 +60,19 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
   public func encrypt(
     dataIdentifier: String,
     keyIdentifier: String,
-    options: CoreSecurityTypes.EncryptionOptions? = nil
+    options: CoreSecurityTypes.EncryptionOptions?=nil
   ) async -> Result<String, SecurityStorageError> {
     // Create a log context with proper privacy classification
-    var metadata = LogMetadataDTOCollection()
+    var metadata=LogMetadataDTOCollection()
       .withPublic(key: "dataIdentifier", value: dataIdentifier)
       .withPrivate(key: "keyIdentifier", value: keyIdentifier)
-    
+
     // Add algorithm information if available
-    if let algorithm = options?.algorithm {
-      metadata = metadata.withPublic(key: "algorithm", value: "\(algorithm)")
+    if let algorithm=options?.algorithm {
+      metadata=metadata.withPublic(key: "algorithm", value: "\(algorithm)")
     }
-    
-    let context = createLogContext(
+
+    let context=createLogContext(
       operation: "encrypt",
       status: "started",
       details: [
@@ -81,13 +81,13 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
         "algorithm": options?.algorithm.rawValue ?? "default"
       ]
     )
-    
+
     await logger.info(
       "Encrypting data with identifier \(dataIdentifier)",
       context: context
     )
 
-    let result = await wrapped.encrypt(
+    let result=await wrapped.encrypt(
       dataIdentifier: dataIdentifier,
       keyIdentifier: keyIdentifier,
       options: options
@@ -95,7 +95,7 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
 
     switch result {
       case let .success(identifier):
-        let successContext = createLogContext(
+        let successContext=createLogContext(
           operation: "encrypt",
           status: "success",
           details: [
@@ -105,13 +105,13 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
             "encryptedIdentifier": identifier
           ]
         )
-        
+
         await logger.info(
           "Successfully encrypted data to identifier: \(identifier)",
           context: successContext
         )
       case let .failure(error):
-        let errorContext = createLogContext(
+        let errorContext=createLogContext(
           operation: "encrypt",
           status: "failed",
           details: [
@@ -121,7 +121,7 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
             "error": error.localizedDescription
           ]
         )
-        
+
         await logger.error(
           "Failed to encrypt data: \(error.localizedDescription)",
           context: errorContext
@@ -143,19 +143,19 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
   public func decrypt(
     encryptedDataIdentifier: String,
     keyIdentifier: String,
-    options: CoreSecurityTypes.EncryptionOptions? = nil
+    options: CoreSecurityTypes.EncryptionOptions?=nil
   ) async -> Result<String, SecurityStorageError> {
     // Create a log context with proper privacy classification
-    var metadata = LogMetadataDTOCollection()
+    var metadata=LogMetadataDTOCollection()
       .withPublic(key: "encryptedDataIdentifier", value: encryptedDataIdentifier)
       .withPrivate(key: "keyIdentifier", value: keyIdentifier)
-    
+
     // Add algorithm information if available
-    if let algorithm = options?.algorithm {
-      metadata = metadata.withPublic(key: "algorithm", value: "\(algorithm)")
+    if let algorithm=options?.algorithm {
+      metadata=metadata.withPublic(key: "algorithm", value: "\(algorithm)")
     }
-    
-    let context = createLogContext(
+
+    let context=createLogContext(
       operation: "decrypt",
       status: "started",
       details: [
@@ -164,13 +164,13 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
         "algorithm": options?.algorithm.rawValue ?? "default"
       ]
     )
-    
+
     await logger.info(
       "Decrypting data with identifier \(encryptedDataIdentifier)",
       context: context
     )
 
-    let result = await wrapped.decrypt(
+    let result=await wrapped.decrypt(
       encryptedDataIdentifier: encryptedDataIdentifier,
       keyIdentifier: keyIdentifier,
       options: options
@@ -178,7 +178,7 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
 
     switch result {
       case let .success(identifier):
-        let successContext = createLogContext(
+        let successContext=createLogContext(
           operation: "decrypt",
           status: "success",
           details: [
@@ -188,13 +188,13 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
             "decryptedIdentifier": identifier
           ]
         )
-        
+
         await logger.info(
           "Successfully decrypted data to identifier: \(identifier)",
           context: successContext
         )
       case let .failure(error):
-        let errorContext = createLogContext(
+        let errorContext=createLogContext(
           operation: "decrypt",
           status: "failed",
           details: [
@@ -204,7 +204,7 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
             "error": error.localizedDescription
           ]
         )
-        
+
         await logger.error(
           "Failed to decrypt data: \(error.localizedDescription)",
           context: errorContext
@@ -224,18 +224,18 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
    */
   public func hash(
     dataIdentifier: String,
-    options: CoreSecurityTypes.HashingOptions? = nil
+    options: CoreSecurityTypes.HashingOptions?=nil
   ) async -> Result<String, SecurityStorageError> {
     // Create a log context with proper privacy classification
-    var metadata = LogMetadataDTOCollection()
+    var metadata=LogMetadataDTOCollection()
       .withPublic(key: "dataIdentifier", value: dataIdentifier)
-    
+
     // Add algorithm information if available
-    if let algorithm = options?.algorithm {
-      metadata = metadata.withPublic(key: "algorithm", value: "\(algorithm)")
+    if let algorithm=options?.algorithm {
+      metadata=metadata.withPublic(key: "algorithm", value: "\(algorithm)")
     }
-    
-    let context = createLogContext(
+
+    let context=createLogContext(
       operation: "hash",
       status: "started",
       details: [
@@ -243,20 +243,20 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
         "algorithm": options?.algorithm.rawValue ?? "default"
       ]
     )
-    
+
     await logger.info(
       "Hashing data with identifier \(dataIdentifier)",
       context: context
     )
 
-    let result = await wrapped.hash(
+    let result=await wrapped.hash(
       dataIdentifier: dataIdentifier,
       options: options
     )
 
     switch result {
       case let .success(identifier):
-        let successContext = createLogContext(
+        let successContext=createLogContext(
           operation: "hash",
           status: "success",
           details: [
@@ -265,13 +265,13 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
             "hashIdentifier": identifier
           ]
         )
-        
+
         await logger.info(
           "Successfully hashed data to identifier: \(identifier)",
           context: successContext
         )
       case let .failure(error):
-        let errorContext = createLogContext(
+        let errorContext=createLogContext(
           operation: "hash",
           status: "failed",
           details: [
@@ -280,7 +280,7 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
             "error": error.localizedDescription
           ]
         )
-        
+
         await logger.error(
           "Failed to hash data: \(error.localizedDescription)",
           context: errorContext
@@ -292,7 +292,7 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
 
   /**
    Verifies a hash value matches the expected hash.
-   
+
    - Parameters:
      - dataIdentifier: Identifier for the data to verify
      - hashIdentifier: Identifier for the expected hash
@@ -304,7 +304,7 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
     hashIdentifier: String,
     options: CoreSecurityTypes.HashingOptions?
   ) async -> Result<Bool, SecurityStorageError> {
-    let context = createLogContext(
+    let context=createLogContext(
       operation: "verifyHash",
       status: "started",
       details: [
@@ -313,38 +313,38 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
         "algorithm": options?.algorithm.rawValue ?? "default"
       ]
     )
-    
+
     await logger.debug(
       "Verifying hash for data with identifier \(dataIdentifier) against hash \(hashIdentifier)",
       context: context
     )
-    
-    let result = await wrapped.verifyHash(
+
+    let result=await wrapped.verifyHash(
       dataIdentifier: dataIdentifier,
       hashIdentifier: hashIdentifier,
       options: options
     )
-    
+
     switch result {
-      case .success(let isValid):
-        let successContext = createLogContext(
+      case let .success(isValid):
+        let successContext=createLogContext(
           operation: "verifyHash",
           status: "success",
           details: [
             "dataIdentifier": dataIdentifier,
-            "hashIdentifier": hashIdentifier, 
+            "hashIdentifier": hashIdentifier,
             "algorithm": options?.algorithm.rawValue ?? "default",
             "isValid": isValid ? "true" : "false"
           ]
         )
-        
+
         await logger.info(
           "Hash verification result: \(isValid ? "Valid" : "Invalid")",
           context: successContext
         )
-        
-      case .failure(let error):
-        let errorContext = createLogContext(
+
+      case let .failure(error):
+        let errorContext=createLogContext(
           operation: "verifyHash",
           status: "failed",
           details: [
@@ -354,13 +354,13 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
             "error": error.localizedDescription
           ]
         )
-        
+
         await logger.error(
           "Failed to verify hash: \(error.localizedDescription)",
           context: errorContext
         )
     }
-    
+
     return result
   }
 
@@ -377,27 +377,27 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
     options: CoreSecurityTypes.KeyGenerationOptions?
   ) async -> Result<String, SecurityStorageError> {
     // Create a log context with proper privacy classification
-    let context = createLogContext(
+    let context=createLogContext(
       operation: "generateKey",
       status: "started",
       details: [
         "keyLength": "\(length)"
       ]
     )
-    
+
     await logger.debug(
       "Generating key with length \(length) bytes",
       context: context
     )
-    
-    let result = await wrapped.generateKey(
+
+    let result=await wrapped.generateKey(
       length: length,
       options: options
     )
-    
+
     switch result {
       case let .success(identifier):
-        let successContext = createLogContext(
+        let successContext=createLogContext(
           operation: "generateKey",
           status: "success",
           details: [
@@ -405,14 +405,14 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
             "keyIdentifier": identifier
           ]
         )
-        
+
         await logger.info(
           "Successfully generated key with identifier \(identifier)",
           context: successContext
         )
-        
+
       case let .failure(error):
-        let errorContext = createLogContext(
+        let errorContext=createLogContext(
           operation: "generateKey",
           status: "failed",
           details: [
@@ -420,13 +420,13 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
             "error": error.localizedDescription
           ]
         )
-        
+
         await logger.error(
           "Failed to generate key: \(error.localizedDescription)",
           context: errorContext
         )
     }
-    
+
     return result
   }
 
@@ -440,24 +440,24 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
     identifier: String
   ) async -> Result<[UInt8], SecurityStorageError> {
     // Create a log context with proper privacy classification
-    let context = createLogContext(
+    let context=createLogContext(
       operation: "exportData",
       status: "started",
       details: [
         "dataIdentifier": identifier
       ]
     )
-    
+
     await logger.info(
       "Exporting data with identifier \(identifier)",
       context: context
     )
 
-    let result = await wrapped.exportData(identifier: identifier)
+    let result=await wrapped.exportData(identifier: identifier)
 
     switch result {
       case let .success(data):
-        let successContext = createLogContext(
+        let successContext=createLogContext(
           operation: "exportData",
           status: "success",
           details: [
@@ -465,13 +465,13 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
             "dataSize": "\(data.count)"
           ]
         )
-        
+
         await logger.info(
           "Successfully exported data (\(data.count) bytes)",
           context: successContext
         )
       case let .failure(error):
-        let errorContext = createLogContext(
+        let errorContext=createLogContext(
           operation: "exportData",
           status: "failed",
           details: [
@@ -479,7 +479,7 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
             "error": error.localizedDescription
           ]
         )
-        
+
         await logger.error(
           "Failed to export data: \(error.localizedDescription)",
           context: errorContext
@@ -499,10 +499,10 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
    */
   public func generateHash(
     dataIdentifier: String,
-    options: CoreSecurityTypes.HashingOptions? = nil
+    options: CoreSecurityTypes.HashingOptions?=nil
   ) async -> Result<String, SecurityStorageError> {
     // This is just a proxy to the hash method to conform to the protocol
-    return await hash(dataIdentifier: dataIdentifier, options: options)
+    await hash(dataIdentifier: dataIdentifier, options: options)
   }
 
   /**
@@ -515,37 +515,37 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
     identifier: String
   ) async -> Result<Void, SecurityStorageError> {
     // Create a log context with proper privacy classification
-    let context = createLogContext(
+    let context=createLogContext(
       operation: "deleteData",
       status: "started",
       details: [
         "dataIdentifier": identifier
       ]
     )
-    
+
     await logger.info(
       "Deleting data with identifier \(identifier)",
       context: context
     )
 
-    let result = await wrapped.deleteData(identifier: identifier)
+    let result=await wrapped.deleteData(identifier: identifier)
 
     switch result {
       case .success:
-        let successContext = createLogContext(
+        let successContext=createLogContext(
           operation: "deleteData",
           status: "success",
           details: [
             "dataIdentifier": identifier
           ]
         )
-        
+
         await logger.info(
           "Successfully deleted data with identifier: \(identifier)",
           context: successContext
         )
       case let .failure(error):
-        let errorContext = createLogContext(
+        let errorContext=createLogContext(
           operation: "deleteData",
           status: "failed",
           details: [
@@ -553,7 +553,7 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
             "error": error.localizedDescription
           ]
         )
-        
+
         await logger.error(
           "Failed to delete data: \(error.localizedDescription)",
           context: errorContext
@@ -576,40 +576,40 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
     identifier: String
   ) async -> Result<Void, SecurityStorageError> {
     // Create a log context with proper privacy classification
-    let context = createLogContext(
+    let context=createLogContext(
       operation: "storeData",
       status: "started",
       details: [
         "dataSize": "\(data.count)"
       ]
     )
-    
+
     await logger.info(
       "Storing data (\(data.count) bytes)",
       context: context
     )
 
-    let result = await wrapped.storeData(
+    let result=await wrapped.storeData(
       data: data,
       identifier: identifier
     )
 
     switch result {
       case .success:
-        let successContext = createLogContext(
+        let successContext=createLogContext(
           operation: "storeData",
           status: "success",
           details: [
             "dataSize": "\(data.count)"
           ]
         )
-        
+
         await logger.info(
           "Successfully stored data",
           context: successContext
         )
       case let .failure(error):
-        let errorContext = createLogContext(
+        let errorContext=createLogContext(
           operation: "storeData",
           status: "failed",
           details: [
@@ -617,7 +617,7 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
             "error": error.localizedDescription
           ]
         )
-        
+
         await logger.error(
           "Failed to store data: \(error.localizedDescription)",
           context: errorContext
@@ -637,26 +637,26 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
     identifier: String
   ) async -> Result<Data, SecurityStorageError> {
     // Create a log context with proper privacy classification
-    let context = createLogContext(
+    let context=createLogContext(
       operation: "retrieveData",
       status: "started",
       details: [
         "dataIdentifier": identifier
       ]
     )
-    
+
     await logger.info(
       "Retrieving data with identifier \(identifier)",
       context: context
     )
 
-    let result = await wrapped.retrieveData(
+    let result=await wrapped.retrieveData(
       identifier: identifier
     )
 
     switch result {
       case let .success(data):
-        let successContext = createLogContext(
+        let successContext=createLogContext(
           operation: "retrieveData",
           status: "success",
           details: [
@@ -664,13 +664,13 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
             "dataSize": "\(data.count)"
           ]
         )
-        
+
         await logger.info(
           "Successfully retrieved data (\(data.count) bytes)",
           context: successContext
         )
       case let .failure(error):
-        let errorContext = createLogContext(
+        let errorContext=createLogContext(
           operation: "retrieveData",
           status: "failed",
           details: [
@@ -678,29 +678,29 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
             "error": error.localizedDescription
           ]
         )
-        
+
         await logger.error(
           "Failed to retrieve data: \(error.localizedDescription)",
           context: errorContext
         )
     }
-    
+
     return result
   }
 
   /**
    Imports data with logging.
-   
+
    - Parameters:
      - data: Raw data bytes to import
      - customIdentifier: Optional custom identifier to use
    - Returns: Success with data identifier or error
    */
   public func importData(
-    _ data: [UInt8], 
+    _ data: [UInt8],
     customIdentifier: String?
   ) async -> Result<String, SecurityStorageError> {
-    let context = createLogContext(
+    let context=createLogContext(
       operation: "importData",
       status: "started",
       details: [
@@ -708,57 +708,57 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
         "hasCustomIdentifier": customIdentifier != nil ? "true" : "false"
       ]
     )
-    
+
     await logger.debug(
       "Importing data (\(data.count) bytes)",
       context: context
     )
-    
+
     // Convert data to Data object if needed
-    let dataObj = Data(data)
-    
+    let dataObj=Data(data)
+
     // Forward to wrapped service with proper handling of optional customIdentifier
-    let effectiveIdentifier = customIdentifier ?? ""
-    let result = await wrapped.importData(dataObj, customIdentifier: effectiveIdentifier)
-    
+    let effectiveIdentifier=customIdentifier ?? ""
+    let result=await wrapped.importData(dataObj, customIdentifier: effectiveIdentifier)
+
     switch result {
-    case .success(let identifier):
-      let successContext = createLogContext(
-        operation: "importData",
-        status: "success",
-        details: [
-          "dataSize": String(data.count),
-          "identifier": identifier
-        ]
-      )
-      
-      await logger.info(
-        "Successfully imported data with identifier \(identifier)",
-        context: successContext
-      )
-      
-    case .failure(let error):
-      let errorContext = createLogContext(
-        operation: "importData",
-        status: "failed",
-        details: [
-          "dataSize": String(data.count),
-          "error": error.localizedDescription
-        ]
-      )
-      
-      await logger.error(
-        "Failed to import data: \(error.localizedDescription)",
-        context: errorContext
-      )
+      case let .success(identifier):
+        let successContext=createLogContext(
+          operation: "importData",
+          status: "success",
+          details: [
+            "dataSize": String(data.count),
+            "identifier": identifier
+          ]
+        )
+
+        await logger.info(
+          "Successfully imported data with identifier \(identifier)",
+          context: successContext
+        )
+
+      case let .failure(error):
+        let errorContext=createLogContext(
+          operation: "importData",
+          status: "failed",
+          details: [
+            "dataSize": String(data.count),
+            "error": error.localizedDescription
+          ]
+        )
+
+        await logger.error(
+          "Failed to import data: \(error.localizedDescription)",
+          context: errorContext
+        )
     }
-    
+
     return result
   }
 
   /**
    Imports data with logging.
-   
+
    - Parameters:
      - data: The data to import
      - customIdentifier: Identifier to use for the data
@@ -769,15 +769,15 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
     customIdentifier: String
   ) async -> Result<String, SecurityStorageError> {
     // Convert Data to [UInt8] for internal implementation
-    let bytes = [UInt8](data)
-    
+    let bytes=[UInt8](data)
+
     // Delegate to the other implementation
     return await importData(bytes, customIdentifier: customIdentifier)
   }
 
   /**
    Creates a log context with appropriate privacy controls for cryptographic operations.
-   
+
    - Parameters:
      - operation: The cryptographic operation being performed
      - status: The status of the operation (started, success, failed, etc.)
@@ -787,20 +787,20 @@ public actor LoggingCryptoServiceImpl: CryptoServiceProtocol {
   private func createLogContext(
     operation: String,
     status: String,
-    details: [String: String] = [:]
+    details: [String: String]=[:]
   ) -> LogContext {
-    var metadata = LogMetadataDTOCollection()
-    
+    var metadata=LogMetadataDTOCollection()
+
     // Add operation and status as public information
-    metadata = metadata
+    metadata=metadata
       .withPublic(key: "operation", value: operation)
       .withPublic(key: "status", value: status)
-    
+
     // Add all details with appropriate privacy classification
     for (key, value) in details {
-      metadata = metadata.withPublic(key: key, value: value)
+      metadata=metadata.withPublic(key: key, value: value)
     }
-    
+
     return LogContext(
       source: "LoggingCryptoServiceImpl",
       metadata: metadata,

@@ -65,9 +65,9 @@ public actor FilePathServiceFactory {
    - Returns: A FilePathServiceProtocol implementation
    */
   public func createWithFileManager(
-    _ fileManager: FileManager
+    _: FileManager
   ) -> FilePathServiceProtocol {
-    let isolatedFileManager = FileManager()
+    let isolatedFileManager=FileManager()
     return FilePathServiceImpl(fileManager: isolatedFileManager)
   }
 
@@ -81,7 +81,7 @@ public actor FilePathServiceFactory {
    - Returns: A FilePathServiceProtocol implementation suitable for testing
    */
   public func createForTesting() -> FilePathServiceProtocol {
-    let testFileManager = FileManager()
+    let testFileManager=FileManager()
     return FilePathServiceImpl(
       fileManager: testFileManager,
       bundleIdentifier: "com.umbra.testing"
@@ -153,12 +153,12 @@ actor FilePathServiceImpl: FilePathServiceProtocol {
    */
   init(
     fileManager: FileManager = .default,
-    bundleIdentifier: String = Bundle.main.bundleIdentifier ?? ""
+    bundleIdentifier: String=Bundle.main.bundleIdentifier ?? ""
   ) {
     self.fileManager=fileManager
     self.bundleIdentifier=bundleIdentifier
   }
-  
+
   /**
    Creates a secure path from a string.
 
@@ -171,10 +171,10 @@ actor FilePathServiceImpl: FilePathServiceProtocol {
     guard !path.isEmpty else {
       return nil
     }
-    
+
     return SecurePath(path: path, isDirectory: isDirectory)
   }
-  
+
   /**
    Creates a secure path by joining components.
 
@@ -216,71 +216,71 @@ actor FilePathServiceImpl: FilePathServiceProtocol {
    - Returns: Whether the path exists
    */
   func exists(_ path: SecurePath) async -> Bool {
-    let filePath = path.toString()
+    let filePath=path.toString()
     return FileManager.default.fileExists(atPath: filePath)
   }
-  
+
   /**
    Determines if a path is a directory.
-   
+
    - Parameter path: The path to check
    - Returns: true if the path is a directory, false otherwise
    */
   func isDirectory(_ path: SecurePath) async -> Bool {
-    let filePath = path.toString()
-    var isDir: ObjCBool = false
-    let exists = FileManager.default.fileExists(atPath: filePath, isDirectory: &isDir)
+    let filePath=path.toString()
+    var isDir: ObjCBool=false
+    let exists=FileManager.default.fileExists(atPath: filePath, isDirectory: &isDir)
     return exists && isDir.boolValue
   }
-  
+
   /**
    Determines if a path is a regular file.
-   
+
    - Parameter path: The path to check
    - Returns: true if the path is a regular file, false otherwise
    */
   func isFile(_ path: SecurePath) async -> Bool {
-    let filePath = path.toString()
-    var isDir: ObjCBool = false
-    let exists = FileManager.default.fileExists(atPath: filePath, isDirectory: &isDir)
+    let filePath=path.toString()
+    var isDir: ObjCBool=false
+    let exists=FileManager.default.fileExists(atPath: filePath, isDirectory: &isDir)
     return exists && !isDir.boolValue
   }
-  
+
   /**
    Returns the parent directory of a path.
-   
+
    - Parameter path: The path to get the parent of
    - Returns: The parent directory path
    */
   func parentDirectory(of path: SecurePath) async -> SecurePath? {
-    let filePath = path.toString()
-    let url = URL(fileURLWithPath: filePath)
-    let parentPath = url.deletingLastPathComponent().path
+    let filePath=path.toString()
+    let url=URL(fileURLWithPath: filePath)
+    let parentPath=url.deletingLastPathComponent().path
     return SecurePath(path: parentPath, isDirectory: true, securityLevel: path.securityLevel)
   }
-  
+
   /**
    Returns the last component of a path.
-   
+
    - Parameter path: The path to get the last component of
    - Returns: The last path component
    */
   func lastComponent(of path: SecurePath) async -> String {
-    let filePath = path.toString()
-    let url = URL(fileURLWithPath: filePath)
+    let filePath=path.toString()
+    let url=URL(fileURLWithPath: filePath)
     return url.lastPathComponent
   }
-  
+
   /**
    Returns the file extension of a path.
-   
+
    - Parameter path: The path to get the extension of
    - Returns: The file extension, or nil if there is none
    */
   func fileExtension(of path: SecurePath) async -> String? {
-    let filePath = path.toString()
-    let url = URL(fileURLWithPath: filePath)
-    let ext = url.pathExtension
+    let filePath=path.toString()
+    let url=URL(fileURLWithPath: filePath)
+    let ext=url.pathExtension
     return ext.isEmpty ? nil : ext
   }
 
@@ -478,41 +478,41 @@ actor FilePathServiceImpl: FilePathServiceProtocol {
 
   /**
    Joins multiple path components together.
-   
+
    - Parameters:
       - components: The path components to join.
    - Returns: A path with the components joined.
    */
   nonisolated func join(_ components: String...) -> String {
-    let path = NSString.path(withComponents: components) as String
+    let path=NSString.path(withComponents: components) as String
     return (path as NSString).standardizingPath
   }
-  
+
   /**
    Normalises a file path according to system rules.
-   
+
    - Parameter path: The path to normalise.
    - Returns: The normalised path.
    */
   nonisolated func normalise(_ path: String) -> String {
-    return (path as NSString).standardizingPath
+    (path as NSString).standardizingPath
   }
-  
+
   /**
    Validates that a path is within a specified root directory.
-   
+
    - Parameters:
       - path: The path to validate.
       - rootDirectory: The root directory that should contain the path.
    - Returns: Whether the path is within the root directory.
    */
   nonisolated func isPathWithinRoot(_ path: String, rootDirectory: String) -> Bool {
-    let normalizedPath = normalise(path)
-    let normalizedRoot = normalise(rootDirectory)
-    
+    let normalizedPath=normalise(path)
+    let normalizedRoot=normalise(rootDirectory)
+
     // Ensure root ends with a path separator
-    let rootWithSeparator = normalizedRoot.hasSuffix("/") ? normalizedRoot : normalizedRoot + "/"
-    
+    let rootWithSeparator=normalizedRoot.hasSuffix("/") ? normalizedRoot : normalizedRoot + "/"
+
     // Check if the normalized path starts with the normalized root
     // This ensures that "/root/path" is contained within "/root" but "/root-other" is not
     return normalizedPath.hasPrefix(rootWithSeparator) || normalizedPath == normalizedRoot
@@ -528,10 +528,10 @@ actor SecureFilePathService: FilePathServiceProtocol {
 
   /// Logger for recording operations
   private let logger: any LoggingProtocol
-  
+
   /// File manager to use for operations
   private let fileManager: FileManager
-  
+
   /// Root directory for path operations
   private let rootDirectory: String
 
@@ -548,12 +548,12 @@ actor SecureFilePathService: FilePathServiceProtocol {
     securityLevel: SecurityLevel,
     logger: any LoggingProtocol,
     fileManager: FileManager = .default,
-    rootDirectory: String = "/"
+    rootDirectory: String="/"
   ) {
-    self.securityLevel = securityLevel
-    self.logger = logger
-    self.fileManager = fileManager
-    self.rootDirectory = rootDirectory
+    self.securityLevel=securityLevel
+    self.logger=logger
+    self.fileManager=fileManager
+    self.rootDirectory=rootDirectory
   }
 
   /**
@@ -568,7 +568,7 @@ actor SecureFilePathService: FilePathServiceProtocol {
     guard !path.isEmpty else {
       return nil
     }
-    
+
     return SecurePath(path: path, isDirectory: isDirectory)
   }
 
@@ -616,78 +616,78 @@ actor SecureFilePathService: FilePathServiceProtocol {
     validateSecurityLevel(path)
     return fileManager.fileExists(atPath: path.toString())
   }
-  
+
   /**
    Determines if a path is a directory.
-   
+
    - Parameter path: The path to check
    - Returns: true if the path is a directory, false otherwise
    */
   func isDirectory(_ path: SecurePath) async -> Bool {
     validateSecurityLevel(path)
-    var isDir: ObjCBool = false
-    let exists = fileManager.fileExists(atPath: path.toString(), isDirectory: &isDir)
+    var isDir: ObjCBool=false
+    let exists=fileManager.fileExists(atPath: path.toString(), isDirectory: &isDir)
     return exists && isDir.boolValue
   }
-  
+
   /**
    Determines if a path is a regular file.
-   
+
    - Parameter path: The path to check
    - Returns: true if the path is a regular file, false otherwise
    */
   func isFile(_ path: SecurePath) async -> Bool {
     validateSecurityLevel(path)
-    var isDir: ObjCBool = false
-    let exists = fileManager.fileExists(atPath: path.toString(), isDirectory: &isDir)
+    var isDir: ObjCBool=false
+    let exists=fileManager.fileExists(atPath: path.toString(), isDirectory: &isDir)
     return exists && !isDir.boolValue
   }
-  
+
   /**
    Returns the parent directory of a path.
-   
+
    - Parameter path: The path to get the parent of
    - Returns: The parent directory path
    */
   func parentDirectory(of path: SecurePath) async -> SecurePath? {
     validateSecurityLevel(path)
-    let url = URL(fileURLWithPath: path.toString())
-    let parentPath = url.deletingLastPathComponent().path
-    
+    let url=URL(fileURLWithPath: path.toString())
+    let parentPath=url.deletingLastPathComponent().path
+
     // Don't allow escaping the sandbox
     if !parentPath.hasPrefix(rootDirectory) {
       return nil
     }
-    
+
     return SecurePath(
       path: parentPath,
       isDirectory: true,
       securityLevel: path.securityLevel
     )
   }
-  
+
   /**
    Returns the last component of a path.
-   
+
    - Parameter path: The path to get the last component of
    - Returns: The last path component
    */
   func lastComponent(of path: SecurePath) async -> String {
     validateSecurityLevel(path)
-    let url = URL(fileURLWithPath: path.toString())
+    let url=URL(fileURLWithPath: path.toString())
     return url.lastPathComponent
   }
-  
+
   /**
    Returns the file extension of a path.
-   
+
    - Parameter path: The path to get the extension of
    - Returns: The file extension, or nil if there is none
    */
   func fileExtension(of path: SecurePath) async -> String? {
     validateSecurityLevel(path)
-    let url = URL(fileURLWithPath: path.toString())
-    let ext = url.pathExtension
+    let url=URL(fileURLWithPath: path.toString())
+    let ext=url.pathExtension
     return ext.isEmpty ? nil : ext
   }
 
@@ -961,41 +961,41 @@ actor SecureFilePathService: FilePathServiceProtocol {
 
   /**
    Joins multiple path components together.
-   
+
    - Parameters:
       - components: The path components to join.
    - Returns: A path with the components joined.
    */
   nonisolated func join(_ components: String...) -> String {
-    let path = NSString.path(withComponents: components) as String
+    let path=NSString.path(withComponents: components) as String
     return (path as NSString).standardizingPath
   }
-  
+
   /**
    Normalises a file path according to system rules.
-   
+
    - Parameter path: The path to normalise.
    - Returns: The normalised path.
    */
   nonisolated func normalise(_ path: String) -> String {
-    return (path as NSString).standardizingPath
+    (path as NSString).standardizingPath
   }
-  
+
   /**
    Validates that a path is within a specified root directory.
-   
+
    - Parameters:
       - path: The path to validate.
       - rootDirectory: The root directory that should contain the path.
    - Returns: Whether the path is within the root directory.
    */
   nonisolated func isPathWithinRoot(_ path: String, rootDirectory: String) -> Bool {
-    let normalizedPath = normalise(path)
-    let normalizedRoot = normalise(rootDirectory)
-    
+    let normalizedPath=normalise(path)
+    let normalizedRoot=normalise(rootDirectory)
+
     // Ensure root ends with a path separator
-    let rootWithSeparator = normalizedRoot.hasSuffix("/") ? normalizedRoot : normalizedRoot + "/"
-    
+    let rootWithSeparator=normalizedRoot.hasSuffix("/") ? normalizedRoot : normalizedRoot + "/"
+
     // Check if the normalized path starts with the normalized root
     // This ensures that "/root/path" is contained within "/root" but "/root-other" is not
     return normalizedPath.hasPrefix(rootWithSeparator) || normalizedPath == normalizedRoot
@@ -1011,13 +1011,13 @@ actor SandboxedFilePathService: FilePathServiceProtocol {
 
   /// Logger for recording operations
   private let logger: any LoggingProtocol
-  
+
   /// File manager instance for file operations
   private let fileManager: FileManager
-  
+
   /**
    Initialises a new sandboxed file path service.
-   
+
    - Parameters:
       - rootDirectory: The root directory to restrict operations to
       - logger: Logger for recording operations
@@ -1028,9 +1028,9 @@ actor SandboxedFilePathService: FilePathServiceProtocol {
     logger: any LoggingProtocol,
     fileManager: FileManager = .default
   ) {
-    self.rootDirectory = rootDirectory
-    self.logger = logger
-    self.fileManager = fileManager
+    self.rootDirectory=rootDirectory
+    self.logger=logger
+    self.fileManager=fileManager
   }
 
   /**
@@ -1091,14 +1091,14 @@ actor SandboxedFilePathService: FilePathServiceProtocol {
       await logSandboxViolation(operation: "exists", path: path)
       return false
     }
-    
-    let filePath = path.toString()
+
+    let filePath=path.toString()
     return fileManager.fileExists(atPath: filePath)
   }
-  
+
   /**
    Determines if a path is a directory.
-   
+
    - Parameter path: The path to check
    - Returns: true if the path is a directory, false otherwise
    */
@@ -1108,16 +1108,16 @@ actor SandboxedFilePathService: FilePathServiceProtocol {
       await logSandboxViolation(operation: "isDirectory", path: path)
       return false
     }
-    
-    let filePath = path.toString()
-    var isDir: ObjCBool = false
-    let exists = fileManager.fileExists(atPath: filePath, isDirectory: &isDir)
+
+    let filePath=path.toString()
+    var isDir: ObjCBool=false
+    let exists=fileManager.fileExists(atPath: filePath, isDirectory: &isDir)
     return exists && isDir.boolValue
   }
-  
+
   /**
    Determines if a path is a regular file.
-   
+
    - Parameter path: The path to check
    - Returns: true if the path is a regular file, false otherwise
    */
@@ -1127,16 +1127,16 @@ actor SandboxedFilePathService: FilePathServiceProtocol {
       await logSandboxViolation(operation: "isFile", path: path)
       return false
     }
-    
-    let filePath = path.toString()
-    var isDir: ObjCBool = false
-    let exists = fileManager.fileExists(atPath: filePath, isDirectory: &isDir)
+
+    let filePath=path.toString()
+    var isDir: ObjCBool=false
+    let exists=fileManager.fileExists(atPath: filePath, isDirectory: &isDir)
     return exists && !isDir.boolValue
   }
-  
+
   /**
    Returns the parent directory of a path.
-   
+
    - Parameter path: The path to get the parent of
    - Returns: The parent directory path
    */
@@ -1146,46 +1146,46 @@ actor SandboxedFilePathService: FilePathServiceProtocol {
       await logSandboxViolation(operation: "parentDirectory", path: path)
       return nil
     }
-    
-    let url = URL(fileURLWithPath: path.toString())
-    let parentPath = url.deletingLastPathComponent().path
-    
+
+    let url=URL(fileURLWithPath: path.toString())
+    let parentPath=url.deletingLastPathComponent().path
+
     // Don't allow escaping the sandbox
     if !isPathWithinRoot(parentPath, rootDirectory: rootDirectory) {
       return nil
     }
-    
+
     return SecurePath(
       path: parentPath,
       isDirectory: true,
       securityLevel: path.securityLevel
     )
   }
-  
+
   /**
    Returns the last component of a path.
-   
+
    - Parameter path: The path to get the last component of
    - Returns: The last path component
    */
   func lastComponent(of path: SecurePath) async -> String {
     // Still allow returning the last component even if outside sandbox
     // This is safe as we're just returning a string, not accessing the file system
-    let url = URL(fileURLWithPath: path.toString())
+    let url=URL(fileURLWithPath: path.toString())
     return url.lastPathComponent
   }
-  
+
   /**
    Returns the file extension of a path.
-   
+
    - Parameter path: The path to get the extension of
    - Returns: The file extension, or nil if there is none
    */
   func fileExtension(of path: SecurePath) async -> String? {
     // Still allow returning the extension even if outside sandbox
     // This is safe as we're just returning a string, not accessing the file system
-    let url = URL(fileURLWithPath: path.toString())
-    let ext = url.pathExtension
+    let url=URL(fileURLWithPath: path.toString())
+    let ext=url.pathExtension
     return ext.isEmpty ? nil : ext
   }
 
@@ -1300,20 +1300,20 @@ actor SandboxedFilePathService: FilePathServiceProtocol {
 
   /**
    Logs a sandbox violation with the given operation details.
-   
+
    - Parameters:
      - operation: The operation being performed
      - path: The path that was outside the sandbox
    */
   private func logSandboxViolation(operation: String, path: SecurePath) async {
-    let logContext = FileSystemLogContext(
+    let logContext=FileSystemLogContext(
       operation: operation,
       path: path.toString(),
       metadata: LogMetadataDTOCollection()
         .withPrivate(key: "path", value: path.toString())
         .withPublic(key: "sandboxRoot", value: rootDirectory)
     )
-    
+
     await logger.warning(
       "Sandbox violation detected: \(operation) operation attempted outside sandbox",
       context: logContext
@@ -1322,68 +1322,74 @@ actor SandboxedFilePathService: FilePathServiceProtocol {
 
   /**
    Checks if a path is within the sandbox root directory.
-   
+
    - Parameter path: The path to check
    - Returns: Whether the path is within the sandbox
    */
   private func isPathWithinSandbox(_ path: SecurePath) -> Bool {
-    let filePath = path.toString()
+    let filePath=path.toString()
     return filePath.hasPrefix(rootDirectory)
   }
 
   /**
    Joins multiple path components together.
-   
+
    - Parameters:
       - components: The path components to join.
    - Returns: A path with the components joined.
    */
   nonisolated func join(_ components: String...) -> String {
-    let path = NSString.path(withComponents: components) as String
-    let normalizedPath = (path as NSString).standardizingPath
-    
+    let path=NSString.path(withComponents: components) as String
+    let normalizedPath=(path as NSString).standardizingPath
+
     // If this is an absolute path, ensure it's within the root directory
-    if normalizedPath.hasPrefix("/") && !isPathWithinRoot(normalizedPath, rootDirectory: rootDirectory) {
+    if
+      normalizedPath
+        .hasPrefix("/") && !isPathWithinRoot(normalizedPath, rootDirectory: rootDirectory)
+    {
       // Join to the root directory to keep it sandboxed
       return (rootDirectory as NSString).appendingPathComponent(normalizedPath)
     }
-    
+
     return normalizedPath
   }
-  
+
   /**
    Normalises a file path according to system rules.
-   
+
    - Parameter path: The path to normalise.
    - Returns: The normalised path.
    */
   nonisolated func normalise(_ path: String) -> String {
-    let normalizedPath = (path as NSString).standardizingPath
-    
+    let normalizedPath=(path as NSString).standardizingPath
+
     // If this is an absolute path, ensure it's within the root directory
-    if normalizedPath.hasPrefix("/") && !isPathWithinRoot(normalizedPath, rootDirectory: rootDirectory) {
+    if
+      normalizedPath
+        .hasPrefix("/") && !isPathWithinRoot(normalizedPath, rootDirectory: rootDirectory)
+    {
       // Normalize to the root directory to keep it sandboxed
       return rootDirectory
     }
-    
+
     return normalizedPath
   }
-  
+
   /**
    Validates that a path is within a specified root directory.
-   
+
    - Parameters:
       - path: The path to validate.
       - rootDirectory: The root directory that should contain the path.
    - Returns: Whether the path is within the root directory.
    */
   nonisolated func isPathWithinRoot(_ path: String, rootDirectory: String) -> Bool {
-    let normalizedPath = (path as NSString).standardizingPath
-    let normalizedRoot = (rootDirectory as NSString).standardizingPath
-    
+    let normalizedPath=(path as NSString).standardizingPath
+    let normalizedRoot=(rootDirectory as NSString).standardizingPath
+
     // Ensure root ends with a path separator
-    let rootWithSeparator = normalizedRoot.hasSuffix("/") ? normalizedRoot : normalizedRoot + "/"
-    
+    let rootWithSeparator=normalizedRoot.hasSuffix("/") ? normalizedRoot : normalizedRoot + "/"
+
     // Check if the normalized path starts with the normalized root
     // This ensures that "/root/path" is contained within "/root" but "/root-other" is not
     return normalizedPath.hasPrefix(rootWithSeparator) || normalizedPath == normalizedRoot

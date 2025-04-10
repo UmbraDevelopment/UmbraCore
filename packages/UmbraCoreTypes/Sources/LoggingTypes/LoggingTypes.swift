@@ -428,7 +428,7 @@ public struct LogContext: Sendable, Equatable, Hashable, LogContextDTO {
   /// - Parameter newMetadata: The metadata to add to the existing metadata
   /// - Returns: A new context with combined metadata
   public func withUpdatedMetadata(_ newMetadata: LogMetadataDTOCollection) -> LogContext {
-    let combinedMetadata = metadataCollection?.merging(with: newMetadata) ?? newMetadata
+    let combinedMetadata=metadataCollection?.merging(with: newMetadata) ?? newMetadata
 
     return LogContext(
       source: getSource(),
@@ -442,10 +442,11 @@ public struct LogContext: Sendable, Equatable, Hashable, LogContextDTO {
   /// Create a new context with updated metadata from a DTO collection
   /// - Parameter metadata: The metadata collection to add to the context
   /// - Returns: A new log context with the updated metadata
-  public func toBaseLogContextDTO(withMetadata metadata: LogMetadataDTOCollection? = nil) -> BaseLogContextDTO {
+  public func toBaseLogContextDTO(withMetadata metadata: LogMetadataDTOCollection?=nil)
+  -> BaseLogContextDTO {
     // Create a new BaseLogContextDTO with merged metadata
-    let finalMetadata = metadata != nil ? self.metadata.merging(with: metadata!) : self.metadata
-    
+    let finalMetadata=metadata != nil ? self.metadata.merging(with: metadata!) : self.metadata
+
     return BaseLogContextDTO(
       domainName: domainName,
       source: source,

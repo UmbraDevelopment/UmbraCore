@@ -50,7 +50,7 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
     includeFileStatistics: Bool
   ) async throws -> BackupInterfaces.BackupSnapshot? {
     // Create a log context
-    let context = SnapshotLogContext(
+    let context=SnapshotLogContext(
       operation: "getSnapshotDetails",
       source: "SnapshotServiceImpl"
     )
@@ -104,7 +104,7 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
     includeFileStatistics: Bool=false
   ) async throws -> BackupInterfaces.BackupSnapshot? {
     // Create a log context
-    let context = SnapshotLogContext(
+    let context=SnapshotLogContext(
       operation: "getLatestSnapshot",
       source: "SnapshotServiceImpl"
     )
@@ -157,7 +157,7 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
     includeFileStatistics: Bool=false
   ) async throws -> [BackupInterfaces.BackupSnapshot] {
     // Create a log context
-    let context = SnapshotLogContext(
+    let context=SnapshotLogContext(
       operation: "listSnapshots",
       source: "SnapshotServiceImpl"
     )
@@ -207,7 +207,7 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
     secondSnapshotID: String
   ) async throws -> BackupInterfaces.BackupSnapshotComparisonResult {
     // Create a log context
-    let context = SnapshotLogContext(
+    let context=SnapshotLogContext(
       operation: "compareSnapshots",
       source: "SnapshotServiceImpl"
     )
@@ -262,7 +262,7 @@ public actor SnapshotServiceImpl: SnapshotServiceProtocol {
     fullVerification: Bool=false
   ) async throws -> BackupInterfaces.BackupVerificationResult {
     // Create a log context
-    let context = SnapshotLogContext(
+    let context=SnapshotLogContext(
       operation: "verifySnapshot",
       source: "SnapshotServiceImpl"
     )
