@@ -2,51 +2,7 @@ import CoreSecurityTypes
 import Foundation
 import LoggingTypes
 import SecurityCoreInterfaces
-
-/// Data transfer object for security configuration.
-/// This is a simplified implementation for the Alpha Dot Five architecture refactoring.
-public struct SecurityConfigurationDTO: Sendable, Equatable {
-  /// The security level to use
-  public let securityLevel: CoreSecurityTypes.SecurityLevelDTO
-
-  /// The logging level for security operations
-  public let loggingLevel: CoreSecurityTypes.SecurityLogLevelDTO
-
-  /// Options for secure random number generation
-  public let randomizationOptions: CoreSecurityTypes.RandomizationOptionsDTO
-
-  /// Creates a new security configuration
-  /// - Parameters:
-  ///   - securityLevel: The security level to use
-  ///   - loggingLevel: The logging level for security operations
-  ///   - randomizationOptions: Options for secure random number generation
-  public init(
-    securityLevel: CoreSecurityTypes.SecurityLevelDTO = .standard,
-    loggingLevel: CoreSecurityTypes.SecurityLogLevelDTO = .warning,
-    randomizationOptions: CoreSecurityTypes.RandomizationOptionsDTO = .default
-  ) {
-    self.securityLevel=securityLevel
-    self.loggingLevel=loggingLevel
-    self.randomizationOptions=randomizationOptions
-  }
-
-  /// Default configuration
-  public static let `default`=SecurityConfigurationDTO()
-
-  /// High security configuration
-  public static let highSecurity=SecurityConfigurationDTO(
-    securityLevel: .high,
-    loggingLevel: .debug,
-    randomizationOptions: .highEntropy
-  )
-
-  /// Performance optimized configuration
-  public static let performance=SecurityConfigurationDTO(
-    securityLevel: .basic,
-    loggingLevel: .error,
-    randomizationOptions: .fast
-  )
-}
+import SecurityInterfaces
 
 /// The type of security event
 public enum SecurityEventTypeDTO: String, Sendable, Equatable, CaseIterable {

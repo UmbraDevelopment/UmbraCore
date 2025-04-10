@@ -7,7 +7,6 @@ import LoggingServices
 import LoggingTypes
 import SecurityCoreInterfaces
 import SecurityInterfaces
-import SecurityImplementation
 import UmbraErrors
 
 /// Factory for creating instances of the SecurityProviderProtocol.
@@ -26,17 +25,13 @@ public enum SecurityServiceFactory {
   /// - Returns: A security service instance
   public static func createStandard(
     logger: LoggingInterfaces.LoggingProtocol,
-    secureLogger: SecureLoggerActor? = nil
+    secureLogger: LoggingInterfaces.LoggingProtocol? = nil
   ) async -> SecurityProviderProtocol {
     // Create a secure logger if one wasn't provided
-    let secureLogger = secureLogger ?? await createSecureLogger(
-      logger: logger,
-      category: "SecurityService",
-      includeTimestamps: true
-    )
-
+    let secureLogger = secureLogger ?? await createSecureLogger(logger: logger)
+    
     // Create default configuration
-    let configuration = SecurityConfigurationDTO(
+    let configuration = CoreSecurityTypes.SecurityConfigurationDTO(
       securityLevel: .standard,
       loggingLevel: .info
     )
@@ -66,26 +61,22 @@ public enum SecurityServiceFactory {
   /// - Returns: A fully configured security service with privacy-aware logging
   public static func createWithLoggers(
     logger: LoggingInterfaces.LoggingProtocol,
-    secureLogger: SecureLoggerActor? = nil,
-    configuration: SecurityImplementation.SecurityConfigurationDTO? = nil
+    secureLogger: LoggingInterfaces.LoggingProtocol? = nil,
+    configuration: CoreSecurityTypes.SecurityConfigurationDTO? = nil
   ) async -> SecurityProviderProtocol {
     // Create dependencies
-    let cryptoService = await CryptoServiceFactory.shared.createDefault()
+    let cryptoService = await CryptoServiceFactory.shared.createDefault(logger: logger)
     
     // Create a secure logger if one wasn't provided
-    let secureLoggerInstance: SecureLoggerActor
+    let secureLoggerInstance: LoggingInterfaces.LoggingProtocol
     if let secureLogger = secureLogger {
       secureLoggerInstance = secureLogger
     } else {
-      secureLoggerInstance = await LoggingServiceFactory.createSecureLogger(
-        baseLogger: logger,
-        domain: "SecurityService",
-        privacyLevel: .high
-      )
+      secureLoggerInstance = await createSecureLogger(logger: logger)
     }
 
     // Create default configuration if needed
-    let configurationInstance = configuration ?? SecurityImplementation.SecurityConfigurationDTO(
+    let configurationInstance = configuration ?? CoreSecurityTypes.SecurityConfigurationDTO(
       securityLevel: .standard,
       loggingLevel: .info
     )
@@ -106,7 +97,7 @@ public enum SecurityServiceFactory {
   /// - Returns: A mock security service instance
   public static func createMock(
     logger: LoggingInterfaces.LoggingProtocol,
-    secureLogger: SecureLoggerActor? = nil
+    secureLogger: LoggingInterfaces.LoggingProtocol? = nil
   ) async -> SecurityProviderProtocol {
     // Create a secure logger if one wasn't provided
     let secureLogger = secureLogger ?? await createSecureLogger(logger: logger)
@@ -115,7 +106,7 @@ public enum SecurityServiceFactory {
     let cryptoService = MockCryptoService()
 
     // Create mock configuration
-    let configuration = SecurityImplementation.SecurityConfigurationDTO(
+    let configuration = CoreSecurityTypes.SecurityConfigurationDTO(
       securityLevel: .standard,
       loggingLevel: .debug
     )
@@ -140,7 +131,7 @@ public enum SecurityServiceFactory {
     )
 
     // Create default configuration
-    let configuration = SecurityImplementation.SecurityConfigurationDTO(
+    let configuration = CoreSecurityTypes.SecurityConfigurationDTO(
       securityLevel: .standard,
       loggingLevel: .debug
     )
@@ -163,7 +154,7 @@ public enum SecurityServiceFactory {
     )
 
     // Create default configuration
-    let configuration = SecurityImplementation.SecurityConfigurationDTO(
+    let configuration = CoreSecurityTypes.SecurityConfigurationDTO(
       securityLevel: .standard,
       loggingLevel: .warning
     )
@@ -175,33 +166,34 @@ public enum SecurityServiceFactory {
       configuration: configuration
     )
   }
+  
+  /// Creates a secure logger for privacy-aware logging of security operations
+  /// - Parameters:
+  ///   - logger: The base logger to use
+  /// - Returns: A secure logger for privacy-aware logging
+  private static func createSecureLogger(
+    logger: LoggingInterfaces.LoggingProtocol
+  ) async -> LoggingInterfaces.LoggingProtocol {
+    // Create secure logger for privacy-aware logging
+    return await LoggingServices.createSecureLogger(
+      subsystem: "com.umbra.security",
+      category: "SecurityService"
+    )
+  }
 }
 
 /// Helper function to create metadata dictionary from LogMetadataDTOCollection
 private func createMetadataDictionary(_ metadata: LogMetadataDTOCollection) -> [String: String] {
   var metadataDict = [String: String]()
-  for (key, value) in metadata.publicMetadata {
-    metadataDict[key] = value
+  
+  // Extract public metadata values from the collection
+  for (key, value) in metadata {
+    if metadata.privacyLevel(for: key) == .public {
+      metadataDict[key] = value
+    }
   }
+  
   return metadataDict
-}
-
-/// Helper function to create a secure logger
-/// - Parameters:
-///   - logger: The logger to use as a base
-///   - category: The category for the logger
-///   - includeTimestamps: Whether to include timestamps in log messages
-/// - Returns: A secure logger instance
-private func createSecureLogger(
-  logger: LoggingInterfaces.LoggingProtocol,
-  category: String = "SecurityService",
-  includeTimestamps: Bool = true
-) async -> SecureLoggerActor {
-  return await LoggingServiceFactory.createSecureLogger(
-    baseLogger: logger,
-    domain: category,
-    privacyLevel: .high
-  )
 }
 
 /// Mock implementation of CryptoServiceProtocol for testing

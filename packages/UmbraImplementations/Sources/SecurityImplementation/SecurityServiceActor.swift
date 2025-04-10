@@ -36,11 +36,11 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
   /// The standard logger used for general logging
   private let logger: LoggingInterfaces.LoggingProtocol
 
-  /// The secure logger used for privacy-aware logging of sensitive operations
-  private let secureLogger: SecureLoggerActor
+  /// The secure logger instance for privacy-aware logging
+  private let secureLogger: LoggingProtocol
 
   /// The configuration for this security service
-  private var configuration: SecurityConfigurationDTO
+  private var configuration: CoreSecurityTypes.SecurityConfigurationDTO
 
   /// Flag indicating if service has been initialised
   private var isInitialised: Bool = false
@@ -62,8 +62,8 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
   public init(
     cryptoService: CryptoServiceProtocol,
     logger: LoggingProtocol,
-    secureLogger: SecureLoggerActor,
-    configuration: SecurityConfigurationDTO
+    secureLogger: LoggingProtocol,
+    configuration: CoreSecurityTypes.SecurityConfigurationDTO
   ) {
     self.cryptoService = cryptoService
     self.logger = logger

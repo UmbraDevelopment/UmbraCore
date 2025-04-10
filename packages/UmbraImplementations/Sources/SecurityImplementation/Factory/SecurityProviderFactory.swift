@@ -5,6 +5,7 @@ import LoggingInterfaces
 import LoggingServices
 import LoggingTypes
 import SecurityCoreInterfaces
+import SecurityInterfaces
 import SecurityKeyManagement
 
 /**
@@ -38,11 +39,11 @@ public enum SecurityProviderFactory {
     logger: LoggingInterfaces.LoggingProtocol?=nil
   ) async -> SecurityProviderProtocol {
     // Create standard crypto service
-    let cryptoService: any CryptoServiceProtocol = await CryptoServiceFactory
-      .createStandardCryptoService()
+    let cryptoService: any CryptoServiceProtocol = await CryptoServiceFactory.shared
+      .createDefault(logger: logger)
     
     // Create the key manager with appropriate logger
-    let keyManager = await KeyManagementFactory.createKeyManager(
+    let keyManager = KeyManagementFactory.createKeyManager(
       logger: logger as? LoggingServiceProtocol
     )
 
@@ -51,26 +52,31 @@ public enum SecurityProviderFactory {
     if let logger {
       actualLogger = logger
     } else {
-      let factory = LoggingServiceFactory()
+      // Create a development logger with appropriate settings
+      let factory = LoggingServiceFactory.shared
       let developmentLogger = await factory.createDevelopmentLogger(
-        subsystem: "com.umbra.security",
-        category: "SecurityProvider"
+        minimumLevel: .debug,
+        formatter: nil
       )
-      actualLogger = developmentLogger
+      // Convert the LoggingServiceActor to LoggingProtocol using a wrapper
+      actualLogger = await SecurityLoggingUtilities.createLoggingWrapper(logger: developmentLogger)
     }
     
     // Create secure logger for privacy-aware logging
-    let secureLogger = await LoggingServices.createSecureLogger(
+    let secureLogger = await SecurityLoggingUtilities.createSecureLogger(
       subsystem: "com.umbra.security",
-      category: "SecurityService",
-      includeTimestamps: true
+      category: "SecurityService"
     )
 
     // Create the security service actor
     let securityService = SecurityServiceActor(
       cryptoService: cryptoService,
       logger: actualLogger,
-      secureLogger: secureLogger
+      secureLogger: secureLogger,
+      configuration: CoreSecurityTypes.SecurityConfigurationDTO(
+        securityLevel: CoreSecurityTypes.SecurityLevelDTO.standard,
+        loggingLevel: CoreSecurityTypes.SecurityLogLevelDTO.info
+      )
     )
 
     // Initialize the service
@@ -97,8 +103,13 @@ public enum SecurityProviderFactory {
   ) async -> SecurityProviderProtocol {
     // Create high-security crypto service
     let cryptoService: any CryptoServiceProtocol = await CryptoServiceFactory
-      .createHighSecurityCryptoService()
-    let keyManager = await KeyManagementFactory.createKeyManager(
+      .createHighSecurityCryptoService(
+        keySize: 256,
+        hashAlgorithm: .sha256,
+        saltSize: 16,
+        iterations: 100000
+      )
+    let keyManager = KeyManagementFactory.createKeyManager(
       logger: logger as? LoggingServiceProtocol
     )
 
@@ -107,26 +118,31 @@ public enum SecurityProviderFactory {
     if let logger {
       actualLogger = logger
     } else {
-      let factory = LoggingServiceFactory()
+      // Create a development logger with appropriate settings
+      let factory = LoggingServiceFactory.shared
       let developmentLogger = await factory.createDevelopmentLogger(
-        subsystem: "com.umbra.security",
-        category: "SecurityProvider"
+        minimumLevel: .debug,
+        formatter: nil
       )
-      actualLogger = developmentLogger
+      // Convert the LoggingServiceActor to LoggingProtocol using a wrapper
+      actualLogger = await SecurityLoggingUtilities.createLoggingWrapper(logger: developmentLogger)
     }
     
     // Create secure logger for privacy-aware logging
-    let secureLogger = await LoggingServices.createSecureLogger(
+    let secureLogger = await SecurityLoggingUtilities.createSecureLogger(
       subsystem: "com.umbra.security",
-      category: "SecurityService",
-      includeTimestamps: true
+      category: "SecurityService"
     )
 
     // Create the security service actor
     let securityService = SecurityServiceActor(
       cryptoService: cryptoService,
       logger: actualLogger,
-      secureLogger: secureLogger
+      secureLogger: secureLogger,
+      configuration: CoreSecurityTypes.SecurityConfigurationDTO(
+        securityLevel: CoreSecurityTypes.SecurityLevelDTO.high,
+        loggingLevel: CoreSecurityTypes.SecurityLogLevelDTO.info
+      )
     )
 
     // Initialize the service
@@ -154,8 +170,15 @@ public enum SecurityProviderFactory {
   ) async -> SecurityProviderProtocol {
     // Create max-security crypto service
     let cryptoService: any CryptoServiceProtocol = await CryptoServiceFactory
-      .createMaxSecurityCryptoService()
-    let keyManager = await KeyManagementFactory.createKeyManager(
+      .createMaxSecurityCryptoService(
+        keySize: 512,
+        hashAlgorithm: .sha512,
+        saltSize: 32,
+        iterations: 200000,
+        memorySize: 1024 * 1024 * 1024,
+        parallelism: 4
+      )
+    let keyManager = KeyManagementFactory.createKeyManager(
       logger: logger as? LoggingServiceProtocol
     )
 
@@ -164,26 +187,31 @@ public enum SecurityProviderFactory {
     if let logger {
       actualLogger = logger
     } else {
-      let factory = LoggingServiceFactory()
+      // Create a development logger with appropriate settings
+      let factory = LoggingServiceFactory.shared
       let developmentLogger = await factory.createDevelopmentLogger(
-        subsystem: "com.umbra.security",
-        category: "SecurityProvider"
+        minimumLevel: .debug,
+        formatter: nil
       )
-      actualLogger = developmentLogger
+      // Convert the LoggingServiceActor to LoggingProtocol using a wrapper
+      actualLogger = await SecurityLoggingUtilities.createLoggingWrapper(logger: developmentLogger)
     }
     
     // Create secure logger for privacy-aware logging
-    let secureLogger = await LoggingServices.createSecureLogger(
+    let secureLogger = await SecurityLoggingUtilities.createSecureLogger(
       subsystem: "com.umbra.security",
-      category: "SecurityService",
-      includeTimestamps: true
+      category: "SecurityService"
     )
 
     // Create the security service actor
     let securityService = SecurityServiceActor(
       cryptoService: cryptoService,
       logger: actualLogger,
-      secureLogger: secureLogger
+      secureLogger: secureLogger,
+      configuration: CoreSecurityTypes.SecurityConfigurationDTO(
+        securityLevel: CoreSecurityTypes.SecurityLevelDTO.maximum,
+        loggingLevel: CoreSecurityTypes.SecurityLogLevelDTO.warning
+      )
     )
 
     // Initialize the service
@@ -193,16 +221,4 @@ public enum SecurityProviderFactory {
   }
 }
 
-extension CoreSecurityError {
-  static func invalidVerificationMethod(reason: String) -> CoreSecurityError {
-    return .invalidInput(reason)
-  }
-  
-  static func verificationFailed(reason: String) -> CoreSecurityError {
-    return .authenticationFailed(reason)
-  }
-  
-  static func notImplemented(reason: String) -> CoreSecurityError {
-    return .unsupportedOperation(reason)
-  }
-}
+// CoreSecurityError extension has been moved to SecurityProvider+Validation.swift

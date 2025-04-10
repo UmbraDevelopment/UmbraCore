@@ -18,7 +18,7 @@ import SecurityCoreInterfaces
 /**
  # SecurityProvider Operations Extension
 
- This extension adds specialised operations to the CoreSecurityProviderService that
+ This extension adds specialised operations to the SecurityProviderService that
  combine multiple basic operations into higher-level functionality.
 
  ## Operations
@@ -27,7 +27,7 @@ import SecurityCoreInterfaces
  * Combined retrieve and decrypt operations
  * Batch encryption and decryption for collections of data
  */
-extension CoreSecurityProviderService {
+extension SecurityProviderService {
   /**
    Encrypts data and then stores it securely.
 
@@ -442,21 +442,5 @@ extension CoreSecurityProviderService {
       executionTimeMs: duration,
       metadata: resultMetadata
     )
-  }
-}
-
-
-
-  
-  static func invalidVerificationMethod(reason: String) -> CoreSecurityError {
-    return .general(code: "INVALID_VERIFICATION_METHOD", message: reason)
-  }
-  
-  static func verificationFailed(reason: String) -> CoreSecurityError {
-    return .general(code: "VERIFICATION_FAILED", message: reason)
-  }
-  
-  static func notImplemented(reason: String) -> CoreSecurityError {
-    return .general(code: "NOT_IMPLEMENTED", message: reason)
   }
 }

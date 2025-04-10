@@ -4,27 +4,27 @@ import LoggingTypes
 /**
  Security Log Context
  
- A specialized context implementation for security operations that implements
+ A specialised context implementation for security operations that implements
  the LogContextDTO protocol to provide privacy-aware context information.
  
  This context type provides standardised metadata for security operations
  with appropriate privacy levels for each field.
  */
-struct SecurityLogContext: LogContextDTO {
+public struct SecurityLogContext: LogContextDTO {
     /// The domain name for this context
-    let domainName: String = "SecurityService"
+    public let domainName: String = "SecurityService"
     
     /// Optional source information
-    let source: String?
+    public let source: String?
     
     /// Optional correlation ID for tracking related logs
-    let correlationID: String?
+    public let correlationID: String?
     
     /// The metadata collection for this context
     private var metadataCollection: LogMetadataDTOCollection
     
     /// Access to the metadata collection
-    var metadata: LogMetadataDTOCollection {
+    public var metadata: LogMetadataDTOCollection {
         return metadataCollection
     }
     
@@ -38,7 +38,7 @@ struct SecurityLogContext: LogContextDTO {
        - source: Optional source information
        - metadata: Optional additional metadata
      */
-    init(
+    public init(
         operation: String,
         component: String,
         correlationID: String? = nil,
@@ -64,7 +64,7 @@ struct SecurityLogContext: LogContextDTO {
        - correlationID: Optional correlation ID for tracking related logs
        - source: Optional source information
      */
-    init(
+    public init(
         operation: String,
         component: String,
         securityLevel: String,
@@ -91,7 +91,7 @@ struct SecurityLogContext: LogContextDTO {
        - correlationID: Optional correlation ID for tracking related logs
        - source: Optional source information
      */
-    init(
+    public init(
         operation: String,
         component: String,
         operationId: String,
@@ -117,7 +117,7 @@ struct SecurityLogContext: LogContextDTO {
        - privacyLevel: The privacy level for this metadata
      - Returns: A new context with the added metadata
      */
-    func adding(key: String, value: String, privacyLevel: LogPrivacyLevel) -> SecurityLogContext {
+    public func adding(key: String, value: String, privacyLevel: LogPrivacyLevel) -> SecurityLogContext {
         var newContext = self
         switch privacyLevel {
         case .public:
@@ -147,7 +147,7 @@ struct SecurityLogContext: LogContextDTO {
      
      - Returns: The LogMetadataDTOCollection for this context
      */
-    func getMetadataCollection() -> LogMetadataDTOCollection {
+    public func getMetadataCollection() -> LogMetadataDTOCollection {
         return metadataCollection
     }
 }

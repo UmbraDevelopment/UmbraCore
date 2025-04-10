@@ -289,6 +289,7 @@ final class KeyManagementService: SecurityServiceBase {
   }
 }
 
+extension CoreSecurityError {
   static func invalidVerificationMethod(reason: String) -> CoreSecurityError {
     return .general(code: "INVALID_VERIFICATION_METHOD", message: reason)
   }

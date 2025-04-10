@@ -35,7 +35,7 @@ private func createMetadataCollection(_ dict: [String: String]) -> LogMetadataDT
  ensuring that sensitive information is properly tagged with privacy levels
  according to the Alpha Dot Five architecture principles.
  */
-extension CoreSecurityProviderService {
+extension SecurityProviderService {
   /**
    Logs the start of a security operation with privacy-aware metadata.
 

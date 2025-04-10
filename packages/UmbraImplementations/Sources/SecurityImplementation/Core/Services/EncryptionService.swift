@@ -5,6 +5,7 @@ import LoggingInterfaces
 import LoggingServices
 import LoggingTypes
 import SecurityCoreInterfaces
+import SecurityInterfaces
 
 /**
  Creates a log context from a metadata dictionary.
@@ -70,7 +71,7 @@ final class EncryptionService: SecurityServiceBase {
    The logger instance for recording general operation details
    */
   let logger: LoggingInterfaces.LoggingProtocol
-
+    
   /**
    The secure storage for handling sensitive data
    */
@@ -79,11 +80,11 @@ final class EncryptionService: SecurityServiceBase {
   // MARK: - Initialisation
 
   /**
-   Initialises a new encryption service with the specified dependencies
-
+   Initialises the service with all required dependencies
+     
    - Parameters:
-       - cryptoService: Service for cryptographic operations
-       - logger: Logger for general operation details
+     - cryptoService: Service for performing cryptographic operations
+     - logger: Service for logging operations
    */
   init(
     cryptoService: SecurityCoreInterfaces.CryptoServiceProtocol,
@@ -91,6 +92,29 @@ final class EncryptionService: SecurityServiceBase {
   ) {
     self.cryptoService = cryptoService
     self.logger = logger
+    secureStorage = SecureStorage()
+  }
+    
+  /**
+   Initialises the service with just a logger
+     
+   This initializer is required to conform to SecurityServiceBase protocol,
+   but it's not intended for direct use.
+     
+   - Parameter logger: The logging service to use
+   */
+  init(logger: LoggingInterfaces.LoggingProtocol) {
+    self.logger = logger
+    self.cryptoService = DefaultCryptoServiceImpl()
+      
+    // Log warning that this initializer shouldn't be used directly
+    Task {
+      await logger.warning(
+        "EncryptionService initialized with minimal dependencies, consider using the full initializer",
+        metadata: nil,
+        source: "SecurityImplementation"
+      )
+    }
     secureStorage = SecureStorage()
   }
 
@@ -299,7 +323,7 @@ final class EncryptionService: SecurityServiceBase {
   private func encryptData(
     data: Data,
     key: Data,
-    options: SecurityOptionsDTO?
+    options: SecurityConfigOptions?
   ) async throws -> Data {
     // Implementation details...
     // This would perform the actual encryption using the cryptoService
@@ -320,7 +344,7 @@ final class EncryptionService: SecurityServiceBase {
   private func decryptData(
     data: Data,
     key: Data,
-    options: SecurityOptionsDTO?
+    options: SecurityConfigOptions?
   ) async throws -> Data {
     // Implementation details...
     // This would perform the actual decryption using the cryptoService

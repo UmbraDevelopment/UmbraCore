@@ -184,9 +184,7 @@ final class SecurityOperationsErrorHandler {
 
     return SecurityResultDTO.failure(errorDetails: "Operation failed", executionTimeMs: duration, metadata: ["errorType": String(describing: type(of: error)),
         "errorMessage": safeErrorMessage,
-        "durationMs": String(format: "%.2f", duration)
-      ])
-    )
+        "durationMs": String(format: "%.2f", duration)])
   }
 
   /**

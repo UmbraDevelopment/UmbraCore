@@ -4,6 +4,7 @@ import LoggingInterfaces
 import LoggingTypes
 import Security
 import UmbraErrors
+import SecurityCoreInterfaces
 
 /// Actor implementation of the RandomDataServiceProtocol that provides thread-safe
 /// access to secure random data generation with proper error handling.
@@ -108,8 +109,9 @@ public actor RandomDataServiceActor: RandomDataServiceProtocol {
       operation: "generateRandomBytes",
       operationId: serviceIdentifier.uuidString,
       entropySource: entropySource.rawValue,
-      byteCount: String(length)
-    )
+      source: "RandomDataServiceActor",
+      correlationID: UUID().uuidString
+    ).adding(key: "byteCount", value: String(length), privacyLevel: .public)
     
     await logger.debug("Generating \(length) random bytes", context: context)
     
@@ -121,7 +123,7 @@ public actor RandomDataServiceActor: RandomDataServiceProtocol {
       let status = SecRandomCopyBytes(kSecRandomDefault, length, &bytes)
       
       guard status == errSecSuccess else {
-        throw CoreSecurityError.operationFailed("Failed to generate random bytes: \(status)")
+        throw CoreSecurityError.cryptoError("Failed to generate random bytes: \(status)")
       }
       
     case .hybrid:
@@ -130,7 +132,7 @@ public actor RandomDataServiceActor: RandomDataServiceProtocol {
       let status = SecRandomCopyBytes(kSecRandomDefault, length, &bytes)
       
       guard status == errSecSuccess else {
-        throw CoreSecurityError.operationFailed("Failed to generate random bytes: \(status)")
+        throw CoreSecurityError.cryptoError("Failed to generate random bytes: \(status)")
       }
       
       // Add additional entropy mixing (simplified for this example)
@@ -155,8 +157,10 @@ public actor RandomDataServiceActor: RandomDataServiceProtocol {
       operation: "generateRandomInteger",
       operationId: serviceIdentifier.uuidString,
       entropySource: entropySource.rawValue,
-      range: "\(range.lowerBound)..<\(range.upperBound)"
-    )
+      source: "RandomDataServiceActor",
+      correlationID: UUID().uuidString
+    ).adding(key: "lowerBound", value: String(range.lowerBound), privacyLevel: .public)
+     .adding(key: "upperBound", value: String(range.upperBound), privacyLevel: .public)
     
     await logger.debug("Generating random integer in range \(range.lowerBound)..<\(range.upperBound)", context: context)
     
@@ -231,65 +235,5 @@ public actor RandomDataServiceActor: RandomDataServiceProtocol {
     case .hybrid:
       return .high
     }
-  }
-}
-
-/// Context for logging random data service operations
-private struct RandomDataServiceContext: LogContextDTO {
-  /// The operation being performed
-  let operation: String
-  
-  /// A unique identifier for the operation
-  let operationId: String
-  
-  /// The entropy source being used
-  let entropySource: String
-  
-  /// The number of bytes being generated (if applicable)
-  let byteCount: String?
-  
-  /// The range for random integer generation (if applicable)
-  let range: String?
-  
-  /// Creates a new random data service context
-  /// - Parameters:
-  ///   - operation: The operation being performed
-  ///   - operationId: A unique identifier for the operation
-  ///   - entropySource: The entropy source being used
-  ///   - byteCount: The number of bytes being generated (if applicable)
-  ///   - range: The range for random integer generation (if applicable)
-  init(
-    operation: String,
-    operationId: String,
-    entropySource: String,
-    byteCount: String? = nil,
-    range: String? = nil
-  ) {
-    self.operation = operation
-    self.operationId = operationId
-    self.entropySource = entropySource
-    self.byteCount = byteCount
-    self.range = range
-  }
-  
-  /// Creates a metadata collection with the context information
-  public func createMetadataCollection() -> LogMetadataDTOCollection {
-    var metadata = LogMetadataDTOCollection()
-    
-    // Add the basic context information
-    metadata = metadata.withPublic(key: "operation", value: operation)
-    metadata = metadata.withPublic(key: "operationId", value: operationId)
-    metadata = metadata.withPublic(key: "entropySource", value: entropySource)
-    
-    // Add optional context information if available
-    if let byteCount = byteCount {
-      metadata = metadata.withPublic(key: "byteCount", value: byteCount)
-    }
-    
-    if let range = range {
-      metadata = metadata.withPublic(key: "range", value: range)
-    }
-    
-    return metadata
   }
 }

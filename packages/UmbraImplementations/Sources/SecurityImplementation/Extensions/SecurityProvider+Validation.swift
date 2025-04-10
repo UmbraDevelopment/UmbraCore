@@ -17,7 +17,7 @@ import SecurityCoreInterfaces
 /**
  # SecurityProvider Validation Extension
 
- This extension adds input validation helpers to the CoreSecurityProviderService.
+ This extension adds input validation helpers to the SecurityProviderService.
  These methods ensure that operations have valid parameters before being performed,
  leading to more robust error handling and predictable behaviour.
 
@@ -27,7 +27,7 @@ import SecurityCoreInterfaces
  - Early detection of configuration errors
  - Common validation logic is centralised
  */
-extension CoreSecurityProviderService {
+extension SecurityProviderService {
   /**
    Validates configuration for encryption operations.
 
@@ -198,21 +198,16 @@ extension CoreSecurityProviderService {
   }
 }
 
-
-
-  
+extension CoreSecurityError {
   static func invalidVerificationMethod(reason: String) -> CoreSecurityError {
-    return .general(code: "INVALID_VERIFICATION_METHOD", message: reason)
+    return .invalidInput("Invalid verification method: \(reason)")
   }
   
   static func verificationFailed(reason: String) -> CoreSecurityError {
-    return .general(code: "VERIFICATION_FAILED", message: reason)
+    return .authenticationFailed("Verification failed: \(reason)")
   }
   
   static func notImplemented(reason: String) -> CoreSecurityError {
-    return .general(code: "NOT_IMPLEMENTED", message: reason)
+    return .unsupportedOperation("Not implemented: \(reason)")
   }
 }
-
-
-

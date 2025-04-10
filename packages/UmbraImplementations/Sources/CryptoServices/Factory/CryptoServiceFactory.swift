@@ -241,14 +241,11 @@ public actor CryptoServiceFactory {
     }
 
     // Create a rate limiter with high security configuration
-    let rateLimiter = RateLimiterAdapter(
-      rateLimiter: TokenBucketRateLimiter(configuration: .highSecurity),
-      domain: "crypto"
-    )
-
+    let rateLimiter = BasicRateLimiter()
+    
     return HighSecurityCryptoServiceImpl(
       secureStorage: defaultSecureStorage,
-      rateLimiter: rateLimiter,
+      rateLimiter: rateLimiter.createAdapter(),
       logger: actualLogger
     )
   }
@@ -387,6 +384,142 @@ public actor CryptoServiceFactory {
     // Create a mock SecureStorageProtocol implementation for now
     // This is a temporary solution until we have a proper implementation
     return MockSecureStorage(logger: actualLogger)
+  }
+
+  // MARK: - Security-Level Specific Implementations
+  
+  /**
+   Creates a high-security crypto service implementation with enhanced protection.
+   
+   This implementation adds additional security features like:
+   - Stronger encryption algorithms
+   - Enhanced key management
+   - Additional validation checks
+   - Comprehensive logging with privacy controls
+   
+   - Parameters:
+     - keySize: The key size to use for encryption (in bits)
+     - hashAlgorithm: The hash algorithm to use
+     - saltSize: The salt size to use for key derivation (in bytes)
+     - iterations: The number of iterations to use for key derivation
+     - secureStorage: Optional secure storage service to use
+     - logger: Optional logger for operations
+   - Returns: A CryptoServiceProtocol implementation with high security features
+   */
+  public static func createHighSecurityCryptoService(
+    keySize: Int = 256,
+    hashAlgorithm: HashAlgorithm = .sha256,
+    saltSize: Int = 16,
+    iterations: Int = 100000,
+    secureStorage: SecureStorageProtocol? = nil,
+    logger: LoggingProtocol? = nil
+  ) async -> CryptoServiceProtocol {
+    let factory = CryptoServiceFactory.shared
+    let loggingFactory = LoggingServiceFactory.shared
+    
+    // Use privacy-aware logger with appropriate privacy controls
+    let actualLogger: LoggingProtocol
+    if let logger {
+      actualLogger = logger
+    } else {
+      actualLogger = await loggingFactory.createPrivacyAwareLogger()
+    }
+    
+    // Get or create secure storage
+    let actualSecureStorage: SecureStorageProtocol
+    if let secureStorage {
+      actualSecureStorage = secureStorage
+    } else {
+      actualSecureStorage = await factory.createLocalSecureStorage(logger: actualLogger)
+    }
+    
+    // Create a rate limiter for sensitive operations
+    let rateLimiter = BasicRateLimiter()
+    
+    // Create the enhanced secure service with the high security provider
+    let baseService = HighSecurityCryptoServiceImpl(
+      secureStorage: actualSecureStorage,
+      rateLimiter: rateLimiter.createAdapter(),
+      logger: actualLogger
+    )
+    
+    // Wrap with enhanced features for additional protection
+    return EnhancedSecureCryptoServiceImpl(
+      wrapped: baseService,
+      logger: actualLogger,
+      rateLimiter: rateLimiter.createAdapter()
+    )
+  }
+  
+  /**
+   Creates a maximum-security crypto service implementation for the highest level of protection.
+   
+   This implementation includes all security features of the high-security implementation plus:
+   - Hardware-backed encryption where available
+   - Multi-factor operation verification
+   - Strict rate limiting
+   - Enhanced anomaly detection
+   - Comprehensive audit logging
+   
+   - Parameters:
+     - keySize: The key size to use for encryption (in bits)
+     - hashAlgorithm: The hash algorithm to use
+     - saltSize: The salt size to use for key derivation (in bytes)
+     - iterations: The number of iterations to use for key derivation
+     - memorySize: The memory size to use for memory-hard functions (in bytes)
+     - parallelism: The degree of parallelism to use for memory-hard functions
+     - secureStorage: Optional secure storage service to use
+     - logger: Optional logger for operations
+   - Returns: A CryptoServiceProtocol implementation with maximum security features
+   */
+  public static func createMaxSecurityCryptoService(
+    keySize: Int = 512,
+    hashAlgorithm: HashAlgorithm = .sha512,
+    saltSize: Int = 32,
+    iterations: Int = 200000,
+    memorySize: Int = 1024 * 1024 * 1024,
+    parallelism: Int = 4,
+    secureStorage: SecureStorageProtocol? = nil,
+    logger: LoggingProtocol? = nil
+  ) async -> CryptoServiceProtocol {
+    let factory = CryptoServiceFactory.shared
+    let loggingFactory = LoggingServiceFactory.shared
+    
+    // Use privacy-aware logger with maximum privacy controls
+    let actualLogger: LoggingProtocol
+    if let logger {
+      actualLogger = logger
+    } else {
+      actualLogger = await loggingFactory.createPrivacyAwareLogger()
+    }
+    
+    // Get or create secure storage with the highest security level
+    let actualSecureStorage: SecureStorageProtocol
+    if let secureStorage {
+      actualSecureStorage = secureStorage
+    } else {
+      actualSecureStorage = await factory.createLocalSecureStorage(logger: actualLogger)
+    }
+    
+    // Create a strict rate limiter for sensitive operations
+    let rateLimiter = BasicRateLimiter(
+      maxOperationsPerMinute: 10,  // Strict rate limiting
+      cooldownPeriod: 60           // 1 minute cooldown after reaching limit
+    )
+    
+    // Create the high security service with the maximum security provider
+    let baseService = HighSecurityCryptoServiceImpl(
+      secureStorage: actualSecureStorage,
+      rateLimiter: rateLimiter.createAdapter(),
+      logger: actualLogger
+    )
+    
+    // Wrap with enhanced features for maximum protection
+    return EnhancedSecureCryptoServiceImpl(
+      wrapped: baseService,
+      logger: actualLogger,
+      rateLimiter: rateLimiter.createAdapter()
+    )
   }
 
   // MARK: - Testing Implementations

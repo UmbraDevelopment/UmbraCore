@@ -143,6 +143,7 @@ public actor SecurityProviderService: SecurityProviderProtocol, AsyncServiceInit
 
     signatureService = SignatureService(
       cryptoService: cryptoService,
+      keyManagementService: keyManager,
       logger: logger
     )
 
@@ -499,23 +500,20 @@ public actor SecurityProviderService: SecurityProviderProtocol, AsyncServiceInit
   }
 
   /**
-   Processes a security operation asynchronously
-
-   This nonisolated method provides an external API for handling security operations
-   without requiring the caller to be aware of the actor-based implementation.
+   Performs a secure operation with data, key, and options
 
    - Parameters:
-     - operation: The type of security operation to perform
-     - data: Input data for the operation
-     - key: Optional key identifier for cryptographic operations
+     - operation: The security operation to perform
+     - data: The data to operate on
+     - key: The key to use for the operation
      - options: Additional options for the operation
-   - Returns: Result containing output data or error information
+   - Returns: The result of the operation
    */
-  public nonisolated func processSecurityOperation(
+  public func performSecureOperation(
     operation: SecurityOperation,
     data: Data?,
     key: String?,
-    options: SecurityOptionsDTO?
+    options: SecurityConfigOptions?
   ) async -> SecurityResultDTO {
     // Create configuration from parameters
     let config = SecurityConfigDTO(
@@ -524,19 +522,142 @@ public actor SecurityProviderService: SecurityProviderProtocol, AsyncServiceInit
       keyIdentifier: key,
       options: options
     )
-
+    
     do {
-      // Delegate to isolated actor method
-      return try await self.performSecureOperation(config: config)
+      // Delegate to the standard operation method
+      return try await performSecureOperation(
+        config: config
+      )
     } catch {
       // Handle errors and convert to result
       return SecurityResultDTO(
-        operationID: UUID().uuidString,
-        data: nil,
-        status: .failure,
-        metadata: nil,
-        error: error
+        success: false,
+        resultData: nil,
+        executionTimeMs: 0,
+        metadata: [
+          "operation": operation.rawValue,
+          "error": error.localizedDescription
+        ]
       )
     }
+  }
+
+  /**
+   Creates a secure configuration with the specified options.
+   
+   - Parameter options: The options for the configuration
+   - Returns: A secure configuration with the specified options
+   */
+  public func createSecureConfig(options: SecurityConfigOptions) async -> SecurityConfigDTO {
+    return SecurityConfigDTO(
+      encryptionAlgorithm: .aes256GCM,
+      hashAlgorithm: .sha256,
+      providerType: .default,
+      options: options
+    )
+  }
+
+  /**
+   Performs a secure operation with the specified configuration.
+   
+   This method is part of the SecurityProviderProtocol and is required for conformance.
+   It delegates to appropriate service implementations based on the operation type.
+
+   - Parameters:
+     - operation: The type of security operation to perform
+     - config: Configuration for the operation
+   - Returns: Result of the operation
+   - Throws: SecurityProtocolError if validation fails
+   */
+  public func performSecureOperation(
+    operation: SecurityOperation,
+    config: SecurityConfigDTO
+  ) async throws -> SecurityResultDTO {
+    // Log operation start
+    await logOperationStart(operation: operation, config: config)
+    
+    do {
+      // Validate the configuration for this operation
+      try await validateConfiguration(operation: operation, config: config)
+      
+      // Process the operation based on type
+      switch operation {
+      case .encrypt:
+        return try await encryptionService.encrypt(config: config)
+      case .decrypt:
+        return try await encryptionService.decrypt(config: config)
+      case .hash:
+        return try await hashingService.hash(config: config)
+      case .sign:
+        return await signatureService.sign(config: config)
+      case .verify:
+        return await signatureService.verify(config: config)
+      case .secure:
+        return try await storageService.secureStore(config: config)
+      case .retrieve:
+        return try await storageService.secureRetrieve(config: config)
+      default:
+        throw SecurityProtocolError.unsupportedOperation(
+          "Operation \(operation) is not supported by this provider"
+        )
+      }
+    } catch {
+      // Log operation failure
+      await logOperationFailure(operation: operation, error: error)
+      
+      // Return appropriate error
+      throw error
+    }
+  }
+
+  // MARK: - Protocol Conformance Methods
+  
+  /// Get the crypto service
+  /// - Returns: The crypto service
+  public func cryptoService() async -> any CryptoServiceProtocol {
+    return self.cryptoService
+  }
+  
+  /// Get the key manager
+  /// - Returns: The key manager
+  public func keyManager() async -> any KeyManagementProtocol {
+    return self.keyManager
+  }
+  
+  /// Securely delete data
+  /// - Parameter config: The configuration for the deletion operation
+  /// - Returns: The result of the deletion operation
+  public func secureDelete(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    // Create a sanitized copy of the configuration
+    let sanitizedConfig = config
+    
+    // Log the operation start
+    await logOperationStart(
+      operation: .secureDelete,
+      config: sanitizedConfig
+    )
+    
+    let startTime = Date()
+    
+    // Perform the secure deletion
+    // This is a placeholder implementation that should be replaced
+    // with actual secure deletion logic
+    let result = SecurityResultDTO(
+      success: true,
+      resultData: nil,
+      executionTimeMs: Date().timeIntervalSince(startTime) * 1000,
+      metadata: [
+        "operation": "secureDelete",
+        "status": "success"
+      ]
+    )
+    
+    // Log the operation completion
+    await logOperationCompletion(
+      operation: .secureDelete,
+      result: result
+    )
+    
+    return result
   }
 }

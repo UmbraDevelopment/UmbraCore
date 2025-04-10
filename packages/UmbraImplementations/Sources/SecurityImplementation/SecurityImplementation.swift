@@ -162,54 +162,90 @@ public enum SecurityImplementation {
   public static let version="1.0.0"
 }
 
-/// Adapter to convert PrivacyAwareLoggingActor to LoggingProtocol
-private class PrivacyAwareLoggingAdapter: LoggingProtocol {
+/**
+ Adapter to convert PrivacyAwareLoggingActor to LoggingProtocol
+ 
+ This class provides a bridge between actor-based PrivacyAwareLoggingActor
+ and the protocol-based LoggingProtocol interface, enabling seamless integration
+ with components that expect the LoggingProtocol interface.
+ */
+@available(*, unavailable)
+private final class PrivacyAwareLoggingAdapter: LoggingProtocol, @unchecked Sendable {
+  /// The underlying privacy-aware logger actor
   private let logger: PrivacyAwareLoggingActor
   
+  /// The actor used for logging operations
+  public var loggingActor: LoggingActor {
+    fatalError("Direct access to underlying LoggingActor is not supported")
+  }
+  
+  /// Creates a new adapter wrapping a privacy-aware logger
+  /// - Parameter logger: The privacy-aware logger to wrap
   init(logger: PrivacyAwareLoggingActor) {
     self.logger = logger
   }
   
+  /// Log a debug message
+  /// - Parameters:
+  ///   - message: The message to log
+  ///   - metadata: Optional metadata for the log entry
   func debug(_ message: String, metadata: LogMetadataDTOCollection?) {
     Task {
-      await logger.debug(message, context: LogContextDTO(metadata: metadata ?? LogMetadataDTOCollection()))
+      await logger.debug(message, context: SimpleLogContext(metadata: metadata ?? LogMetadataDTOCollection()))
     }
   }
   
+  /// Log an info message
+  /// - Parameters:
+  ///   - message: The message to log
+  ///   - metadata: Optional metadata for the log entry
   func info(_ message: String, metadata: LogMetadataDTOCollection?) {
     Task {
-      await logger.info(message, context: LogContextDTO(metadata: metadata ?? LogMetadataDTOCollection()))
+      await logger.info(message, context: SimpleLogContext(metadata: metadata ?? LogMetadataDTOCollection()))
     }
   }
   
+  /// Log a warning message
+  /// - Parameters:
+  ///   - message: The message to log
+  ///   - metadata: Optional metadata for the log entry
   func warning(_ message: String, metadata: LogMetadataDTOCollection?) {
     Task {
-      await logger.warning(message, context: LogContextDTO(metadata: metadata ?? LogMetadataDTOCollection()))
+      await logger.warning(message, context: SimpleLogContext(metadata: metadata ?? LogMetadataDTOCollection()))
     }
   }
   
+  /// Log an error message
+  /// - Parameters:
+  ///   - message: The message to log
+  ///   - metadata: Optional metadata for the log entry
   func error(_ message: String, metadata: LogMetadataDTOCollection?) {
     Task {
-      await logger.error(message, context: LogContextDTO(metadata: metadata ?? LogMetadataDTOCollection()))
+      await logger.error(message, context: SimpleLogContext(metadata: metadata ?? LogMetadataDTOCollection()))
     }
   }
   
+  /// Log a critical message
+  /// - Parameters:
+  ///   - message: The message to log
+  ///   - metadata: Optional metadata for the log entry
   func critical(_ message: String, metadata: LogMetadataDTOCollection?) {
     Task {
-      await logger.critical(message, context: LogContextDTO(metadata: metadata ?? LogMetadataDTOCollection()))
+      await logger.critical(message, context: SimpleLogContext(metadata: metadata ?? LogMetadataDTOCollection()))
     }
   }
   
-  func log(_ level: LoggingInterfaces.LogLevel, _ message: String, context: LoggingTypes.LogContextDTO) async {
+  /// Log a message with the specified level
+  /// - Parameters:
+  ///   - level: The log level
+  ///   - message: The message to log
+  ///   - context: The log context
+  func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
     switch level {
-    case .trace:
-      await logger.trace(message, context: context)
     case .debug:
       await logger.debug(message, context: context)
     case .info:
       await logger.info(message, context: context)
-    case .notice:
-      await logger.info(message, context: context) // Map notice to info
     case .warning:
       await logger.warning(message, context: context)
     case .error:
@@ -217,5 +253,35 @@ private class PrivacyAwareLoggingAdapter: LoggingProtocol {
     case .critical:
       await logger.critical(message, context: context)
     }
+  }
+}
+
+/**
+ Simple implementation of LogContextDTO for basic logging needs.
+ 
+ This struct provides a minimal implementation of the LogContextDTO protocol
+ that can be used for simple logging without needing to create specialised
+ context types.
+ */
+private struct SimpleLogContext: LogContextDTO {
+  /// The domain name for this context
+  let domainName: String = "SecurityImplementation"
+  
+  /// Optional source information
+  let source: String? = nil
+  
+  /// Optional correlation ID for tracing related log events
+  let correlationID: String? = UUID().uuidString
+  
+  /// The metadata collection for this context
+  let metadata: LogMetadataDTOCollection
+  
+  /**
+   Creates a new simple log context with the given metadata.
+   
+   - Parameter metadata: The metadata for the log context
+   */
+  init(metadata: LogMetadataDTOCollection) {
+    self.metadata = metadata
   }
 }

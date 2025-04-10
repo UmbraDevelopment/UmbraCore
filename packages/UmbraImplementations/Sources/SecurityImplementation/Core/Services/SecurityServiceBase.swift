@@ -84,21 +84,4 @@ extension SecurityServiceBase {
   }
 }
 
-
-
-  
-  static func invalidVerificationMethod(reason: String) -> CoreSecurityError {
-    return .general(code: "INVALID_VERIFICATION_METHOD", message: reason)
-  }
-  
-  static func verificationFailed(reason: String) -> CoreSecurityError {
-    return .general(code: "VERIFICATION_FAILED", message: reason)
-  }
-  
-  static func notImplemented(reason: String) -> CoreSecurityError {
-    return .general(code: "NOT_IMPLEMENTED", message: reason)
-  }
-}
-
-
-
+// CoreSecurityError extension has been moved to CoreSecurityError+Extensions.swift
