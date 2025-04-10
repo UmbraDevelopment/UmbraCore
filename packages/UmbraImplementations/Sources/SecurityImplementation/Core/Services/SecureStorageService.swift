@@ -1,4 +1,5 @@
 import CoreSecurityTypes
+import CryptoKit
 import DomainSecurityTypes
 import Foundation
 import LoggingInterfaces
@@ -14,6 +15,7 @@ import UmbraErrors
  - Consistent error handling with typed exceptions
  - Thread safety through actor-based concurrency
  - Type-safe interfaces with proper parameter validation
+ - Data encryption at rest using AES-GCM for authenticated encryption
  */
 actor SecureStorageService: SecureStorageProtocol {
   // MARK: - Properties
@@ -21,23 +23,66 @@ actor SecureStorageService: SecureStorageProtocol {
   /// The logger instance for recording operation details
   private let logger: LoggingProtocol
   
-  /// Storage location for secure data (simulated in this implementation)
-  private var secureStorage: [String: [UInt8]] = [:]
+  /// Storage location for secure data (encrypted)
+  private var encryptedStorage: [String: EncryptedData] = [:]
+  
+  /// Master encryption key for data at rest
+  private let masterKey: SymmetricKey
+  
+  /// Struct to hold encrypted data and associated metadata
+  private struct EncryptedData {
+    /// The encrypted data blob
+    let ciphertext: Data
+    
+    /// The nonce used for encryption
+    let nonce: Data
+    
+    /// Tag for authenticated encryption
+    let tag: Data
+    
+    /// Timestamp when the data was last modified
+    let lastModified: Date
+    
+    /// Create EncryptedData from AES.GCM.SealedBox
+    init(sealedBox: AES.GCM.SealedBox) {
+      self.ciphertext = sealedBox.ciphertext
+      self.nonce = sealedBox.nonce
+      self.tag = sealedBox.tag
+      self.lastModified = Date()
+    }
+    
+    /// Create an AES.GCM.SealedBox from this instance
+    func toSealedBox() throws -> AES.GCM.SealedBox {
+      try AES.GCM.SealedBox(nonce: AES.GCM.Nonce(data: nonce), 
+                           ciphertext: ciphertext, 
+                           tag: tag)
+    }
+  }
   
   /**
    Initialises the service with required dependencies
    
    - Parameters:
        - logger: The logging service to use for operation logging
+       - masterKeyData: Optional master key data for encryption, generated if not provided
    */
-  init(logger: LoggingProtocol) {
+  init(logger: LoggingProtocol, masterKeyData: Data? = nil) {
     self.logger = logger
+    
+    // Use provided master key or generate a new one
+    if let keyData = masterKeyData {
+      self.masterKey = SymmetricKey(data: keyData)
+    } else {
+      // Generate a secure AES-256 key for encryption
+      self.masterKey = SymmetricKey(size: .bits256)
+    }
   }
   
   // MARK: - SecureStorageProtocol Implementation
   
   /**
    Stores data securely with the given identifier.
+   The data is encrypted using AES-GCM for authenticated encryption.
    
    - Parameters:
      - data: The data to store as a byte array
@@ -66,8 +111,15 @@ actor SecureStorageService: SecureStorageProtocol {
         throw error
       }
       
-      // Store data in secure storage (simulated)
-      secureStorage[identifier] = data
+      // Convert data to Data type for encryption
+      let dataToEncrypt = Data(data)
+      
+      // Encrypt the data using AES-GCM
+      let sealedBox = try AES.GCM.seal(dataToEncrypt, using: masterKey)
+      
+      // Store the encrypted data
+      let encryptedData = EncryptedData(sealedBox: sealedBox)
+      encryptedStorage[identifier] = encryptedData
       
       // Calculate duration for metrics
       let duration = Date().timeIntervalSince(startTime) * 1000
@@ -82,6 +134,10 @@ actor SecureStorageService: SecureStorageProtocol {
         ).adding(
           key: "dataSize",
           value: "\(data.count)",
+          privacy: .public
+        ).adding(
+          key: "encryptedSize",
+          value: "\(encryptedData.ciphertext.count)",
           privacy: .public
         ).adding(
           key: "durationMs",
@@ -119,13 +175,14 @@ actor SecureStorageService: SecureStorageProtocol {
       if let storageError = error as? SecurityStorageError {
         return .failure(storageError)
       } else {
-        return .failure(.generalError(reason: error.localizedDescription))
+        return .failure(.storageFailure(reason: "Encryption failed: \(error.localizedDescription)"))
       }
     }
   }
   
   /**
    Retrieves data securely by its identifier.
+   Decrypts the data that was previously encrypted using AES-GCM.
    
    - Parameter identifier: A string identifying the data to retrieve
    - Returns: The retrieved data as a byte array or an error
@@ -152,11 +209,18 @@ actor SecureStorageService: SecureStorageProtocol {
         throw error
       }
       
-      // Retrieve data from secure storage (simulated)
-      guard let data = secureStorage[identifier] else {
+      // Retrieve encrypted data
+      guard let encryptedData = encryptedStorage[identifier] else {
         let error = SecurityStorageError.identifierNotFound(identifier: identifier)
         throw error
       }
+      
+      // Decrypt the data using AES-GCM
+      let sealedBox = try encryptedData.toSealedBox()
+      let decryptedData = try AES.GCM.open(sealedBox, using: masterKey)
+      
+      // Convert to byte array
+      let result = [UInt8](decryptedData)
       
       // Calculate duration for metrics
       let duration = Date().timeIntervalSince(startTime) * 1000
@@ -169,8 +233,12 @@ actor SecureStorageService: SecureStorageProtocol {
           value: identifier,
           privacy: .private
         ).adding(
-          key: "dataSize",
-          value: "\(data.count)",
+          key: "encryptedSize",
+          value: "\(encryptedData.ciphertext.count)",
+          privacy: .public
+        ).adding(
+          key: "decryptedSize",
+          value: "\(result.count)",
           privacy: .public
         ).adding(
           key: "durationMs",
@@ -179,7 +247,7 @@ actor SecureStorageService: SecureStorageProtocol {
         )
       )
       
-      return .success(data)
+      return .success(result)
     } catch {
       // Calculate duration before failure
       let duration = Date().timeIntervalSince(startTime) * 1000
@@ -207,6 +275,8 @@ actor SecureStorageService: SecureStorageProtocol {
       // Map to appropriate error type
       if let storageError = error as? SecurityStorageError {
         return .failure(storageError)
+      } else if error is CryptoKit.CryptoKitError {
+        return .failure(.storageFailure(reason: "Decryption failed: \(error.localizedDescription)"))
       } else {
         return .failure(.generalError(reason: error.localizedDescription))
       }
@@ -215,6 +285,7 @@ actor SecureStorageService: SecureStorageProtocol {
   
   /**
    Deletes data securely by its identifier.
+   Ensures all encrypted data is properly removed.
    
    - Parameter identifier: A string identifying the data to delete
    - Returns: Success or an error
@@ -242,13 +313,13 @@ actor SecureStorageService: SecureStorageProtocol {
       }
       
       // Check if data exists
-      guard secureStorage[identifier] != nil else {
+      guard encryptedStorage[identifier] != nil else {
         let error = SecurityStorageError.identifierNotFound(identifier: identifier)
         throw error
       }
       
-      // Delete data from secure storage (simulated)
-      secureStorage.removeValue(forKey: identifier)
+      // Delete data from secure storage
+      encryptedStorage.removeValue(forKey: identifier)
       
       // Calculate duration for metrics
       let duration = Date().timeIntervalSince(startTime) * 1000
@@ -322,8 +393,8 @@ actor SecureStorageService: SecureStorageProtocol {
     await logger.info("Starting list identifiers operation", context: logContext)
     
     do {
-      // Get all identifiers from secure storage (simulated)
-      let identifiers = Array(secureStorage.keys)
+      // Get all identifiers from secure storage
+      let identifiers = Array(encryptedStorage.keys)
       
       // Calculate duration for metrics
       let duration = Date().timeIntervalSince(startTime) * 1000

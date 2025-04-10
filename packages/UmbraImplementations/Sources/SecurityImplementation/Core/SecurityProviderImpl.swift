@@ -1108,61 +1108,132 @@ public actor SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceInitial
   /**
    Performs a secure operation with the specified configuration.
 
-   This method is part of the SecurityProviderProtocol and is required for conformance.
-   It delegates to appropriate service implementations based on the operation type.
+   This method is part of the SecurityProviderProtocol and delegates to the appropriate
+   specialised methods based on the operation type.
 
    - Parameters:
      - operation: The type of security operation to perform
      - config: Configuration for the operation
    - Returns: Result of the operation
-   - Throws: SecurityProtocolError if validation fails
+   - Throws: SecurityError if the operation fails
    */
   public func performSecureOperation(
     operation: CoreSecurityTypes.SecurityOperation,
     config: CoreSecurityTypes.SecurityConfigDTO
   ) async throws -> CoreSecurityTypes.SecurityResultDTO {
-    // Log operation start
-    await logOperationStart(operation: operation, config: config)
-    
-    // Track start time for metrics
+    let operationID = UUID().uuidString
     let startTime = Date()
     
+    // Create logging context for the operation
+    let logContext = createOperationMetadata(operation, operationID)
+    
+    await logger.info("Starting secure operation: \(operation.rawValue)", context: logContext)
+    
     do {
-      // Process the operation based on type
+      // Route to the appropriate operation method
+      let result: SecurityResultDTO
+      
       switch operation {
-      case .encrypt:
-        return try await encryptionService.encrypt(config: config)
-      case .decrypt:
-        return try await encryptionService.decrypt(config: config)
-      case .hash:
-        return await hashingService.hash(config: config)
-      case .sign:
-        return try await sign(config: config)
-      case .verify:
-        return try await verify(config: config)
-      case .storeKey:
-        return try await storageService.secureStore(config: config)
-      case .retrieveKey:
-        return try await storageService.secureRetrieve(config: config)
-      case .deleteKey:
-        // Handle delete operation
-        return try await secureDelete(config: config)
-      case .deriveKey, .generateRandom:
-        // Handle key generation
-        return await generateCryptoKey(config: config)
-      default:
-        // Handle unsupported operations
-        throw CoreSecurityError.unsupportedOperation(
-          "Operation \(operation) is not supported by this provider"
+        case .encrypt:
+          result = try await encrypt(config: config)
+          
+        case .decrypt:
+          result = try await decrypt(config: config)
+          
+        case .sign:
+          result = try await sign(config: config)
+          
+        case .verify:
+          result = try await verify(config: config)
+          
+        case .hash:
+          result = try await hash(config: config)
+          
+        case .verifyHash:
+          result = try await verifyHash(config: config)
+          
+        case .generateKey:
+          result = try await generateKey(config: config)
+          
+        case .generateRandom:
+          result = try await generateRandom(config: config)
+          
+        case .secureStore:
+          result = try await secureStore(config: config)
+          
+        case .secureRetrieve:
+          result = try await secureRetrieve(config: config)
+          
+        case .secureDelete:
+          result = try await secureDelete(config: config)
+          
+        case .importKey:
+          result = try await importKey(config: config)
+          
+        default:
+          // For any unsupported operations
+          throw CoreSecurityTypes.SecurityError.unsupportedOperation(
+            reason: "Operation \(operation.rawValue) is not supported by this provider"
+          )
+      }
+      
+      // Calculate execution time
+      let executionTime = Date().timeIntervalSince(startTime) * 1000
+      
+      // Log success with privacy-aware context
+      let successContext = logContext
+        .adding(key: "status", value: "success", privacy: .public)
+        .adding(key: "durationMs", value: String(format: "%.2f", executionTime), privacy: .public)
+      
+      await logger.info(
+        "Successfully completed \(operation.rawValue) operation",
+        context: successContext
+      )
+      
+      // If the result doesn't have execution time data, add it
+      var updatedResult = result
+      if result.executionTimeMs == 0 {
+        // Create a new result with the actual execution time
+        updatedResult = SecurityResultDTO.success(
+          resultData: result.resultData,
+          executionTimeMs: executionTime,
+          metadata: result.metadata ?? [:]
         )
       }
-    } catch {
-      // Log operation failure
-      let duration = Date().timeIntervalSince(startTime)
-      await logOperationFailure(operation: operation, error: error, durationMs: duration * 1000)
-
-      // Return appropriate error
+      
+      return updatedResult
+    } catch let error as CoreSecurityTypes.SecurityError {
+      // For known SecurityError types, log and rethrow
+      let errorContext = logContext
+        .adding(key: "status", value: "failed", privacy: .public)
+        .adding(key: "errorType", value: "\(type(of: error))", privacy: .public)
+        .adding(key: "errorDescription", value: error.localizedDescription, privacy: .private)
+        .adding(key: "durationMs", value: String(format: "%.2f", Date().timeIntervalSince(startTime) * 1000), privacy: .public)
+      
+      await logger.error(
+        "Security operation \(operation.rawValue) failed: \(error.localizedDescription)",
+        context: errorContext
+      )
+      
       throw error
+    } catch {
+      // For generic errors, wrap in SecurityError
+      let wrappedError = CoreSecurityTypes.SecurityError.generalError(
+        reason: "Unexpected error during \(operation.rawValue) operation: \(error.localizedDescription)"
+      )
+      
+      let errorContext = logContext
+        .adding(key: "status", value: "failed", privacy: .public)
+        .adding(key: "errorType", value: "generalError", privacy: .public)
+        .adding(key: "errorDescription", value: wrappedError.localizedDescription, privacy: .private)
+        .adding(key: "durationMs", value: String(format: "%.2f", Date().timeIntervalSince(startTime) * 1000), privacy: .public)
+      
+      await logger.error(
+        "Security operation \(operation.rawValue) failed with unexpected error: \(error.localizedDescription)",
+        context: errorContext
+      )
+      
+      throw wrappedError
     }
   }
 
@@ -1702,5 +1773,251 @@ public actor SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceInitial
    */
   public func keyManager() async -> KeyManagementProtocol {
     keyManager
+  }
+}
+
+extension SecurityProviderImpl {
+  /**
+   Verifies a hash against input data with the specified configuration
+   
+   - Parameter config: Configuration for the hash verification operation
+   - Returns: Result indicating whether verification succeeded
+   - Throws: SecurityError if verification fails
+   */
+  public func verifyHash(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    let operationID = UUID().uuidString
+    let startTime = Date()
+    
+    // Create logging context for the operation
+    let logContext = SecurityLogContext(
+      operation: CoreSecurityTypes.SecurityOperation.verifyHash.rawValue,
+      component: "SecurityProviderImpl",
+      operationID: operationID,
+      correlationID: nil,
+      source: "SecurityImplementation"
+    )
+    
+    await logger.info("Starting hash verification operation", context: logContext)
+    
+    do {
+      // Extract data and hash to verify from configuration
+      guard let options = config.options,
+            let inputDataBase64 = options.metadata?["inputData"],
+            let inputData = Data(base64Encoded: inputDataBase64),
+            let existingHashBase64 = options.metadata?["existingHash"],
+            let existingHash = Data(base64Encoded: existingHashBase64) else {
+        throw CoreSecurityTypes.SecurityError.invalidInputData
+      }
+      
+      // Get hash algorithm from config or use default
+      let algorithm = config.hashAlgorithm
+      
+      // Perform hash operation using crypto service
+      let newHash = try await cryptoServiceInstance.hash(
+        inputData,
+        using: algorithm,
+        options: options
+      )
+      
+      // Verify the hash by comparing with existing hash
+      let isValid = newHash.elementsEqual(existingHash)
+      
+      // Calculate duration for metrics
+      let duration = Date().timeIntervalSince(startTime) * 1000
+      
+      // Create result with verification status
+      var resultMetadata: [String: Any] = options.metadata ?? [:]
+      resultMetadata["verified"] = isValid
+      resultMetadata["hashAlgorithm"] = algorithm.rawValue
+      
+      // Log result with privacy-aware metadata
+      var logMetadata = logContext.metadata
+      logMetadata = logMetadata.withPublic(key: "algorithm", value: algorithm.rawValue)
+      logMetadata = logMetadata.withPublic(key: "durationMs", value: String(format: "%.2f", duration))
+      logMetadata = logMetadata.withPublic(key: "verified", value: String(isValid))
+      
+      let resultContext = SecurityLogContext(
+        operation: CoreSecurityTypes.SecurityOperation.verifyHash.rawValue,
+        component: "SecurityProviderImpl",
+        operationID: operationID,
+        correlationID: nil,
+        source: "SecurityImplementation",
+        metadata: logMetadata
+      )
+      
+      await logger.info(
+        "Hash verification completed with result: \(isValid)",
+        context: resultContext
+      )
+      
+      // Return result
+      return SecurityResultDTO.success(
+        resultData: Data(isValid ? [1] : [0]), // Convert boolean to data
+        executionTimeMs: duration,
+        metadata: resultMetadata
+      )
+    } catch {
+      // Log failure with privacy-aware metadata
+      let duration = Date().timeIntervalSince(startTime) * 1000
+      
+      var logMetadata = logContext.metadata
+      logMetadata = logMetadata.withPublic(key: "durationMs", value: String(format: "%.2f", duration))
+      logMetadata = logMetadata.withPublic(key: "status", value: "failed")
+      logMetadata = logMetadata.withPublic(key: "errorType", value: String(describing: type(of: error)))
+      logMetadata = logMetadata.withPrivate(key: "errorMessage", value: error.localizedDescription)
+      
+      let errorContext = SecurityLogContext(
+        operation: CoreSecurityTypes.SecurityOperation.verifyHash.rawValue,
+        component: "SecurityProviderImpl",
+        operationID: operationID,
+        correlationID: nil,
+        source: "SecurityImplementation",
+        metadata: logMetadata
+      )
+      
+      await logger.error(
+        "Hash verification failed: \(error.localizedDescription)",
+        context: errorContext
+      )
+      
+      // Rethrow appropriate error
+      if let securityError = error as? CoreSecurityTypes.SecurityError {
+        throw securityError
+      } else {
+        throw CoreSecurityTypes.SecurityError.hashingOperationFailed(
+          reason: "Hash verification failed: \(error.localizedDescription)"
+        )
+      }
+    }
+  }
+  
+  /**
+   Imports a cryptographic key with the specified configuration
+   
+   - Parameter config: Configuration for the key import operation
+   - Returns: Result containing the imported key identifier
+   - Throws: SecurityError if key import fails
+   */
+  public func importKey(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    let operationID = UUID().uuidString
+    let startTime = Date()
+    
+    // Create logging context for the operation
+    let logContext = SecurityLogContext(
+      operation: CoreSecurityTypes.SecurityOperation.importKey.rawValue,
+      component: "SecurityProviderImpl",
+      operationID: operationID,
+      correlationID: nil,
+      source: "SecurityImplementation"
+    )
+    
+    await logger.info("Starting key import operation", context: logContext)
+    
+    do {
+      // Extract key data and identifier from configuration
+      guard let options = config.options,
+            let keyDataBase64 = options.metadata?["keyData"],
+            let keyData = Data(base64Encoded: keyDataBase64),
+            let keyIdentifier = options.metadata?["keyIdentifier"] else {
+        throw CoreSecurityTypes.SecurityError.invalidInputData
+      }
+      
+      // Additional options for key import
+      let keyType = options.metadata?["keyType"] ?? "symmetric"
+      let keyAlgorithm = options.metadata?["keyAlgorithm"] ?? config.encryptionAlgorithm.rawValue
+      
+      // Import the key using key manager
+      let importResult = try await keyManager.importKey(
+        keyData: keyData,
+        identifier: keyIdentifier,
+        additionalInfo: [
+          "keyType": keyType,
+          "algorithm": keyAlgorithm,
+          "createdAt": "\(Date().timeIntervalSince1970)"
+        ]
+      )
+      
+      // Process import result
+      switch importResult {
+      case .success(let keyMetadata):
+        // Calculate duration for metrics
+        let duration = Date().timeIntervalSince(startTime) * 1000
+        
+        // Create result metadata
+        var resultMetadata: [String: Any] = [
+          "keyIdentifier": keyIdentifier,
+          "keyType": keyType,
+          "algorithm": keyAlgorithm
+        ]
+        
+        // Add any additional metadata from key manager
+        for (key, value) in keyMetadata {
+          resultMetadata[key] = value
+        }
+        
+        // Log success with privacy-aware metadata
+        var logMetadata = logContext.metadata
+        logMetadata = logMetadata.withPublic(key: "durationMs", value: String(format: "%.2f", duration))
+        logMetadata = logMetadata.withPublic(key: "keyType", value: keyType)
+        logMetadata = logMetadata.withPublic(key: "algorithm", value: keyAlgorithm)
+        logMetadata = logMetadata.withPrivate(key: "keyIdentifier", value: keyIdentifier)
+        
+        let successContext = SecurityLogContext(
+          operation: CoreSecurityTypes.SecurityOperation.importKey.rawValue,
+          component: "SecurityProviderImpl",
+          operationID: operationID,
+          correlationID: nil,
+          source: "SecurityImplementation",
+          metadata: logMetadata
+        )
+        
+        await logger.info(
+          "Successfully imported key",
+          context: successContext
+        )
+        
+        // Return success with key identifier
+        return SecurityResultDTO.success(
+          resultData: keyIdentifier.data(using: .utf8) ?? Data(),
+          executionTimeMs: duration,
+          metadata: resultMetadata
+        )
+        
+      case .failure(let error):
+        throw error
+      }
+    } catch {
+      // Log failure with privacy-aware metadata
+      let duration = Date().timeIntervalSince(startTime) * 1000
+      
+      var logMetadata = logContext.metadata
+      logMetadata = logMetadata.withPublic(key: "durationMs", value: String(format: "%.2f", duration))
+      logMetadata = logMetadata.withPublic(key: "status", value: "failed")
+      logMetadata = logMetadata.withPublic(key: "errorType", value: String(describing: type(of: error)))
+      logMetadata = logMetadata.withPrivate(key: "errorMessage", value: error.localizedDescription)
+      
+      let errorContext = SecurityLogContext(
+        operation: CoreSecurityTypes.SecurityOperation.importKey.rawValue,
+        component: "SecurityProviderImpl",
+        operationID: operationID,
+        correlationID: nil,
+        source: "SecurityImplementation",
+        metadata: logMetadata
+      )
+      
+      await logger.error(
+        "Key import failed: \(error.localizedDescription)",
+        context: errorContext
+      )
+      
+      // Rethrow appropriate error
+      if let securityError = error as? CoreSecurityTypes.SecurityError {
+        throw securityError
+      } else {
+        throw CoreSecurityTypes.SecurityError.generalError(
+          reason: "Key import failed: \(error.localizedDescription)"
+        )
+      }
+    }
   }
 }

@@ -234,7 +234,7 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
     options: CoreSecurityTypes.EncryptionOptions?=nil
   ) async -> Result<String, SecurityStorageError> {
     // Create a log context with proper privacy classification
-    let context=CryptoLogContext(
+    let context = CryptoLogContext(
       operation: "decrypt",
       algorithm: options?.algorithm.rawValue,
       correlationID: UUID().uuidString,
@@ -246,27 +246,144 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
     )
 
     // Add algorithm information if available
-    let contextWithOptions=context
+    let contextWithOptions = context
 
     await logger.info(
       "Decrypting data with identifier: \(encryptedDataIdentifier)",
       context: contextWithOptions
     )
+    
+    // Retrieve the encrypted data from secure storage
+    let encryptedDataResult = await secureStorage.retrieveData(withIdentifier: encryptedDataIdentifier)
+    
+    guard case let .success(encryptedData) = encryptedDataResult else {
+      if case let .failure(error) = encryptedDataResult {
+        let errorContext = contextWithOptions.withUpdatedMetadata(
+          contextWithOptions.metadata.withPublic(
+            key: "errorDescription",
+            value: error.localizedDescription
+          )
+        )
 
-    // Implementation similar to encrypt but using provider.decrypt
-    // For now, returning a mock implementation
-    let decryptedID="decrypted_\(UUID().uuidString)"
+        await logger.error(
+          "Failed to retrieve encrypted data for decryption: \(error.localizedDescription)",
+          context: errorContext
+        )
+        return .failure(error)
+      }
 
-    let successContext=contextWithOptions.withUpdatedMetadata(
-      contextWithOptions.metadata.withPublic(key: "decryptedIdentifier", value: decryptedID)
+      let errorContext = contextWithOptions.withUpdatedMetadata(
+        contextWithOptions.metadata.withPublic(key: "errorDescription", value: "Encrypted data not found")
+      )
+
+      await logger.error(
+        "Failed to retrieve encrypted data: not found",
+        context: errorContext
+      )
+      return .failure(.dataNotFound)
+    }
+
+    // Create security configuration for decryption
+    var configOptions = SecurityConfigOptions(
+      enableDetailedLogging: true,
+      keyDerivationIterations: 10000,
+      memoryLimitBytes: 65536,
+      useHardwareAcceleration: true,
+      operationTimeoutSeconds: 30,
+      verifyOperations: true
     )
 
-    await logger.info(
-      "Successfully decrypted data with identifier: \(decryptedID)",
-      context: successContext
-    )
+    // Add the necessary metadata for the security provider
+    var metadata: [String: String] = [
+      "keyIdentifier": keyIdentifier,
+      "inputData": encryptedData.base64EncodedString()
+    ]
+    if let options {
+      metadata["algorithm"] = options.algorithm.rawValue
+    }
+    configOptions.metadata = metadata
 
-    return .success(decryptedID)
+    // Create the security config
+    let securityConfig = await provider.createSecureConfig(options: configOptions)
+
+    // Perform decryption using the provider
+    let resultDTO: SecurityResultDTO
+    do {
+      resultDTO = try await provider.decrypt(config: securityConfig)
+    } catch {
+      let errorContext = contextWithOptions.withUpdatedMetadata(
+        contextWithOptions.metadata.withPublic(
+          key: "errorDescription",
+          value: "Decryption operation failed: \(error.localizedDescription)"
+        )
+      )
+
+      await logger.error(
+        "Decryption failed with error: \(error.localizedDescription)",
+        context: errorContext
+      )
+      return .failure(.operationFailed("Decryption operation failed: \(error)"))
+    }
+
+    // Check if the result is successful and contains data
+    if resultDTO.successful, let resultData = resultDTO.resultData {
+      // Store the decrypted data
+      let decryptedID = "decrypted_\(UUID().uuidString)"
+      let storeResult = await secureStorage.storeData(resultData, withIdentifier: decryptedID)
+
+      guard case .success = storeResult else {
+        if case let .failure(error) = storeResult {
+          let errorContext = contextWithOptions.withUpdatedMetadata(
+            contextWithOptions.metadata.withPublic(
+              key: "errorDescription",
+              value: error.localizedDescription
+            )
+          )
+
+          await logger.error(
+            "Failed to store decrypted data: \(error.localizedDescription)",
+            context: errorContext
+          )
+          return .failure(error)
+        }
+
+        let errorContext = contextWithOptions.withUpdatedMetadata(
+          contextWithOptions.metadata.withPublic(key: "errorDescription", value: "Storage error")
+        )
+
+        await logger.error(
+          "Failed to store decrypted data: storage error",
+          context: errorContext
+        )
+        return .failure(.storageError)
+      }
+
+      // Create success context with decrypted identifier
+      let successContext = contextWithOptions.withUpdatedMetadata(
+        contextWithOptions.metadata.withPublic(key: "decryptedIdentifier", value: decryptedID)
+          .withPublic(key: "executionTimeMs", value: String(format: "%.2f", resultDTO.executionTimeMs))
+      )
+
+      await logger.info(
+        "Successfully decrypted data with identifier: \(decryptedID)",
+        context: successContext
+      )
+
+      return .success(decryptedID)
+    } else {
+      let errorContext = contextWithOptions.withUpdatedMetadata(
+        contextWithOptions.metadata.withPublic(
+          key: "errorDescription",
+          value: "Decryption operation failed - invalid result data"
+        )
+      )
+
+      await logger.error(
+        "Decryption failed - invalid result data",
+        context: errorContext
+      )
+      return .failure(.operationFailed("Decryption operation failed - invalid result data"))
+    }
   }
 
   /**
@@ -282,7 +399,7 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
     options: CoreSecurityTypes.HashingOptions?=nil
   ) async -> Result<String, SecurityStorageError> {
     // Create a log context with proper privacy classification
-    let context=CryptoLogContext(
+    let context = CryptoLogContext(
       operation: "hash",
       algorithm: options?.algorithm.rawValue,
       correlationID: UUID().uuidString,
@@ -293,27 +410,149 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
     )
 
     // Add algorithm information if available
-    let contextWithOptions=context
+    let contextWithOptions = context
 
     await logger.info(
       "Hashing data with identifier: \(dataIdentifier)",
       context: contextWithOptions
     )
+    
+    // Retrieve the data to hash from secure storage
+    let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
+    
+    guard case let .success(dataToHash) = dataResult else {
+      if case let .failure(error) = dataResult {
+        let errorContext = contextWithOptions.withUpdatedMetadata(
+          contextWithOptions.metadata.withPublic(
+            key: "errorDescription",
+            value: error.localizedDescription
+          )
+        )
 
-    // Implementation would use provider.hash
-    // For now, returning a mock implementation
-    let hashID="hash_\(UUID().uuidString)"
+        await logger.error(
+          "Failed to retrieve data for hashing: \(error.localizedDescription)",
+          context: errorContext
+        )
+        return .failure(error)
+      }
 
-    let successContext=contextWithOptions.withUpdatedMetadata(
-      contextWithOptions.metadata.withHashed(key: "hashIdentifier", value: hashID)
+      let errorContext = contextWithOptions.withUpdatedMetadata(
+        contextWithOptions.metadata.withPublic(key: "errorDescription", value: "Data not found")
+      )
+
+      await logger.error(
+        "Failed to retrieve data for hashing: data not found",
+        context: errorContext
+      )
+      return .failure(.dataNotFound)
+    }
+
+    // Create security configuration for hashing
+    var configOptions = SecurityConfigOptions(
+      enableDetailedLogging: true,
+      operationTimeoutSeconds: 30
     )
 
-    await logger.info(
-      "Successfully hashed data with identifier: \(hashID)",
-      context: successContext
-    )
+    // Add the necessary metadata for the security provider
+    var metadata: [String: String] = [
+      "inputData": dataToHash.base64EncodedString(),
+      "inputDataSize": String(dataToHash.count)
+    ]
+    
+    // Add the hash algorithm if specified in options
+    if let options {
+      metadata["algorithm"] = options.algorithm.rawValue
+    }
+    configOptions.metadata = metadata
 
-    return .success(hashID)
+    // Create the security config
+    let securityConfig = await provider.createSecureConfig(options: configOptions)
+    
+    // Set the hash algorithm
+    var securityConfigWithAlgorithm = securityConfig
+    securityConfigWithAlgorithm.hashAlgorithm = options?.algorithm ?? .sha256
+
+    // Perform hashing using the provider
+    let resultDTO: SecurityResultDTO
+    do {
+      resultDTO = try await provider.hash(config: securityConfigWithAlgorithm)
+    } catch {
+      let errorContext = contextWithOptions.withUpdatedMetadata(
+        contextWithOptions.metadata.withPublic(
+          key: "errorDescription",
+          value: "Hashing operation failed: \(error.localizedDescription)"
+        )
+      )
+
+      await logger.error(
+        "Hashing failed with error: \(error.localizedDescription)",
+        context: errorContext
+      )
+      return .failure(.operationFailed("Hashing operation failed: \(error)"))
+    }
+
+    // Check if the result is successful and contains data
+    if resultDTO.successful, let hashData = resultDTO.resultData {
+      // Store the hash data
+      let hashID = "hash_\(UUID().uuidString)"
+      let storeResult = await secureStorage.storeData(hashData, withIdentifier: hashID)
+
+      guard case .success = storeResult else {
+        if case let .failure(error) = storeResult {
+          let errorContext = contextWithOptions.withUpdatedMetadata(
+            contextWithOptions.metadata.withPublic(
+              key: "errorDescription",
+              value: error.localizedDescription
+            )
+          )
+
+          await logger.error(
+            "Failed to store hash data: \(error.localizedDescription)",
+            context: errorContext
+          )
+          return .failure(error)
+        }
+
+        let errorContext = contextWithOptions.withUpdatedMetadata(
+          contextWithOptions.metadata.withPublic(key: "errorDescription", value: "Storage error")
+        )
+
+        await logger.error(
+          "Failed to store hash data: storage error",
+          context: errorContext
+        )
+        return .failure(.storageError)
+      }
+
+      // Create success context with hash identifier
+      let successContext = contextWithOptions.withUpdatedMetadata(
+        contextWithOptions.metadata
+          .withHashed(key: "hashIdentifier", value: hashID)
+          .withPublic(key: "hashAlgorithm", value: securityConfigWithAlgorithm.hashAlgorithm.rawValue)
+          .withPublic(key: "hashSize", value: String(hashData.count))
+          .withPublic(key: "executionTimeMs", value: String(format: "%.2f", resultDTO.executionTimeMs))
+      )
+
+      await logger.info(
+        "Successfully hashed data, stored with identifier: \(hashID)",
+        context: successContext
+      )
+
+      return .success(hashID)
+    } else {
+      let errorContext = contextWithOptions.withUpdatedMetadata(
+        contextWithOptions.metadata.withPublic(
+          key: "errorDescription",
+          value: "Hashing operation failed - invalid result data"
+        )
+      )
+
+      await logger.error(
+        "Hashing failed - invalid result data",
+        context: errorContext
+      )
+      return .failure(.operationFailed("Hashing operation failed - invalid result data"))
+    }
   }
 
   /**
