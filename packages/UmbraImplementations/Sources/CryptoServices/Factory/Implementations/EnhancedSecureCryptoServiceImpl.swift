@@ -64,55 +64,39 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
   }
 
   /**
-   Creates a log context for a cryptographic operation.
-
-   - Parameters:
-     - operation: The type of operation (encrypt, decrypt, etc.)
-     - identifier: Optional identifier for the data or key
-     - algorithm: Optional algorithm used for the operation
-     - status: Optional status of the operation
-     - details: Optional additional details about the operation
-   - Returns: A log context for the operation
+   Creates a log context for cryptographic operations
    */
   private func createLogContext(
     operation: String,
     identifier: String? = nil,
-    algorithm: EncryptionAlgorithm? = nil,
     status: String? = nil,
     details: [String: String] = [:]
   ) -> LoggingTypes.CryptoLogContext {
-    var metadata = LogMetadataDTOCollection()
+    var detailsWithOperation = details
+    detailsWithOperation["operation"] = operation
     
     if let identifier = identifier {
-      metadata = metadata.withPublic(key: "identifier", value: identifier)
-    }
-    
-    if let algorithm = algorithm {
-      metadata = metadata.withPublic(key: "algorithm", value: algorithm.rawValue)
+      detailsWithOperation["identifier"] = identifier
     }
     
     if let status = status {
-      metadata = metadata.withPublic(key: "status", value: status)
+      detailsWithOperation["status"] = status
     }
+
+    // Create metadata collection
+    var contextMetadata = LogMetadataDTOCollection()
     
-    // Add all details with appropriate privacy levels
-    for (key, value) in details {
-      if key.contains("key") || key.contains("password") || key.contains("secret") {
-        metadata = metadata.withSensitive(key: key, value: value)
-      } else if key.contains("hash") {
-        metadata = metadata.withHashed(key: key, value: value)
-      } else if key.contains("error") || key.contains("result") {
-        metadata = metadata.withPublic(key: key, value: value)
-      } else {
-        metadata = metadata.withPrivate(key: key, value: value)
-      }
+    // Add all details with public privacy level
+    for (key, value) in detailsWithOperation {
+      contextMetadata = contextMetadata.withPublic(key: key, value: value)
     }
     
     return LoggingTypes.CryptoLogContext(
       operation: operation,
-      identifier: identifier,
-      status: status,
-      metadata: metadata
+      algorithm: details["algorithm"],
+      correlationID: UUID().uuidString,
+      source: "EnhancedSecureCryptoServiceImpl",
+      additionalContext: contextMetadata
     )
   }
 

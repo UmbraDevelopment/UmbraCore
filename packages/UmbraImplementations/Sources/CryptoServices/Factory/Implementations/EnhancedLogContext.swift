@@ -213,6 +213,9 @@ public struct EnhancedLogContext: LogContextDTO {
           mergedMetadata = mergedMetadata.withSensitive(key: entry.key, value: entry.value)
         case .hash:
           mergedMetadata = mergedMetadata.withHashed(key: entry.key, value: entry.value)
+        case .auto:
+          // For auto, default to private
+          mergedMetadata = mergedMetadata.withPrivate(key: entry.key, value: entry.value)
       }
     }
     
@@ -242,7 +245,10 @@ public struct EnhancedLogContext: LogContextDTO {
         case .sensitive:
           return .sensitive
         case .hash:
-          return .auto // No direct mapping for hash, use auto
+          return .hash
+        case .auto:
+          // For auto, default to private
+          return .private
       }
     }
     

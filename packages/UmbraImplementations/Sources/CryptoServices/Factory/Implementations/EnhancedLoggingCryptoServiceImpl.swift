@@ -580,7 +580,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
   }
 
   /**
-   Signs data using the specified key.
+   Signs data with a private key.
    
    - Parameters:
      - dataIdentifier: Identifier for the data to sign
@@ -588,6 +588,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
      - options: Optional signing options
    - Returns: Result containing the signature identifier or an error
    */
+  /* // Commenting out as this method is not part of CryptoServiceProtocol
   public func signData(
     dataIdentifier: String,
     keyIdentifier: String,
@@ -656,6 +657,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
 
     return result
   }
+  */
 
   /**
    Verifies a signature against the specified data.
@@ -667,6 +669,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
      - options: Optional verification options
    - Returns: Result containing a boolean indicating if the signature is valid or an error
    */
+  /* // Commenting out as this method is not part of CryptoServiceProtocol
   public func verifySignature(
     dataIdentifier: String,
     signatureIdentifier: String,
@@ -738,15 +741,18 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
 
     return result
   }
+  */
 
   /**
    Generates a new cryptographic key.
    
    - Parameters:
+     - length: Length of the key in bytes
      - options: Optional key generation options
    - Returns: Result containing the key identifier or an error
    */
   public func generateKey(
+    length: Int,
     options: CoreSecurityTypes.KeyGenerationOptions? = nil
   ) async -> Result<String, SecurityStorageError> {
     // Create context for logging
@@ -755,6 +761,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
       operationName: "generateKey",
       source: "EnhancedLoggingCryptoServiceImpl.generateKey",
       metadata: LogMetadataDTOCollection()
+        .withPublic(key: "keyLength", value: "\(length)")
     )
     
     // Add key type and algorithm information if available
@@ -769,20 +776,10 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
       )
     }
     
-    if let algorithm = options?.algorithm {
-      contextWithOptions = EnhancedLogContext(
-        domainName: contextWithOptions.domainName,
-        operationName: contextWithOptions.operationName,
-        source: contextWithOptions.source,
-        correlationID: contextWithOptions.correlationID,
-        metadata: contextWithOptions.metadata.withPublic(key: "algorithm", value: "\(algorithm)")
-      )
-    }
-    
     await logger.log(.debug, "Generate key operation started", context: contextWithOptions)
 
     // Perform the operation
-    let result = await wrapped.generateKey(options: options)
+    let result = await wrapped.generateKey(length: length, options: options)
 
     // Log the result
     switch result {
@@ -810,77 +807,6 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
           )
         )
         await logger.error("Generate key operation failed", context: errorContext)
-    }
-
-    return result
-  }
-
-  /**
-   Generates a cryptographic key with specific length.
-
-   - Parameters:
-     - length: The length of the key in bits
-     - options: Optional key generation options
-   - Returns: Identifier for the generated key or an error
-   */
-  public func generateKey(
-    length: Int,
-    options: CoreSecurityTypes.KeyGenerationOptions? = nil
-  ) async -> Result<String, SecurityStorageError> {
-    // Create context for logging
-    let context = EnhancedLogContext(
-      domainName: "CryptoService",
-      operationName: "generateKey",
-      source: "EnhancedLoggingCryptoServiceImpl.generateKey",
-      metadata: LogMetadataDTOCollection()
-        .withPublic(key: "keyLength", value: "\(length)")
-    )
-    
-    // Add key type and algorithm information if available
-    let contextWithOptions: EnhancedLogContext
-    if let keyType = options?.keyType {
-      contextWithOptions = EnhancedLogContext(
-        domainName: context.domainName,
-        operationName: context.operationName,
-        source: context.source,
-        correlationID: context.correlationID,
-        metadata: context.metadata.withPublic(key: "keyType", value: "\(keyType)")
-      )
-    } else {
-      contextWithOptions = context
-    }
-    
-    await logger.log(.debug, "Generating key with length \(length) bits", context: contextWithOptions)
-
-    // Perform the operation
-    let result = await wrapped.generateKey(length: length, options: options)
-
-    // Log the result
-    switch result {
-      case let .success(keyIdentifier):
-        let successContext = EnhancedLogContext(
-          domainName: context.domainName,
-          operationName: "generateKey",
-          source: context.source,
-          correlationID: context.correlationID,
-          metadata: context.metadata.withSensitive(
-            key: "keyIdentifier",
-            value: keyIdentifier
-          )
-        )
-        await logger.log(.info, "Key generation successful", context: successContext)
-      case let .failure(error):
-        let errorContext = EnhancedLogContext(
-          domainName: context.domainName,
-          operationName: "generateKey",
-          source: context.source,
-          correlationID: context.correlationID,
-          metadata: context.metadata.withPublic(
-            key: "errorDescription",
-            value: error.localizedDescription
-          )
-        )
-        await logger.error("Key generation failed", context: errorContext)
     }
 
     return result

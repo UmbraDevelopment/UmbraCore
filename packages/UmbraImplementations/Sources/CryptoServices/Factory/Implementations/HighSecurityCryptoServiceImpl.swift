@@ -154,7 +154,7 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
         
         // Retrieve the data to encrypt
         let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
-        guard case let .success(_) = dataResult else {
+        guard case let .success(dataToEncrypt) = dataResult else {
             if case let .failure(error) = dataResult {
                 let errorContext = createLogContext(
                     operation: "encrypt",
@@ -163,40 +163,23 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
                     details: [
                         "keyIdentifier": keyIdentifier,
                         "algorithm": options?.algorithm.rawValue ?? "default",
-                        "errorDescription": error.localizedDescription
+                        "error": "\(error)"
                     ]
                 )
                 
-                await logger.error(
-                    "Failed to retrieve data for encryption: \(error.localizedDescription)",
+                await logger.warning(
+                    "Failed to retrieve data for encryption: \(error)",
                     context: errorContext
                 )
-                
-                return .failure(error)
+                return .failure(.dataNotFound)
             }
-            
-            let errorContext = createLogContext(
-                operation: "encrypt",
-                identifier: dataIdentifier,
-                status: "failed",
-                details: [
-                    "keyIdentifier": keyIdentifier,
-                    "algorithm": options?.algorithm.rawValue ?? "default",
-                    "errorDescription": "Data not found"
-                ]
-            )
-            
-            await logger.error(
-                "Failed to retrieve data for encryption: data not found",
-                context: errorContext
-            )
             
             return .failure(.dataNotFound)
         }
         
         // Retrieve the key
         let keyResult = await secureStorage.retrieveData(withIdentifier: keyIdentifier)
-        guard case let .success(_) = keyResult else {
+        guard case let .success(keyData) = keyResult else {
             if case let .failure(error) = keyResult {
                 let errorContext = createLogContext(
                     operation: "encrypt",
@@ -205,41 +188,24 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
                     details: [
                         "keyIdentifier": keyIdentifier,
                         "algorithm": options?.algorithm.rawValue ?? "default",
-                        "errorDescription": error.localizedDescription
+                        "error": "\(error)"
                     ]
                 )
                 
-                await logger.error(
-                    "Failed to retrieve key for encryption: \(error.localizedDescription)",
+                await logger.warning(
+                    "Failed to retrieve key for encryption: \(error)",
                     context: errorContext
                 )
-                
-                return .failure(error)
+                return .failure(.keyNotFound)
             }
-            
-            let errorContext = createLogContext(
-                operation: "encrypt",
-                identifier: dataIdentifier,
-                status: "failed",
-                details: [
-                    "keyIdentifier": keyIdentifier,
-                    "algorithm": options?.algorithm.rawValue ?? "default",
-                    "errorDescription": "Key not found"
-                ]
-            )
-            
-            await logger.error(
-                "Failed to retrieve key for encryption: key not found",
-                context: errorContext
-            )
             
             return .failure(.keyNotFound)
         }
         
         // Perform encryption (in a real implementation, use a proper cryptographic algorithm)
         // This is just a mock implementation for demonstration purposes
-        let encryptedData = Data((0..<data.count).map { i in
-            data[i] ^ key[i % key.count]
+        let encryptedData = Data((0..<dataToEncrypt.count).map { i in
+            dataToEncrypt[i] ^ keyData[i % keyData.count]
         })
         
         // Store the encrypted data
@@ -255,12 +221,12 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
                     details: [
                         "keyIdentifier": keyIdentifier,
                         "algorithm": options?.algorithm.rawValue ?? "default",
-                        "errorDescription": error.localizedDescription
+                        "error": "\(error)"
                     ]
                 )
                 
                 await logger.error(
-                    "Failed to store encrypted data: \(error.localizedDescription)",
+                    "Failed to store encrypted data: \(error)",
                     context: errorContext
                 )
                 
@@ -274,7 +240,7 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
                 details: [
                     "keyIdentifier": keyIdentifier,
                     "algorithm": options?.algorithm.rawValue ?? "default",
-                    "errorDescription": "Unknown error storing encrypted data"
+                    "error": "Unknown error storing encrypted data"
                 ]
             )
             
@@ -294,7 +260,7 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
                 "keyIdentifier": keyIdentifier,
                 "algorithm": options?.algorithm.rawValue ?? "default",
                 "encryptedIdentifier": encryptedId,
-                "dataSize": "\(data.count)"
+                "dataSize": "\(dataToEncrypt.count)"
             ]
         )
         
@@ -359,7 +325,7 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
         
         // Retrieve the encrypted data
         let encryptedDataResult = await secureStorage.retrieveData(withIdentifier: encryptedDataIdentifier)
-        guard case let .success(_) = encryptedDataResult else {
+        guard case let .success(encryptedData) = encryptedDataResult else {
             if case let .failure(error) = encryptedDataResult {
                 let errorContext = createLogContext(
                     operation: "decrypt",
@@ -368,12 +334,12 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
                     details: [
                         "keyIdentifier": keyIdentifier,
                         "algorithm": options?.algorithm.rawValue ?? "default",
-                        "errorDescription": error.localizedDescription
+                        "error": "\(error)"
                     ]
                 )
                 
                 await logger.error(
-                    "Failed to retrieve encrypted data: \(error.localizedDescription)",
+                    "Failed to retrieve encrypted data: \(error)",
                     context: errorContext
                 )
                 
@@ -387,12 +353,12 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
                 details: [
                     "keyIdentifier": keyIdentifier,
                     "algorithm": options?.algorithm.rawValue ?? "default",
-                    "errorDescription": "Encrypted data not found"
+                    "error": "Encrypted data not found"
                 ]
             )
             
             await logger.error(
-                "Failed to retrieve encrypted data: data not found",
+                "Failed to retrieve encrypted data: encrypted data not found",
                 context: errorContext
             )
             
@@ -401,7 +367,7 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
         
         // Retrieve the key
         let keyResult = await secureStorage.retrieveData(withIdentifier: keyIdentifier)
-        guard case let .success(_) = keyResult else {
+        guard case let .success(keyData) = keyResult else {
             if case let .failure(error) = keyResult {
                 let errorContext = createLogContext(
                     operation: "decrypt",
@@ -410,12 +376,12 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
                     details: [
                         "keyIdentifier": keyIdentifier,
                         "algorithm": options?.algorithm.rawValue ?? "default",
-                        "errorDescription": error.localizedDescription
+                        "error": "\(error)"
                     ]
                 )
                 
                 await logger.error(
-                    "Failed to retrieve key for decryption: \(error.localizedDescription)",
+                    "Failed to retrieve key for decryption: \(error)",
                     context: errorContext
                 )
                 
@@ -429,7 +395,7 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
                 details: [
                     "keyIdentifier": keyIdentifier,
                     "algorithm": options?.algorithm.rawValue ?? "default",
-                    "errorDescription": "Key not found"
+                    "error": "Key not found"
                 ]
             )
             
@@ -444,7 +410,7 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
         // Perform decryption (in a real implementation, use a proper cryptographic algorithm)
         // This is just a mock implementation for demonstration purposes
         let decryptedData = Data((0..<encryptedData.count).map { i in
-            encryptedData[i] ^ key[i % key.count]
+            encryptedData[i] ^ keyData[i % keyData.count]
         })
         
         // Store the decrypted data
@@ -460,12 +426,12 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
                     details: [
                         "keyIdentifier": keyIdentifier,
                         "algorithm": options?.algorithm.rawValue ?? "default",
-                        "errorDescription": error.localizedDescription
+                        "error": "\(error)"
                     ]
                 )
                 
                 await logger.error(
-                    "Failed to store decrypted data: \(error.localizedDescription)",
+                    "Failed to store decrypted data: \(error)",
                     context: errorContext
                 )
                 
@@ -479,7 +445,7 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
                 details: [
                     "keyIdentifier": keyIdentifier,
                     "algorithm": options?.algorithm.rawValue ?? "default",
-                    "errorDescription": "Unknown error storing decrypted data"
+                    "error": "Unknown error storing decrypted data"
                 ]
             )
             
@@ -569,12 +535,12 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
                     status: "failed",
                     details: [
                         "algorithm": algorithm,
-                        "errorDescription": error.localizedDescription
+                        "error": "\(error)"
                     ]
                 )
                 
                 await logger.error(
-                    "Failed to retrieve data for hashing: \(error.localizedDescription)",
+                    "Failed to retrieve data for hashing: \(error)",
                     context: errorContext
                 )
                 
@@ -587,7 +553,7 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
                 status: "failed",
                 details: [
                     "algorithm": algorithm,
-                    "errorDescription": "Data not found"
+                    "error": "Data not found"
                 ]
             )
             
@@ -615,12 +581,12 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
                     status: "failed",
                     details: [
                         "algorithm": algorithm,
-                        "errorDescription": error.localizedDescription
+                        "error": "\(error)"
                     ]
                 )
                 
                 await logger.error(
-                    "Failed to store hash: \(error.localizedDescription)",
+                    "Failed to store hash: \(error)",
                     context: errorContext
                 )
                 
@@ -633,7 +599,7 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
                 status: "failed",
                 details: [
                     "algorithm": algorithm,
-                    "errorDescription": "Unknown error storing hash"
+                    "error": "Unknown error storing hash"
                 ]
             )
             
@@ -727,15 +693,34 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
                     details: [
                         "hashIdentifier": hashIdentifier,
                         "algorithm": algorithm,
-                        "errorDescription": error.localizedDescription
+                        "error": "\(error)"
                     ]
                 )
                 
                 await logger.error(
-                    "Failed to retrieve data for hash verification: \(error.localizedDescription)",
+                    "Failed to retrieve data for hash verification: \(error)",
                     context: errorContext
                 )
+                
+                return .failure(error)
             }
+            
+            let errorContext = createLogContext(
+                operation: "verifyHash",
+                identifier: dataIdentifier,
+                status: "failed",
+                details: [
+                    "hashIdentifier": hashIdentifier,
+                    "algorithm": algorithm,
+                    "error": "Data not found"
+                ]
+            )
+            
+            await logger.error(
+                "Failed to retrieve data for hash verification: data not found",
+                context: errorContext
+            )
+            
             return .failure(.dataNotFound)
         }
         
@@ -750,15 +735,34 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
                     details: [
                         "hashIdentifier": hashIdentifier,
                         "algorithm": algorithm,
-                        "errorDescription": error.localizedDescription
+                        "error": "\(error)"
                     ]
                 )
                 
                 await logger.error(
-                    "Failed to retrieve expected hash: \(error.localizedDescription)",
+                    "Failed to retrieve expected hash: \(error)",
                     context: errorContext
                 )
+                
+                return .failure(error)
             }
+            
+            let errorContext = createLogContext(
+                operation: "verifyHash",
+                identifier: dataIdentifier,
+                status: "failed",
+                details: [
+                    "hashIdentifier": hashIdentifier,
+                    "algorithm": algorithm,
+                    "error": "Expected hash not found"
+                ]
+            )
+            
+            await logger.error(
+                "Failed to retrieve expected hash: hash not found",
+                context: errorContext
+            )
+            
             return .failure(.dataNotFound)
         }
         
@@ -847,12 +851,12 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
                     status: "failed",
                     details: [
                         "dataSize": "\(data.count)",
-                        "errorDescription": error.localizedDescription
+                        "error": "\(error)"
                     ]
                 )
                 
                 await logger.error(
-                    "Failed to retrieve data for storage: \(error.localizedDescription)",
+                    "Failed to retrieve data for storage: \(error)",
                     context: errorContext
                 )
                 
@@ -865,7 +869,7 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
                 status: "failed",
                 details: [
                     "dataSize": "\(data.count)",
-                    "errorDescription": "Data not found"
+                    "error": "Data not found"
                 ]
             )
             
@@ -888,12 +892,12 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
                     status: "failed",
                     details: [
                         "dataSize": "\(data.count)",
-                        "errorDescription": error.localizedDescription
+                        "error": "\(error)"
                     ]
                 )
                 
                 await logger.error(
-                    "Failed to store data: \(error.localizedDescription)",
+                    "Failed to store data: \(error)",
                     context: errorContext
                 )
                 
@@ -906,7 +910,7 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
                 status: "failed",
                 details: [
                     "dataSize": "\(data.count)",
-                    "errorDescription": "Unknown error storing data"
+                    "error": "Unknown error storing data"
                 ]
             )
             
@@ -986,12 +990,12 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
                     identifier: identifier,
                     status: "failed",
                     details: [
-                        "errorDescription": error.localizedDescription
+                        "error": "\(error)"
                     ]
                 )
                 
                 await logger.error(
-                    "Failed to retrieve data: \(error.localizedDescription)",
+                    "Failed to retrieve data: \(error)",
                     context: errorContext
                 )
                 
@@ -1003,7 +1007,7 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
                 identifier: identifier,
                 status: "failed",
                 details: [
-                    "errorDescription": "Data not found"
+                    "error": "Data not found"
                 ]
             )
             
@@ -1029,7 +1033,7 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
             context: successContext
         )
         
-        return .success(data)
+        return .success(Data(data))
     }
     
     /**
@@ -1083,12 +1087,12 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
                     identifier: identifier,
                     status: "failed",
                     details: [
-                        "errorDescription": error.localizedDescription
+                        "error": "\(error)"
                     ]
                 )
                 
                 await logger.error(
-                    "Failed to delete data: \(error.localizedDescription)",
+                    "Failed to delete data: \(error)",
                     context: errorContext
                 )
                 
@@ -1100,7 +1104,7 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
                 identifier: identifier,
                 status: "failed",
                 details: [
-                    "errorDescription": "Unknown error deleting data"
+                    "error": "Unknown error deleting data"
                 ]
             )
             
@@ -1187,16 +1191,34 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
                     status: "failed",
                     details: [
                         "keyLength": String(length),
-                        "errorDescription": error.localizedDescription
+                        "error": "\(error)"
                     ]
                 )
                 
                 await logger.error(
-                    "Failed to store generated key: \(error.localizedDescription)",
+                    "Failed to store generated key: \(error)",
                     context: errorContext
                 )
+                
+                return .failure(error)
             }
-            return .failure(.operationFailed("Key generation operation failed"))
+            
+            let errorContext = createLogContext(
+                operation: "generateKey",
+                identifier: keyId,
+                status: "failed",
+                details: [
+                    "keyLength": String(length),
+                    "error": "Unknown error storing generated key"
+                ]
+            )
+            
+            await logger.error(
+                "Failed to store generated key: unknown error",
+                context: errorContext
+            )
+            
+            return .failure(.storageError)
         }
         
         let successContext = createLogContext(
@@ -1406,7 +1428,7 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
                     context: successContext
                 )
                 
-                return .success(Data(data))
+                return .success(data)
                 
             case .failure(let error):
                 let errorContext = createLogContext(
@@ -1485,16 +1507,34 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
                     status: "failed",
                     details: [
                         "dataSize": "\(data.count)",
-                        "errorDescription": error.localizedDescription
+                        "error": "\(error)"
                     ]
                 )
                 
                 await logger.error(
-                    "Failed to store data: \(error.localizedDescription)",
+                    "Failed to store data: \(error)",
                     context: errorContext
                 )
+                
+                return .failure(error)
             }
-            return .failure(.operationFailed("Data storage operation failed"))
+            
+            let errorContext = createLogContext(
+                operation: "storeData",
+                identifier: identifier,
+                status: "failed",
+                details: [
+                    "dataSize": "\(data.count)",
+                    "error": "Unknown error storing data"
+                ]
+            )
+            
+            await logger.error(
+                "Failed to store data: unknown error",
+                context: errorContext
+            )
+            
+            return .failure(.storageError)
         }
         
         let successContext = createLogContext(
@@ -1579,6 +1619,7 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
                     "Failed to retrieve data for hashing: \(error)",
                     context: errorContext
                 )
+                
                 return .failure(.dataNotFound)
             }
             
@@ -1590,13 +1631,13 @@ public actor HighSecurityCryptoServiceImpl: @preconcurrency CryptoServiceProtoco
         switch options?.algorithm ?? .sha256 {
             case .sha256:
                 // Compute SHA-256 hash
-                hashData = computeSHA256Hash(data: dataToHash)
+                hashData = computeSHA256Hash(data: Data(dataToHash))
             case .sha512:
                 // Compute SHA-512 hash
-                hashData = computeSHA512Hash(data: dataToHash)
+                hashData = computeSHA512Hash(data: Data(dataToHash))
             default:
                 // Default to SHA-256 for unsupported algorithms
-                hashData = computeSHA256Hash(data: dataToHash)
+                hashData = computeSHA256Hash(data: Data(dataToHash))
         }
         
         // Store the hash

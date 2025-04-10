@@ -92,7 +92,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
         algorithm: algorithm.rawValue,
         correlationID: context.correlationID,
         source: context.source,
-        additionalContext: context.additionalContext.withPublic(key: "algorithm", value: "\(algorithm)")
+        additionalContext: context.metadata.withPublic(key: "algorithm", value: "\(algorithm)")
       )
     } else {
       contextWithOptions = context
@@ -115,7 +115,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
           algorithm: context.algorithm,
           correlationID: context.correlationID,
           source: context.source,
-          additionalContext: context.additionalContext.withPublic(key: "status", value: "failed")
+          additionalContext: context.metadata.withPublic(key: "status", value: "failed")
             .withPublic(key: "error", value: "\(error)")
         )
         
@@ -131,7 +131,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
           algorithm: context.algorithm,
           correlationID: context.correlationID,
           source: context.source,
-          additionalContext: context.additionalContext.withPublic(key: "status", value: "failed")
+          additionalContext: context.metadata.withPublic(key: "status", value: "failed")
             .withPublic(key: "error", value: "Unknown error state")
         )
         
@@ -175,7 +175,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
           algorithm: context.algorithm,
           correlationID: context.correlationID,
           source: context.source,
-          additionalContext: context.additionalContext.withPublic(key: "status", value: "success")
+          additionalContext: context.metadata.withPublic(key: "status", value: "success")
             .withPublic(key: "encryptedIdentifier", value: encryptedDataStoreIdentifier)
         )
         
@@ -192,7 +192,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
           algorithm: context.algorithm,
           correlationID: context.correlationID,
           source: context.source,
-          additionalContext: context.additionalContext.withPublic(key: "status", value: "failed")
+          additionalContext: context.metadata.withPublic(key: "status", value: "failed")
             .withPublic(key: "error", value: "\(error)")
         )
         
@@ -238,7 +238,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
         algorithm: algorithm.rawValue,
         correlationID: context.correlationID,
         source: context.source,
-        additionalContext: context.additionalContext.withPublic(key: "algorithm", value: "\(algorithm)")
+        additionalContext: context.metadata.withPublic(key: "algorithm", value: "\(algorithm)")
       )
     } else {
       contextWithOptions = context
@@ -265,7 +265,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
               algorithm: context.algorithm,
               correlationID: context.correlationID,
               source: context.source,
-              additionalContext: context.additionalContext.withPublic(key: "status", value: "failed")
+              additionalContext: context.metadata.withPublic(key: "status", value: "failed")
                 .withPublic(key: "error", value: "Invalid encrypted data format: missing key ID length")
             )
             
@@ -290,7 +290,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
               algorithm: context.algorithm,
               correlationID: context.correlationID,
               source: context.source,
-              additionalContext: context.additionalContext.withPublic(key: "status", value: "failed")
+              additionalContext: context.metadata.withPublic(key: "status", value: "failed")
                 .withPublic(key: "error", value: "Invalid encrypted data format: key ID length mismatch")
             )
             
@@ -307,7 +307,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
           let decryptedDataIdentifier = "decrypted_\(UUID().uuidString)"
           let storeDecryptedResult = await storeData(
             data: Data(decryptedDataBytes),
-            withIdentifier: decryptedDataIdentifier
+            identifier: decryptedDataIdentifier
           )
 
           switch storeDecryptedResult {
@@ -317,7 +317,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
                 algorithm: context.algorithm,
                 correlationID: context.correlationID,
                 source: context.source,
-                additionalContext: context.additionalContext.withPublic(key: "status", value: "success")
+                additionalContext: context.metadata.withPublic(key: "status", value: "success")
                   .withPublic(key: "decryptedIdentifier", value: decryptedDataIdentifier)
               )
               
@@ -334,7 +334,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
                 algorithm: context.algorithm,
                 correlationID: context.correlationID,
                 source: context.source,
-                additionalContext: context.additionalContext.withPublic(key: "status", value: "failed")
+                additionalContext: context.metadata.withPublic(key: "status", value: "failed")
                   .withPublic(key: "error", value: "\(error)")
               )
               
@@ -352,7 +352,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
             algorithm: context.algorithm,
             correlationID: context.correlationID,
             source: context.source,
-            additionalContext: context.additionalContext.withPublic(key: "status", value: "failed")
+            additionalContext: context.metadata.withPublic(key: "status", value: "failed")
               .withPublic(key: "error", value: "Invalid encrypted data format")
           )
           
@@ -370,7 +370,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
           algorithm: context.algorithm,
           correlationID: context.correlationID,
           source: context.source,
-          additionalContext: context.additionalContext.withPublic(key: "status", value: "failed")
+          additionalContext: context.metadata.withPublic(key: "status", value: "failed")
             .withPublic(key: "error", value: "\(error)")
         )
         
@@ -424,7 +424,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
           algorithm: context.algorithm,
           correlationID: context.correlationID,
           source: context.source,
-          additionalContext: context.additionalContext.withPublic(key: "status", value: "failed")
+          additionalContext: context.metadata.withPublic(key: "status", value: "failed")
             .withPublic(key: "error", value: "\(error)")
         )
         
@@ -440,7 +440,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
           algorithm: context.algorithm,
           correlationID: context.correlationID,
           source: context.source,
-          additionalContext: context.additionalContext.withPublic(key: "status", value: "failed")
+          additionalContext: context.metadata.withPublic(key: "status", value: "failed")
             .withPublic(key: "error", value: "Unknown error state")
         )
         
@@ -476,7 +476,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
           algorithm: context.algorithm,
           correlationID: context.correlationID,
           source: context.source,
-          additionalContext: context.additionalContext.withPublic(key: "status", value: "success")
+          additionalContext: context.metadata.withPublic(key: "status", value: "success")
             .withPublic(key: "hashIdentifier", value: hashIdentifier)
         )
         
@@ -493,7 +493,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
           algorithm: context.algorithm,
           correlationID: context.correlationID,
           source: context.source,
-          additionalContext: context.additionalContext.withPublic(key: "status", value: "failed")
+          additionalContext: context.metadata.withPublic(key: "status", value: "failed")
             .withPublic(key: "error", value: "\(error)")
         )
         
@@ -549,7 +549,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
         algorithm: context.algorithm,
         correlationID: context.correlationID,
         source: context.source,
-        additionalContext: context.additionalContext.withPublic(key: "status", value: "failed")
+        additionalContext: context.metadata.withPublic(key: "status", value: "failed")
           .withPublic(key: "error", value: "Failed to retrieve original data for hash verification")
       )
       
@@ -574,7 +574,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
         algorithm: context.algorithm,
         correlationID: context.correlationID,
         source: context.source,
-        additionalContext: context.additionalContext.withPublic(key: "status", value: "failed")
+        additionalContext: context.metadata.withPublic(key: "status", value: "failed")
           .withPublic(key: "error", value: "Failed to retrieve stored hash for verification")
       )
       
@@ -603,7 +603,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
     var hashesMatch = false
     
     if case let .success(storedHash) = hashResult {
-      hashesMatch = generatedHash == storedHash
+      hashesMatch = generatedHash.elementsEqual(storedHash)
     }
     
     let resultContext = CryptoLogContext(
@@ -611,7 +611,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
       algorithm: context.algorithm,
       correlationID: context.correlationID,
       source: context.source,
-      additionalContext: context.additionalContext.withPublic(key: "status", value: "success")
+      additionalContext: context.metadata.withPublic(key: "status", value: "success")
         .withPublic(key: "hashesMatch", value: hashesMatch ? "true" : "false")
     )
     
@@ -625,11 +625,11 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
   }
 
   /**
-   Stores data in the secure storage.
+   Stores the specified data.
    
    - Parameters:
-     - data: Data to store
-     - identifier: Identifier for the data
+     - data: The data to store
+     - identifier: The identifier to use
    - Returns: Result containing void or an error
    */
   public func storeData(
@@ -648,8 +648,8 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
     )
     
     await logger?.log(
-      .debug, 
-      "Storing data with identifier: \(identifier)", 
+      .debug,
+      "Storing data with identifier: \(identifier)",
       context: context
     )
     
@@ -666,14 +666,15 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
           algorithm: context.algorithm,
           correlationID: context.correlationID,
           source: context.source,
-          additionalContext: context.additionalContext.withPublic(key: "status", value: "success")
+          additionalContext: context.metadata.withPublic(key: "status", value: "success")
         )
         
         await logger?.log(
           .info,
-          "Successfully stored data for identifier: \(identifier)",
+          "Successfully stored data with identifier: \(identifier)",
           context: successContext
         )
+        return .success(())
         
       case let .failure(error):
         let errorContext = CryptoLogContext(
@@ -681,18 +682,27 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
           algorithm: context.algorithm,
           correlationID: context.correlationID,
           source: context.source,
-          additionalContext: context.additionalContext.withPublic(key: "status", value: "failed")
+          additionalContext: context.metadata.withPublic(key: "status", value: "failed")
             .withPublic(key: "error", value: "\(error)")
         )
         
         await logger?.log(
-          .error, 
-          "Failed to store data: \(error)", 
+          .error,
+          "Failed to store data: \(error)",
           context: errorContext
         )
+        return .failure(error)
     }
-    
-    return result
+  }
+
+  /**
+   Internal helper method with properly ordered parameters for storeData
+   */
+  private func storeData(
+    withIdentifier identifier: String,
+    data: Data
+  ) async -> Result<Void, SecurityStorageError> {
+    return await storeData(data: data, identifier: identifier)
   }
 
   /**
@@ -732,7 +742,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
           algorithm: context.algorithm,
           correlationID: context.correlationID,
           source: context.source,
-          additionalContext: context.additionalContext.withPublic(key: "status", value: "success")
+          additionalContext: context.metadata.withPublic(key: "status", value: "success")
             .withPublic(key: "dataSize", value: "\(data.count)")
         )
         
@@ -750,7 +760,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
           algorithm: context.algorithm,
           correlationID: context.correlationID,
           source: context.source,
-          additionalContext: context.additionalContext.withPublic(key: "status", value: "failed")
+          additionalContext: context.metadata.withPublic(key: "status", value: "failed")
             .withPublic(key: "error", value: "\(error)")
         )
         
@@ -798,7 +808,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
           algorithm: context.algorithm,
           correlationID: context.correlationID,
           source: context.source,
-          additionalContext: context.additionalContext.withPublic(key: "status", value: "success")
+          additionalContext: context.metadata.withPublic(key: "status", value: "success")
         )
         
         await logger?.log(
@@ -813,7 +823,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
           algorithm: context.algorithm,
           correlationID: context.correlationID,
           source: context.source,
-          additionalContext: context.additionalContext.withPublic(key: "status", value: "failed")
+          additionalContext: context.metadata.withPublic(key: "status", value: "failed")
             .withPublic(key: "error", value: "\(error)")
         )
         
@@ -851,17 +861,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
     
     // Add algorithm information if available
     let contextWithOptions: CryptoLogContext
-    if let algorithm = options?.algorithm {
-      contextWithOptions = CryptoLogContext(
-        operation: context.operation,
-        algorithm: algorithm.rawValue,
-        correlationID: context.correlationID,
-        source: context.source,
-        additionalContext: context.additionalContext.withPublic(key: "algorithm", value: "\(algorithm)")
-      )
-    } else {
-      contextWithOptions = context
-    }
+    contextWithOptions = context
     
     await logger?.log(
       .debug, 
@@ -884,8 +884,8 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
           algorithm: context.algorithm,
           correlationID: context.correlationID,
           source: context.source,
-          additionalContext: context.additionalContext.withPublic(key: "status", value: "success")
-            .withSensitiveMetadata(key: "keyIdentifier", value: keyIdentifier)
+          additionalContext: context.metadata.withPublic(key: "status", value: "success")
+            .withPrivate(key: "keyIdentifier", value: keyIdentifier)
         )
         
         await logger?.log(
@@ -901,7 +901,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
           algorithm: context.algorithm,
           correlationID: context.correlationID,
           source: context.source,
-          additionalContext: context.additionalContext.withPublic(key: "status", value: "failed")
+          additionalContext: context.metadata.withPublic(key: "status", value: "failed")
             .withPublic(key: "error", value: "\(error)")
         )
         
@@ -956,7 +956,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
           algorithm: context.algorithm,
           correlationID: context.correlationID,
           source: context.source,
-          additionalContext: context.additionalContext.withPublic(key: "status", value: "success")
+          additionalContext: context.metadata.withPublic(key: "status", value: "success")
         )
         
         await logger?.log(
@@ -972,7 +972,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
           algorithm: context.algorithm,
           correlationID: context.correlationID,
           source: context.source,
-          additionalContext: context.additionalContext.withPublic(key: "status", value: "failed")
+          additionalContext: context.metadata.withPublic(key: "status", value: "failed")
             .withPublic(key: "error", value: "\(error)")
         )
         
@@ -1034,7 +1034,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
           algorithm: context.algorithm,
           correlationID: context.correlationID,
           source: context.source,
-          additionalContext: context.additionalContext.withPublic(key: "status", value: "success")
+          additionalContext: context.metadata.withPublic(key: "status", value: "success")
             .withPublic(key: "identifier", value: effectiveIdentifier)
         )
         
@@ -1051,7 +1051,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
           algorithm: context.algorithm,
           correlationID: context.correlationID,
           source: context.source,
-          additionalContext: context.additionalContext.withPublic(key: "status", value: "failed")
+          additionalContext: context.metadata.withPublic(key: "status", value: "failed")
             .withPublic(key: "error", value: "\(error)")
         )
         
@@ -1098,7 +1098,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
           algorithm: context.algorithm,
           correlationID: context.correlationID,
           source: context.source,
-          additionalContext: context.additionalContext.withPublic(key: "status", value: "success")
+          additionalContext: context.metadata.withPublic(key: "status", value: "success")
             .withPublic(key: "dataSize", value: "\(data.count)")
         )
         
@@ -1115,7 +1115,7 @@ public actor DefaultCryptoServiceImpl: CryptoServiceProtocol {
           algorithm: context.algorithm,
           correlationID: context.correlationID,
           source: context.source,
-          additionalContext: context.additionalContext.withPublic(key: "status", value: "failed")
+          additionalContext: context.metadata.withPublic(key: "status", value: "failed")
             .withPublic(key: "error", value: "\(error)")
         )
         
