@@ -430,10 +430,5 @@ private extension SendableCryptoMaterial {
 }
 
 /**
- Supported hash algorithms
+ * This enum has been removed in favor of CoreSecurityTypes.HashAlgorithm
  */
-public enum HashAlgorithm: String, CaseIterable, Sendable, Equatable {
-  case sha256="SHA256"
-  case sha384="SHA384"
-  case sha512="SHA512"
-}
