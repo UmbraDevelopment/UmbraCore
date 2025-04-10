@@ -114,35 +114,38 @@ final class KeyManagementService: SecurityServiceBase {
 
     do {
       // Extract key parameters from configuration
-      let keySizeString = config.options?.metadata?["keySize"] ?? "256"
-      let keySize = Int(keySizeString) ?? 256 // Default to 256 bits if not specified or invalid
-      let algorithm = config.options?.metadata?["algorithm"] ?? "AES" // Default to AES
+      let keySizeString=config.options?.metadata?["keySize"] ?? "256"
+      let keySize=Int(keySizeString) ?? 256 // Default to 256 bits if not specified or invalid
+      let algorithm=config.options?.metadata?["algorithm"] ?? "AES" // Default to AES
 
       // Generate random key material
       // In a production implementation, this would use a secure random generator
       let keyMaterial: Data
       if keySize > 0 {
         // Create a buffer of the appropriate size
-        var bytes = [UInt8](repeating: 0, count: keySize / 8)
+        var bytes=[UInt8](repeating: 0, count: keySize / 8)
         // Use system's secure random number generator
-        let status = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+        let status=SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
         guard status == errSecSuccess else {
-          throw NSError(domain: "SecurityImplementation", code: Int(status), 
-                       userInfo: [NSLocalizedDescriptionKey: "Failed to generate secure random bytes"])
+          throw NSError(
+            domain: "SecurityImplementation",
+            code: Int(status),
+            userInfo: [NSLocalizedDescriptionKey: "Failed to generate secure random bytes"]
+          )
         }
-        keyMaterial = Data(bytes)
+        keyMaterial=Data(bytes)
       } else {
         // Default to 256 bits (32 bytes) of zeroes (for testing only, not secure)
-        keyMaterial = Data(repeating: 0, count: 32)
+        keyMaterial=Data(repeating: 0, count: 32)
       }
 
       // Store the key if an identifier is provided
-      if let keyIdentifier = config.options?.metadata?["keyIdentifier"] {
-        let storageResult = await cryptoService.secureStorage.storeData(
+      if let keyIdentifier=config.options?.metadata?["keyIdentifier"] {
+        let storageResult=await cryptoService.secureStorage.storeData(
           keyMaterial,
           withIdentifier: keyIdentifier
         )
-        if case let .failure(error) = storageResult {
+        if case let .failure(error)=storageResult {
           throw CoreSecurityTypes.SecurityError.keyStorageFailed(reason: error.localizedDescription)
         }
       }
@@ -151,13 +154,13 @@ final class KeyManagementService: SecurityServiceBase {
       let duration=Date().timeIntervalSince(startTime)
 
       // Return successful result with metrics
-      let successMetadata = [
+      let successMetadata=[
         "durationMs": String(format: "%.2f", duration * 1000),
         "algorithm": algorithm,
         "keySize": "\(keySize)",
         "operationID": operationID
       ]
-      
+
       return SecurityResultDTO.success(
         resultData: Data(keyMaterial),
         executionTimeMs: duration * 1000,
@@ -168,12 +171,12 @@ final class KeyManagementService: SecurityServiceBase {
       let duration=Date().timeIntervalSince(startTime)
 
       // Return error result with metrics
-      let errorMetadata = [
+      let errorMetadata=[
         "durationMs": String(format: "%.2f", duration * 1000),
         "error": error.localizedDescription,
         "operationID": operationID
       ]
-      
+
       return SecurityResultDTO.failure(
         errorDetails: error.localizedDescription,
         executionTimeMs: duration * 1000,
@@ -217,27 +220,28 @@ final class KeyManagementService: SecurityServiceBase {
       if length <= 0 {
         throw CoreSecurityTypes.SecurityError.invalidInputData
       }
-      
+
       // Generate secure random bytes
-      var randomBytes = [UInt8](repeating: 0, count: length)
-      let status = SecRandomCopyBytes(kSecRandomDefault, length, &randomBytes)
-      
+      var randomBytes=[UInt8](repeating: 0, count: length)
+      let status=SecRandomCopyBytes(kSecRandomDefault, length, &randomBytes)
+
       if status != errSecSuccess {
-        throw CoreSecurityTypes.SecurityError.keyGenerationFailed(reason: "Failed to generate secure random bytes: \(status)")
+        throw CoreSecurityTypes.SecurityError
+          .keyGenerationFailed(reason: "Failed to generate secure random bytes: \(status)")
       }
-      
-      let randomMaterial = Data(randomBytes)
+
+      let randomMaterial=Data(randomBytes)
 
       // Calculate duration for performance metrics
       let duration=Date().timeIntervalSince(startTime)
 
       // Return successful result with metrics
-      let successMetadata = [
+      let successMetadata=[
         "durationMs": String(format: "%.2f", duration * 1000),
         "length": "\(length)",
         "operationID": operationID
       ]
-      
+
       return SecurityResultDTO.success(
         resultData: Data(randomMaterial),
         executionTimeMs: duration * 1000,
@@ -248,12 +252,12 @@ final class KeyManagementService: SecurityServiceBase {
       let duration=Date().timeIntervalSince(startTime)
 
       // Return error result with metrics
-      let errorMetadata = [
+      let errorMetadata=[
         "durationMs": String(format: "%.2f", duration * 1000),
         "error": error.localizedDescription,
         "operationID": operationID
       ]
-      
+
       return SecurityResultDTO.failure(
         errorDetails: error.localizedDescription,
         executionTimeMs: duration * 1000,

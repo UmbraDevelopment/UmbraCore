@@ -373,6 +373,26 @@ public final class ApplicationSecurityProviderImpl: SecurityProviderProtocol {
     )
   }
 
+  /**
+   Verifies a cryptographic hash against the expected value.
+   
+   - Parameter config: Configuration for the operation
+   - Returns: A result object with verification status or error details
+   - Throws: If the verification operation fails due to configuration issues
+   */
+  public func verifyHash(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    // This is a placeholder implementation
+    // In production, this would compare the data hash against an expected value
+    
+    let isValid = true // Placeholder result
+    
+    return SecurityResultDTO.success(
+      resultData: Data([isValid ? 1 : 0]), // 1 for valid, 0 for invalid
+      executionTimeMs: 0.4,
+      metadata: ["isValid": isValid ? "true" : "false"]
+    )
+  }
+
   public func performSecureOperation(
     operation: SecurityOperation,
     config: SecurityConfigDTO

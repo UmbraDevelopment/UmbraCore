@@ -1,4 +1,5 @@
 import CoreSecurityTypes
+import CryptoServices
 import DomainSecurityTypes
 import Foundation
 import LoggingInterfaces
@@ -6,7 +7,6 @@ import LoggingServices
 import LoggingTypes
 import SecurityCoreInterfaces
 import SecurityInterfaces
-import CryptoServices
 import UmbraErrors
 
 /**
@@ -116,19 +116,19 @@ final class EncryptionService: SecurityServiceBase {
    */
   init(logger: LoggingInterfaces.LoggingProtocol) {
     self.logger=logger
-    
+
     // Initialize secureStorage first since it's needed for cryptoService
     secureStorage=SecureStorage()
-    
+
     // Correctly initialize cryptoService with the required secureStorage parameter
     cryptoService=DefaultCryptoServiceImpl(secureStorage: secureStorage, logger: logger)
 
     // Log warning that this initializer shouldn't be used directly
     Task {
-      let warningContext = createLogContext([
+      let warningContext=createLogContext([
         "component": (value: "SecurityImplementation", privacy: .public)
       ])
-      
+
       await logger.warning(
         "EncryptionService initialized with minimal dependencies, consider using the full initializer",
         context: warningContext
@@ -163,13 +163,13 @@ final class EncryptionService: SecurityServiceBase {
 
     let result=try await encryptData(
       data: extractInputData(from: config),
-      key: try await getKeyData(for: config),
+      key: getKeyData(for: config),
       options: config.options
     )
 
     // Process encryption result
     switch result {
-      case .success(let encryptedData):
+      case let .success(encryptedData):
         // Calculate duration for metrics
         let duration=Date().timeIntervalSince(startTime)
 
@@ -193,7 +193,7 @@ final class EncryptionService: SecurityServiceBase {
           metadata: nil
         )
 
-      case .failure(let error):
+      case let .failure(error):
         // Calculate duration for metrics
         let duration=Date().timeIntervalSince(startTime)
 
@@ -213,7 +213,8 @@ final class EncryptionService: SecurityServiceBase {
         if let secError=error as? CoreSecurityError {
           throw secError
         } else {
-          throw CoreSecurityError.encryptionFailed(reason: "Encryption failed: \(error.localizedDescription)")
+          throw CoreSecurityError
+            .encryptionFailed(reason: "Encryption failed: \(error.localizedDescription)")
         }
     }
   }
@@ -243,13 +244,13 @@ final class EncryptionService: SecurityServiceBase {
 
     let result=try await decryptData(
       data: extractInputData(from: config),
-      key: try await getKeyData(for: config),
+      key: getKeyData(for: config),
       options: config.options
     )
 
     // Process decryption result
     switch result {
-      case .success(let decryptedData):
+      case let .success(decryptedData):
         // Calculate duration for metrics
         let duration=Date().timeIntervalSince(startTime)
 
@@ -257,7 +258,8 @@ final class EncryptionService: SecurityServiceBase {
         let successContext=createLogContext([
           "operationID": (value: operationID, privacy: .public),
           "durationMs": (value: String(Int(duration * 1000)), privacy: .public),
-          "inputSize": (value: String(config.options?.metadata?["inputData"]?.count ?? 0), privacy: .public),
+          "inputSize": (value: String(config.options?.metadata?["inputData"]?.count ?? 0),
+                        privacy: .public),
           "outputSize": (value: String(decryptedData.count), privacy: .public)
         ])
 
@@ -273,7 +275,7 @@ final class EncryptionService: SecurityServiceBase {
           metadata: nil
         )
 
-      case .failure(let error):
+      case let .failure(error):
         // Calculate duration for metrics
         let duration=Date().timeIntervalSince(startTime)
 
@@ -293,7 +295,8 @@ final class EncryptionService: SecurityServiceBase {
         if let secError=error as? CoreSecurityError {
           throw secError
         } else {
-          throw CoreSecurityError.decryptionFailed(reason: "Decryption failed: \(error.localizedDescription)")
+          throw CoreSecurityError
+            .decryptionFailed(reason: "Decryption failed: \(error.localizedDescription)")
         }
     }
   }
@@ -307,7 +310,7 @@ final class EncryptionService: SecurityServiceBase {
    - Returns: The key data
    - Throws: CoreSecurityError if key retrieval fails
    */
-  private func getKeyData(for config: SecurityConfigDTO) async throws -> Data {
+  private func getKeyData(for _: SecurityConfigDTO) async throws -> Data {
     // Implementation details...
     // This would retrieve key data from a keychain or other secure source
     // For now, just return empty data as a placeholder
@@ -326,8 +329,8 @@ final class EncryptionService: SecurityServiceBase {
    */
   private func encryptData(
     data: Data,
-    key: Data,
-    options: SecurityConfigOptions?
+    key _: Data,
+    options _: SecurityConfigOptions?
   ) async throws -> Result<Data, Error> {
     // Implementation details...
     // This would perform the actual encryption using the cryptoService
@@ -347,8 +350,8 @@ final class EncryptionService: SecurityServiceBase {
    */
   private func decryptData(
     data: Data,
-    key: Data,
-    options: SecurityConfigOptions?
+    key _: Data,
+    options _: SecurityConfigOptions?
   ) async throws -> Result<Data, Error> {
     // Implementation details...
     // This would perform the actual decryption using the cryptoService
@@ -357,19 +360,19 @@ final class EncryptionService: SecurityServiceBase {
   }
 
   private func extractInputData(from config: SecurityConfigDTO) -> Data {
-    guard 
-      let options = config.options,
-      let metadata = options.metadata,
-      let inputDataString = metadata["inputData"]
+    guard
+      let options=config.options,
+      let metadata=options.metadata,
+      let inputDataString=metadata["inputData"]
     else {
       return Data()
     }
-    
+
     // Attempt to convert from Base64 if the data is Base64-encoded
-    if let decodedData = Data(base64Encoded: inputDataString) {
+    if let decodedData=Data(base64Encoded: inputDataString) {
       return decodedData
     }
-    
+
     // If not Base64, try using the string data directly
     return inputDataString.data(using: .utf8) ?? Data()
   }
@@ -381,7 +384,7 @@ final class EncryptionService: SecurityServiceBase {
  for better memory safety and concurrency control.
  */
 actor SecureStorage: SecureStorageProtocol {
-  private var storage: [String: Data] = [:]
+  private var storage: [String: Data]=[:]
 
   /// Stores data securely with the given identifier.
   /// - Parameters:
@@ -389,8 +392,8 @@ actor SecureStorage: SecureStorageProtocol {
   ///   - identifier: A string identifier for the stored data.
   /// - Returns: Success or an error.
   func storeData(_ data: [UInt8], withIdentifier identifier: String) async
-    -> Result<Void, SecurityStorageError> {
-    storage[identifier] = Data(data)
+  -> Result<Void, SecurityStorageError> {
+    storage[identifier]=Data(data)
     return .success(())
   }
 
@@ -398,8 +401,8 @@ actor SecureStorage: SecureStorageProtocol {
   /// - Parameter identifier: A string identifying the data to retrieve.
   /// - Returns: The retrieved data as a byte array or an error.
   func retrieveData(withIdentifier identifier: String) async
-    -> Result<[UInt8], SecurityStorageError> {
-    guard let data = storage[identifier] else {
+  -> Result<[UInt8], SecurityStorageError> {
+    guard let data=storage[identifier] else {
       return .failure(.keyNotFound)
     }
     return .success([UInt8](data))
@@ -409,7 +412,7 @@ actor SecureStorage: SecureStorageProtocol {
   /// - Parameter identifier: A string identifying the data to delete.
   /// - Returns: Success or an error.
   func deleteData(withIdentifier identifier: String) async
-    -> Result<Void, SecurityStorageError> {
+  -> Result<Void, SecurityStorageError> {
     storage.removeValue(forKey: identifier)
     return .success(())
   }
@@ -417,16 +420,16 @@ actor SecureStorage: SecureStorageProtocol {
   /// Lists all available data identifiers.
   /// - Returns: An array of data identifiers or an error.
   func listDataIdentifiers() async -> Result<[String], SecurityStorageError> {
-    return .success(Array(storage.keys))
+    .success(Array(storage.keys))
   }
 
   // Legacy methods for internal use
   func store(data: Data, withIdentifier identifier: String) throws {
-    storage[identifier] = data
+    storage[identifier]=data
   }
 
   func retrieve(withIdentifier identifier: String) throws -> Data {
-    guard let data = storage[identifier] else {
+    guard let data=storage[identifier] else {
       throw CoreSecurityError.storageError("Key not found: \(identifier)")
     }
     return data

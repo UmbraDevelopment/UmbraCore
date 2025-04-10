@@ -167,75 +167,165 @@ public actor KeyManagementActor: KeyManagementProtocol {
   }
 
   /**
-   Stores a key with the specified identifier.
+   Stores a key with the specified identifier and optional metadata.
+
+   This method securely stores a cryptographic key with proper privacy controls
+   and creates associated metadata for key management purposes.
 
    - Parameters:
-   - key: The key to store
-   - identifier: The identifier to associate with the key
+     - key: The key to store
+     - identifier: The identifier to associate with the key
+     - additionalInfo: Optional additional information about the key
    - Returns: A Result indicating success or an error
    */
   public func storeKey(
     _ key: [UInt8],
-    withIdentifier identifier: String
+    withIdentifier identifier: String,
+    additionalInfo: [String: String]=[:]
   ) async -> Result<Void, SecurityProtocolError> {
+    let operationID=UUID().uuidString
+
+    // Create privacy-aware logging context
+    var logMetadata=LogMetadataDTOCollection()
+      .withPrivate(key: "keyIdentifier", value: identifier)
+      .withPublic(key: "keySize", value: String(key.count))
+      .withPublic(key: "operationId", value: operationID)
+      .withPublic(key: "operation", value: "storeKey")
+
+    // Log only non-sensitive additional information
+    for (key, value) in additionalInfo {
+      if ["algorithm", "keyType", "createdAt", "expiresAt", "purpose", "keyUsage"].contains(key) {
+        logMetadata=logMetadata.withPublic(key: key, value: value)
+      } else {
+        // Any metadata not in the safe list is treated as private
+        logMetadata=logMetadata.withPrivate(key: key, value: value)
+      }
+    }
+
+    // Log operation start with enhanced context
     await securityLogger.logOperationStart(
       keyIdentifier: identifier,
-      operation: "store"
+      operation: "store",
+      additionalContext: logMetadata
     )
 
     let sanitizedIdentifier=sanitizeIdentifier(identifier)
 
-    // Validate the input
+    // Validate the input with enhanced error context
     guard !identifier.isEmpty else {
       let error=KeyManagementError.invalidInput(details: "Identifier cannot be empty")
+
       await securityLogger.logOperationFailure(
-        keyIdentifier: identifier,
+        keyIdentifier: "invalid",
         operation: "store",
-        error: error
+        error: error,
+        additionalContext: logMetadata.withPublic(key: "validationFailed", value: "emptyIdentifier")
       )
+
       return Result<Void, SecurityProtocolError>.failure(error.toStandardError())
     }
 
-    // Validate the key
+    // Validate the key with enhanced error context
     guard !key.isEmpty else {
       let error=KeyManagementError.invalidInput(details: "Key cannot be empty")
+
       await securityLogger.logOperationFailure(
         keyIdentifier: identifier,
         operation: "store",
-        error: error
+        error: error,
+        additionalContext: logMetadata.withPublic(key: "validationFailed", value: "emptyKey")
       )
+
       return Result<Void, SecurityProtocolError>.failure(error.toStandardError())
     }
 
     // Store the key securely
     do {
+      // Measure operation duration for performance monitoring
+      let startTime=Date()
+
       // Store the key in the secure storage
       try await keyStore.storeKey(key, identifier: sanitizedIdentifier)
 
-      // Create and store metadata
+      // Create and store metadata with additional information
+      var keyPurpose=additionalInfo["purpose"] ?? "encryption"
+      var keyAlgorithm: KeyAlgorithm = .aes // Default
+
+      // Determine algorithm from metadata if available
+      if let algorithmStr=additionalInfo["algorithm"] {
+        switch algorithmStr.lowercased() {
+          case "aes", "aes-256", "aes-128", "aes-gcm":
+            keyAlgorithm = .aes
+          case "rsa":
+            keyAlgorithm = .rsa
+          case "ec", "ecdsa", "ecdh":
+            keyAlgorithm = .ec
+          case "hmac", "hmac-sha256":
+            keyAlgorithm = .hmac
+            keyPurpose="authentication"
+          default:
+            keyAlgorithm = .other(algorithmStr)
+        }
+      }
+
+      // Create comprehensive metadata
       let metadata=KeyMetadata(
         id: identifier,
-        algorithm: .aes, // Default, should be determined based on key
+        algorithm: keyAlgorithm,
         keySize: key.count * 8, // Size in bits
-        purpose: "encryption" // Default, should be a parameter
+        purpose: keyPurpose,
+        createdAt: Date(),
+        expiresAt: additionalInfo["expiresAt"].flatMap { ISO8601DateFormatter().date(from: $0) },
+        lastUsed: Date(),
+        usageCount: 0,
+        additionalData: additionalInfo
       )
 
       try await metadataStore.storeKeyMetadata(metadata)
 
-      // Log the success
+      // Calculate operation duration
+      let duration=Date().timeIntervalSince(startTime) * 1000
+
+      // Log the success with enhanced context
+      let successMetadata=logMetadata
+        .withPublic(key: "algorithm", value: keyAlgorithm.description)
+        .withPublic(key: "purpose", value: keyPurpose)
+        .withPublic(key: "durationMs", value: String(format: "%.2f", duration))
+        .withPublic(key: "status", value: "success")
+
       await securityLogger.logOperationSuccess(
         keyIdentifier: identifier,
-        operation: "store"
+        operation: "store",
+        additionalContext: successMetadata
       )
 
       return .success(())
     } catch {
-      let secError=KeyManagementError.keyManagementError(details: error.localizedDescription)
+      // Enhanced error handling with more context
+      let errorDescription: String
+      let secError: KeyManagementError
+
+      if let keyError=error as? KeyManagementError {
+        secError=keyError
+        errorDescription=keyError.localizedDescription
+      } else {
+        errorDescription=error.localizedDescription
+        secError=KeyManagementError.keyManagementError(details: errorDescription)
+      }
+
+      // Log failure with comprehensive context
+      let failureMetadata=logMetadata
+        .withPublic(key: "errorType", value: String(describing: type(of: error)))
+        .withPrivate(key: "errorMessage", value: errorDescription)
+        .withPublic(key: "status", value: "failed")
+
       await securityLogger.logOperationFailure(
         keyIdentifier: identifier,
         operation: "store",
-        error: secError
+        error: secError,
+        additionalContext: failureMetadata
       )
+
       return Result<Void, SecurityProtocolError>.failure(secError.toStandardError())
     }
   }

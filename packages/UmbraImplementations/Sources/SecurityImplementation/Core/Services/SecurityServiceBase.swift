@@ -55,7 +55,6 @@ protocol SecurityServiceBase {
     operation: CoreSecurityTypes.SecurityOperation,
     config: SecurityConfigDTO
   ) -> LoggingTypes.LogMetadataDTOCollection
-
 }
 
 /**

@@ -35,6 +35,18 @@ public enum SecurityStorageError: Error, Sendable {
   /// The protocol implementation is not available
   case implementationUnavailable
 
+  /// The identifier is invalid (empty or malformed)
+  case invalidIdentifier(reason: String)
+
+  /// The specified identifier does not exist in storage
+  case identifierNotFound(identifier: String)
+
+  /// General storage operation failure
+  case storageFailure(reason: String)
+
+  /// Generic error with reason
+  case generalError(reason: String)
+
   /// Generic operation failure with optional message
   case operationFailed(String)
 
@@ -80,6 +92,14 @@ public enum SecurityStorageError: Error, Sendable {
         "Operation was rate limited for security purposes"
       case .storageError:
         "Generic storage error"
+      case let .invalidIdentifier(reason):
+        "Invalid identifier: \(reason)"
+      case let .identifierNotFound(identifier):
+        "Identifier not found: \(identifier)"
+      case let .storageFailure(reason):
+        "Storage failure: \(reason)"
+      case let .generalError(reason):
+        "General error: \(reason)"
     }
   }
 }

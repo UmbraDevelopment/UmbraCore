@@ -16,6 +16,9 @@ public enum SecurityOperation: String, Sendable, Codable, Equatable, CaseIterabl
   /// Hashing operation
   case hash
 
+  /// Hash verification operation
+  case verifyHash
+
   /// Signature generation operation
   case sign
 
@@ -46,6 +49,8 @@ public enum SecurityOperation: String, Sendable, Codable, Equatable, CaseIterabl
         "Decryption"
       case .hash:
         "Hashing"
+      case .verifyHash:
+        "Hash Verification"
       case .sign:
         "Signature Generation"
       case .verify:
@@ -68,7 +73,7 @@ public enum SecurityOperation: String, Sendable, Codable, Equatable, CaseIterabl
     switch self {
       case .encrypt, .decrypt, .deriveKey, .storeKey, .retrieveKey:
         true
-      case .hash, .sign, .verify, .generateRandom, .deleteKey:
+      case .hash, .verifyHash, .sign, .verify, .generateRandom, .deleteKey:
         false
     }
   }

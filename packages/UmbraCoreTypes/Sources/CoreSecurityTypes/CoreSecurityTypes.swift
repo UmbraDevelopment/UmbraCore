@@ -226,13 +226,18 @@ public enum SecurityError: Error, Sendable, Equatable {
   case keyDeletionFailed(reason: String?)
   case signingFailed(reason: String?)
   case verificationFailed(reason: String?)
-  case invalidInputData
-  case invalidConfiguration
-  case algorithmNotSupported
+  case invalidInputData(reason: String?=nil)
+  case invalidConfiguration(reason: String?=nil)
+  case algorithmNotSupported(reason: String?=nil)
   case secureEnclaveUnavailable
   case operationCancelled
   case underlyingError(Error)
   case unknownError(String?)
+  // Add the missing error types needed by our refactored code
+  case generalError(reason: String)
+  case unsupportedOperation(reason: String)
+  case deletionOperationFailed(reason: String)
+  case hashingOperationFailed(reason: String)
 
   // Implement Equatable conformance manually for the .underlyingError case
   public static func == (lhs: SecurityError, rhs: SecurityError) -> Bool {
@@ -246,14 +251,19 @@ public enum SecurityError: Error, Sendable, Equatable {
       case let (.keyDeletionFailed(l), .keyDeletionFailed(r)): l == r
       case let (.signingFailed(l), .signingFailed(r)): l == r
       case let (.verificationFailed(l), .verificationFailed(r)): l == r
-      case (.invalidInputData, .invalidInputData): true
-      case (.invalidConfiguration, .invalidConfiguration): true
-      case (.algorithmNotSupported, .algorithmNotSupported): true
+      case let (.invalidInputData(l), .invalidInputData(r)): l == r
+      case let (.invalidConfiguration(l), .invalidConfiguration(r)): l == r
+      case let (.algorithmNotSupported(l), .algorithmNotSupported(r)): l == r
       case (.secureEnclaveUnavailable, .secureEnclaveUnavailable): true
       case (.operationCancelled, .operationCancelled): true
       case let (.underlyingError(l), .underlyingError(r)): String(reflecting: l) ==
       String(reflecting: r) // Compare descriptions for non-Equatable errors
       case let (.unknownError(l), .unknownError(r)): l == r
+      // Add comparison for new error types
+      case let (.generalError(l), .generalError(r)): l == r
+      case let (.unsupportedOperation(l), .unsupportedOperation(r)): l == r
+      case let (.deletionOperationFailed(l), .deletionOperationFailed(r)): l == r
+      case let (.hashingOperationFailed(l), .hashingOperationFailed(r)): l == r
       default: false
     }
   }

@@ -77,12 +77,12 @@ public enum SecurityImplementation {
     } else {
       // Create a factory instance first
       let factory=LoggingServiceFactory.shared
-      let loggingService = await factory.createService(
+      let loggingService=await factory.createService(
         minimumLevel: .info
       )
-      
+
       // Wrap the logging service with a protocol adapter
-      let logger = await SecurityLoggingUtilities.createLoggingWrapper(logger: loggingService)
+      let logger=await SecurityLoggingUtilities.createLoggingWrapper(logger: loggingService)
 
       return await SecurityServiceFactory.createStandard(
         logger: logger

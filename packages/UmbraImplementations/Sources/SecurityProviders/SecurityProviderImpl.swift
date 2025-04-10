@@ -197,7 +197,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
       - key: The key data to store
       - identifier: Unique identifier for the key
       - purpose: Purpose of the key
-      - algorithm: Algorithm the key is intended for
+      - algorithm _: Algorithm the key is intended for
    - Throws: SecurityProviderError if storage fails
    */
   private func storeKey(
@@ -764,36 +764,345 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
   }
 
   /**
-   Helper method to compute HMAC-SHA256.
+   Computes a cryptographic hash with the specified configuration.
 
-   - Parameters:
-      - data: Data to be authenticated
-      - key: Key for the HMAC operation
-   - Returns: HMAC-SHA256 result
+   - Parameter config: Configuration for the hashing operation
+   - Returns: Result containing hash data or error
    */
-  private func hmacSHA256(data: [UInt8], key: [UInt8]) -> [UInt8] {
-    var digest=[UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
-    CCHmac(CCHmacAlgorithm(kCCHmacAlgSHA256), key, key.count, data, data.count, &digest)
-    return digest
+  public func hash(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    let startTime=Date().timeIntervalSince1970
+
+    do {
+      // Validate initialization
+      try await ensureInitialized()
+
+      // Extract hash algorithm from configuration
+      let algorithm=config.hashAlgorithm
+
+      // Create context for logging
+      var metadata=PrivacyMetadata()
+      metadata["operation"]=PrivacyMetadataValue(value: "hash", privacy: .public)
+      metadata["algorithm"]=PrivacyMetadataValue(value: algorithm.rawValue, privacy: .public)
+
+      let logContext=BaseLogContextDTO(
+        domainName: "SecurityProvider",
+        source: "SecurityProviderImpl",
+        metadata: metadata.toLogMetadataDTOCollection()
+      )
+
+      await logger.debug(
+        "Computing hash using algorithm: \(algorithm.rawValue)",
+        context: logContext
+      )
+
+      // Get data identifier from options
+      guard let dataIdentifier=config.options?.metadata?["dataIdentifier"] as? String else {
+        throw SecurityProtocolError.inputError("Missing data identifier")
+      }
+
+      // Create hashing options
+      let hashingOptions=HashingOptions(
+        algorithm: algorithm
+      )
+
+      // Delegate to the crypto service
+      let hashResult=await cryptoServiceInstance.hash(
+        dataIdentifier: dataIdentifier,
+        options: hashingOptions
+      )
+
+      // Map result to SecurityResultDTO
+      let resultDTO: SecurityResultDTO
+      switch hashResult {
+        case let .success(hashIdentifier):
+          // Successful hash operation
+          let executionTime=Date().timeIntervalSince1970 - startTime
+          let hashData=hashIdentifier.data(using: String.Encoding.utf8)
+
+          resultDTO=SecurityResultDTO.success(
+            resultData: hashData,
+            executionTimeMs: executionTime * 1000,
+            metadata: ["hashIdentifier": hashIdentifier]
+          )
+
+          // Log success
+          let successContext=logContext.withUpdatedMetadata(
+            logContext.metadata
+              .withPublic(
+                key: "executionTimeMs",
+                value: String(format: "%.2f", executionTime * 1000)
+              )
+              .withPrivate(key: "hashIdentifier", value: hashIdentifier)
+          )
+
+          await logger.info(
+            "Successfully computed hash",
+            context: successContext
+          )
+        case let .failure(error):
+          // Failed hash operation
+          let executionTime=Date().timeIntervalSince1970 - startTime
+          resultDTO=SecurityResultDTO.failure(
+            errorDetails: error.localizedDescription,
+            executionTimeMs: executionTime * 1000
+          )
+
+          // Log error
+          let errorContext=logContext.withUpdatedMetadata(
+            logContext.metadata.withPublic(key: "error", value: error.localizedDescription)
+          )
+
+          await logger.error(
+            "Hash operation failed: \(error.localizedDescription)",
+            context: errorContext
+          )
+
+          throw mapToProtocolError(error)
+      }
+
+      return resultDTO
+    } catch {
+      // Log and rethrow
+      var metadata=PrivacyMetadata()
+      metadata["operation"]=PrivacyMetadataValue(value: "hash", privacy: .public)
+      metadata["error"]=PrivacyMetadataValue(value: error.localizedDescription, privacy: .public)
+
+      let errorContext=BaseLogContextDTO(
+        domainName: "SecurityProvider",
+        source: "SecurityProviderImpl",
+        metadata: metadata.toLogMetadataDTOCollection()
+      )
+
+      await logger.error(
+        "Hash operation failed with error: \(error.localizedDescription)",
+        context: errorContext
+      )
+
+      throw mapToProtocolError(error)
+    }
   }
 
   /**
-   Compares two byte arrays in constant time to prevent timing attacks.
+   Verifies a hash against data with the specified configuration.
 
-   - Parameters:
-      - lhs: First byte array
-      - rhs: Second byte array
-   - Returns: True if arrays are equal, false otherwise
+   - Parameter config: Configuration for the hash verification operation
+   - Returns: Result containing verification status or error
    */
-  private func constantTimeEqual(_ lhs: [UInt8], _ rhs: [UInt8]) -> Bool {
-    guard lhs.count == rhs.count else { return false }
+  public func verifyHash(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+    let startTime=Date().timeIntervalSince1970
 
-    var result: UInt8=0
-    for i in 0..<lhs.count {
-      result |= lhs[i] ^ rhs[i]
+    do {
+      // Validate initialization
+      try await ensureInitialized()
+
+      // Extract hash algorithm from configuration
+      let algorithm=config.hashAlgorithm
+
+      // Create context for logging
+      var metadata=PrivacyMetadata()
+      metadata["operation"]=PrivacyMetadataValue(value: "verifyHash", privacy: .public)
+      metadata["algorithm"]=PrivacyMetadataValue(value: algorithm.rawValue, privacy: .public)
+
+      let logContext=BaseLogContextDTO(
+        domainName: "SecurityProvider",
+        source: "SecurityProviderImpl",
+        metadata: metadata.toLogMetadataDTOCollection()
+      )
+
+      await logger.debug(
+        "Verifying hash using algorithm: \(algorithm.rawValue)",
+        context: logContext
+      )
+
+      // Get identifiers from options
+      guard
+        let dataIdentifier=config.options?.metadata?["dataIdentifier"] as? String,
+        let hashIdentifier=config.options?.metadata?["hashIdentifier"] as? String
+      else {
+        throw SecurityProtocolError.inputError("Missing data or hash identifier")
+      }
+
+      // Create hashing options
+      let hashingOptions=HashingOptions(
+        algorithm: algorithm
+      )
+
+      // Delegate to the crypto service
+      let verifyResult=await cryptoServiceInstance.verifyHash(
+        dataIdentifier: dataIdentifier,
+        hashIdentifier: hashIdentifier,
+        options: hashingOptions
+      )
+
+      // Map result to SecurityResultDTO
+      let resultDTO: SecurityResultDTO
+      switch verifyResult {
+        case let .success(isValid):
+          // Successful verification
+          let executionTime=Date().timeIntervalSince1970 - startTime
+          let resultByte: UInt8=isValid ? 1 : 0
+          let resultData=Data([resultByte])
+
+          resultDTO=SecurityResultDTO.success(
+            resultData: resultData,
+            executionTimeMs: executionTime * 1000,
+            metadata: ["isValid": isValid ? "true" : "false"]
+          )
+
+          // Log success
+          let successContext=logContext.withUpdatedMetadata(
+            logContext.metadata
+              .withPublic(
+                key: "executionTimeMs",
+                value: String(format: "%.2f", executionTime * 1000)
+              )
+              .withPublic(key: "isValid", value: "\(isValid)")
+          )
+
+          await logger.info(
+            "Hash verification result: \(isValid ? "Valid" : "Invalid")",
+            context: successContext
+          )
+        case let .failure(error):
+          // Failed verification
+          let executionTime=Date().timeIntervalSince1970 - startTime
+          resultDTO=SecurityResultDTO.failure(
+            errorDetails: error.localizedDescription,
+            executionTimeMs: executionTime * 1000
+          )
+
+          // Log error
+          let errorContext=logContext.withUpdatedMetadata(
+            logContext.metadata.withPublic(key: "error", value: error.localizedDescription)
+          )
+
+          await logger.error(
+            "Hash verification failed: \(error.localizedDescription)",
+            context: errorContext
+          )
+
+          throw mapToProtocolError(error)
+      }
+
+      return resultDTO
+    } catch {
+      // Log and rethrow
+      var metadata=PrivacyMetadata()
+      metadata["operation"]=PrivacyMetadataValue(value: "verifyHash", privacy: .public)
+      metadata["error"]=PrivacyMetadataValue(value: error.localizedDescription, privacy: .public)
+
+      let errorContext=BaseLogContextDTO(
+        domainName: "SecurityProvider",
+        source: "SecurityProviderImpl",
+        metadata: metadata.toLogMetadataDTOCollection()
+      )
+
+      await logger.error(
+        "Hash verification failed with error: \(error.localizedDescription)",
+        context: errorContext
+      )
+
+      throw mapToProtocolError(error)
     }
+  }
 
-    return result == 0
+  /**
+   Maps internal errors to standardised protocol errors.
+
+   - Parameter error: The internal error to map
+   - Returns: A SecurityProtocolError representing the error
+   */
+  private func mapToProtocolError(_ error: Error) -> SecurityProtocolError {
+    if let protocolError=error as? SecurityProtocolError {
+      protocolError
+    } else if let storageError=error as? SecurityStorageError {
+      // Convert storage errors to protocol errors directly
+      switch storageError {
+        case .storageUnavailable:
+          .operationFailed(reason: "Secure storage is not available")
+        case .dataNotFound:
+          .operationFailed(reason: "Data not found in secure storage")
+        case .keyNotFound:
+          .operationFailed(reason: "Key not found in secure storage")
+        case .hashNotFound:
+          .operationFailed(reason: "Hash not found in secure storage")
+        case .encryptionFailed:
+          .operationFailed(reason: "Encryption operation failed")
+        case .decryptionFailed:
+          .operationFailed(reason: "Decryption operation failed")
+        case .hashingFailed:
+          .operationFailed(reason: "Hash operation failed")
+        case .hashVerificationFailed:
+          .operationFailed(reason: "Hash verification failed")
+        case .keyGenerationFailed:
+          .operationFailed(reason: "Key generation failed")
+        case let .invalidIdentifier(reason):
+          .operationFailed(reason: "Invalid identifier: \(reason)")
+        case let .identifierNotFound(identifier):
+          .operationFailed(reason: "Identifier not found: \(identifier)")
+        case let .storageFailure(reason):
+          .operationFailed(reason: "Storage failure: \(reason)")
+        case let .generalError(reason):
+          .operationFailed(reason: "General error: \(reason)")
+        case .unsupportedOperation:
+          .operationFailed(reason: "The operation is not supported")
+        case .implementationUnavailable:
+          .operationFailed(reason: "The protocol implementation is not available")
+        case let .operationFailed(message):
+          .operationFailed(reason: message)
+        case let .invalidInput(message):
+          .inputError(message)
+        case .operationRateLimited:
+          .operationFailed(reason: "Operation was rate limited for security purposes")
+        case .storageError:
+          .operationFailed(reason: "Generic storage error occurred")
+      }
+    } else if let securityError=error as? SecurityError {
+      switch securityError {
+        case let .encryptionFailed(reason):
+          .operationFailed(reason: "Encryption failed: \(reason ?? "Unknown reason")")
+        case let .decryptionFailed(reason):
+          .operationFailed(reason: "Decryption failed: \(reason ?? "Unknown reason")")
+        case let .hashingFailed(reason):
+          .operationFailed(reason: "Hashing failed: \(reason ?? "Unknown reason")")
+        case let .keyGenerationFailed(reason):
+          .operationFailed(reason: "Key generation failed: \(reason ?? "Unknown reason")")
+        case let .keyStorageFailed(reason):
+          .operationFailed(reason: "Key storage failed: \(reason ?? "Unknown reason")")
+        case let .keyRetrievalFailed(reason):
+          .operationFailed(reason: "Key retrieval failed: \(reason ?? "Unknown reason")")
+        case let .keyDeletionFailed(reason):
+          .operationFailed(reason: "Key deletion failed: \(reason ?? "Unknown reason")")
+        case let .signingFailed(reason):
+          .operationFailed(reason: "Signing failed: \(reason ?? "Unknown reason")")
+        case let .verificationFailed(reason):
+          .operationFailed(reason: "Verification failed: \(reason ?? "Unknown reason")")
+        case let .invalidInputData(reason):
+          .inputError("Invalid input data: \(reason ?? "Unknown reason")")
+        case let .invalidConfiguration(reason):
+          .operationFailed(reason: "Invalid configuration: \(reason ?? "Unknown reason")")
+        case let .algorithmNotSupported(reason):
+          .operationFailed(reason: "Algorithm not supported: \(reason ?? "Unknown reason")")
+        case .secureEnclaveUnavailable:
+          .operationFailed(reason: "Secure Enclave is not available")
+        case .operationCancelled:
+          .operationFailed(reason: "Operation was cancelled")
+        case let .underlyingError(underlyingError):
+          .operationFailed(reason: "Internal error: \(underlyingError.localizedDescription)")
+        case let .unknownError(message):
+          .operationFailed(reason: "Unknown error: \(message ?? "No details")")
+        case let .generalError(reason):
+          .operationFailed(reason: reason)
+        case let .unsupportedOperation(reason):
+          .operationFailed(reason: "Unsupported operation: \(reason)")
+        case let .deletionOperationFailed(reason):
+          .operationFailed(reason: "Deletion failed: \(reason)")
+        case let .hashingOperationFailed(reason):
+          .operationFailed(reason: "Hashing operation failed: \(reason)")
+      }
+    } else {
+      .operationFailed(reason: error.localizedDescription)
+    }
   }
 
   /**
@@ -838,12 +1147,9 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
       case .verify:
         return try await verify(config: config)
       case .hash:
-        // Implementation for hash operation
-        let executionTime=(Date().timeIntervalSince1970 - startTime) * 1000
-        return SecurityResultDTO.failure(
-          errorDetails: "Hash operation not implemented",
-          executionTimeMs: executionTime
-        )
+        return try await hash(config: config)
+      case .verifyHash:
+        return try await verifyHash(config: config)
       case .deriveKey:
         // Implementation for deriveKey operation
         let executionTime=(Date().timeIntervalSince1970 - startTime) * 1000
@@ -1427,6 +1733,50 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
       _=CC_SHA256(dataBuffer.baseAddress, CC_LONG(data.count), &hashBytes)
     }
     return Data(hashBytes)
+  }
+
+  /**
+   Performs an HMAC-SHA256 operation on the provided data with the given key.
+   
+   - Parameters:
+     - data: The data to generate a MAC for
+     - key: The key to use for the HMAC
+   - Returns: An array of bytes representing the HMAC
+   */
+  private func hmacSHA256(data: [UInt8], key: [UInt8]) -> [UInt8] {
+    var digest = [UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
+    
+    CCHmac(
+      CCHmacAlgorithm(kCCHmacAlgSHA256),
+      key, key.count,
+      data, data.count,
+      &digest
+    )
+    
+    return digest
+  }
+  
+  /**
+   Performs a constant-time comparison of two byte arrays.
+   
+   - Parameters:
+     - lhs: First byte array
+     - rhs: Second byte array
+   - Returns: True if the arrays are equal, false otherwise
+   */
+  private func constantTimeEqual(_ lhs: [UInt8], _ rhs: [UInt8]) -> Bool {
+    // Check if the arrays have the same length
+    guard lhs.count == rhs.count else {
+      return false
+    }
+    
+    // Perform constant-time comparison
+    var result: UInt8 = 0
+    for i in 0..<lhs.count {
+      result |= lhs[i] ^ rhs[i]
+    }
+    
+    return result == 0
   }
 }
 

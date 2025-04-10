@@ -50,26 +50,29 @@ extension SecurityProviderService {
     source: String="SecurityProvider"
   ) async {
     // Create a safe version of config - don't log auth data
-    let safeConfig = "Algorithm: \(config.encryptionAlgorithm.rawValue), Hash: \(config.hashAlgorithm.rawValue)"
+    let safeConfig="Algorithm: \(config.encryptionAlgorithm.rawValue), Hash: \(config.hashAlgorithm.rawValue)"
 
-    var metadata = LogMetadataDTOCollection()
-    metadata = metadata.withPublic(key: "operation", value: operation.rawValue)
-    metadata = metadata.withPublic(key: "status", value: "started")
-    metadata = metadata.withPublic(key: "config", value: safeConfig)
+    var metadata=LogMetadataDTOCollection()
+    metadata=metadata.withPublic(key: "operation", value: operation.rawValue)
+    metadata=metadata.withPublic(key: "status", value: "started")
+    metadata=metadata.withPublic(key: "config", value: safeConfig)
 
     // Operation ID may be in the options
-    if let options = config.options, let optionsMetadata = options.metadata, let operationID = optionsMetadata["operationID"] {
+    if
+      let options=config.options, let optionsMetadata=options.metadata,
+      let operationID=optionsMetadata["operationID"]
+    {
       // Cannot modify the options.metadata directly, so we update our collection instead
-      metadata = metadata.withPublic(key: "operationId", value: operationID)
+      metadata=metadata.withPublic(key: "operationId", value: operationID)
     }
 
     // Create a context for logging
-    let context = LoggingTypes.BaseLogContextDTO(
+    let context=LoggingTypes.BaseLogContextDTO(
       domainName: "SecurityImplementation",
       source: source,
       metadata: metadata
     )
-    
+
     await logger.info(
       "Security operation started: \(operation.rawValue)",
       context: context
@@ -95,12 +98,12 @@ extension SecurityProviderService {
     metadata=metadata.withPublic(key: "durationMs", value: String(format: "%.2f", durationMs))
 
     // Create a context for logging
-    let context = LoggingTypes.BaseLogContextDTO(
+    let context=LoggingTypes.BaseLogContextDTO(
       domainName: "SecurityImplementation",
       source: source,
       metadata: metadata
     )
-    
+
     await logger.info(
       "Security operation completed successfully: \(operation.rawValue)",
       context: context
@@ -140,12 +143,12 @@ extension SecurityProviderService {
     }
 
     // Create a context for logging
-    let context = LoggingTypes.BaseLogContextDTO(
+    let context=LoggingTypes.BaseLogContextDTO(
       domainName: "SecurityImplementation",
       source: source,
       metadata: metadata
     )
-    
+
     await logger.error(
       "Security operation failed: \(operation.rawValue)",
       context: context
@@ -170,12 +173,12 @@ extension SecurityProviderService {
     metadata=metadata.withPublic(key: "keyType", value: keyType)
 
     // Create a context for logging
-    let context = LoggingTypes.BaseLogContextDTO(
+    let context=LoggingTypes.BaseLogContextDTO(
       domainName: "SecurityImplementation",
       source: source,
       metadata: metadata
     )
-    
+
     await logger.info(
       "Key management operation: \(operation) for \(keyType)",
       context: context
@@ -200,12 +203,12 @@ extension SecurityProviderService {
     metadata=metadata.withPublic(key: "result", value: result ? "pass" : "fail")
 
     // Create a context for logging
-    let context = LoggingTypes.BaseLogContextDTO(
+    let context=LoggingTypes.BaseLogContextDTO(
       domainName: "SecurityImplementation",
       source: source,
       metadata: metadata
     )
-    
+
     await logger.info(
       "Security policy check: \(policyName) - \(result ? "Passed" : "Failed")",
       context: context
@@ -233,12 +236,12 @@ extension SecurityProviderService {
     let metadataCollection=createMetadataCollection(metadata)
 
     // Create a context for logging
-    let context = LoggingTypes.BaseLogContextDTO(
+    let context=LoggingTypes.BaseLogContextDTO(
       domainName: "SecurityImplementation",
       source: source,
       metadata: metadataCollection
     )
-    
+
     switch level {
       case .debug:
         await logger.debug(event, context: context)

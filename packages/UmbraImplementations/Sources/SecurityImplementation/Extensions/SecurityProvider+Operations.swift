@@ -4,18 +4,18 @@ import Foundation
 
 /// Helper function to create LogMetadataDTOCollection from dictionary
 private func createMetadataCollection(_ dict: [String: String]) -> LogMetadataDTOCollection {
-  var collection = LogMetadataDTOCollection()
+  var collection=LogMetadataDTOCollection()
   for (key, value) in dict {
-    collection = collection.withPublic(key: key, value: value)
+    collection=collection.withPublic(key: key, value: value)
   }
   return collection
 }
 
 // Helper function to convert LogMetadataDTOCollection to [String: String]
-private func dictionaryFromMetadata(_ metadata: LogMetadataDTOCollection) -> [String: String] {
-  // Instead of using publicItems which doesn't exist, we need to 
+private func dictionaryFromMetadata(_: LogMetadataDTOCollection) -> [String: String] {
+  // Instead of using publicItems which doesn't exist, we need to
   // implement a proper conversion or access the entries properly
-  var result = [String: String]()
+  var result=[String: String]()
   // Since we can't directly access the items, we'll return an empty dictionary for now
   // This will need to be addressed based on the actual LogMetadataDTOCollection implementation
   return result
@@ -434,13 +434,13 @@ extension SecurityProviderService {
       let length=Int(lengthString)
     else {
       // Create log metadata
-      let bytesRequested = 32 // Default to 32 bytes if not specified
-      let metadataItems = [
+      let bytesRequested=32 // Default to 32 bytes if not specified
+      let metadataItems=[
         "bytesRequested": String(bytesRequested),
         "operationId": UUID().uuidString,
         "source": "randomData"
       ]
-      
+
       // Return error result with operation details
       return CoreSecurityTypes.SecurityResultDTO.failure(
         errorDetails: "Missing or invalid length parameter for random data generation",
@@ -498,7 +498,10 @@ extension SecurityProviderService {
       context: LoggingTypes.BaseLogContextDTO(
         domainName: "SecurityImplementation",
         source: "SecurityProvider+Operations.generateSecureRandom",
-        metadata: metadataCollection.withPublic(key: "durationMs", value: String(format: "%.2f", duration))
+        metadata: metadataCollection.withPublic(
+          key: "durationMs",
+          value: String(format: "%.2f", duration)
+        )
       )
     )
 

@@ -88,7 +88,10 @@ public struct SecurityErrorHandler {
      - operation: The security operation that was being performed
    - Returns: A SecurityError
    */
-  private static func mapError(_ error: Error, operation: CoreSecurityTypes.SecurityOperation) -> SecurityError {
+  private static func mapError(
+    _ error: Error,
+    operation: CoreSecurityTypes.SecurityOperation
+  ) -> SecurityError {
     // If it's already a SecurityError, return it
     if let securityError=error as? SecurityError {
       return securityError
@@ -100,7 +103,7 @@ public struct SecurityErrorHandler {
     }
 
     // If it's an NSError, map it to a SecurityError
-    if let nsError = error as? NSError {
+    if let nsError=error as? NSError {
       return mapSecurityFrameworkError(nsError)
     }
 

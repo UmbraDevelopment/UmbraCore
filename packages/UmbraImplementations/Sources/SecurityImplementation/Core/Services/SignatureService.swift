@@ -74,7 +74,7 @@ final class SignatureService: SecurityServiceBase {
 
    - Parameter logger: The logging service to use
    */
-  init(logger: LoggingProtocol) {
+  init(logger _: LoggingProtocol) {
     fatalError(
       "This initializer is not supported. Use init(cryptoService:keyManagementService:logger:) instead."
     )
@@ -110,17 +110,17 @@ final class SignatureService: SecurityServiceBase {
 
     do {
       // Extract required parameters from configuration
-      guard let options = config.options else {
+      guard let options=config.options else {
         throw SignatureError.invalidInput("Missing options for signing")
       }
-      
-      guard let inputDataBase64 = options.metadata?["data"] else {
+
+      guard let inputDataBase64=options.metadata?["data"] else {
         throw SignatureError.invalidInput("Missing input data for signing")
       }
-      
+
       let inputData: SendableCryptoMaterial
       do {
-        inputData = try SendableCryptoMaterial(hexString: inputDataBase64)
+        inputData=try SendableCryptoMaterial(hexString: inputDataBase64)
       } catch {
         throw SignatureError.invalidInput("Invalid input data format")
       }
@@ -130,9 +130,9 @@ final class SignatureService: SecurityServiceBase {
         let signature: SendableCryptoMaterial
 
         // If keyID is provided, retrieve the key from key management
-        if let keyID = options.metadata?["keyId"] {
+        if let keyID=options.metadata?["keyId"] {
           // Retrieve the key from the key management service
-          let keyResult = await keyManagementService.retrieveKey(withIdentifier: keyID)
+          let keyResult=await keyManagementService.retrieveKey(withIdentifier: keyID)
 
           switch keyResult {
             case let .success(keyMaterial):
@@ -149,10 +149,10 @@ final class SignatureService: SecurityServiceBase {
           }
         }
         // If direct key is provided, use it
-        else if let keyHex = options.metadata?["key"] {
+        else if let keyHex=options.metadata?["key"] {
           let key: SendableCryptoMaterial
           do {
-            key = try SendableCryptoMaterial(hexString: keyHex)
+            key=try SendableCryptoMaterial(hexString: keyHex)
           } catch {
             throw SignatureError.invalidInput("Invalid key format")
           }
@@ -281,42 +281,42 @@ final class SignatureService: SecurityServiceBase {
 
     do {
       // Extract required parameters from configuration
-      guard let options = config.options else {
+      guard let options=config.options else {
         throw SignatureError.invalidInput("Missing options for verification")
       }
-      
-      guard let inputDataHex = options.metadata?["data"] else {
+
+      guard let inputDataHex=options.metadata?["data"] else {
         throw SignatureError.invalidInput("Missing input data for verification")
       }
-      
+
       let inputData: SendableCryptoMaterial
       do {
-        inputData = try SendableCryptoMaterial(hexString: inputDataHex)
+        inputData=try SendableCryptoMaterial(hexString: inputDataHex)
       } catch {
         throw SignatureError.invalidInput("Invalid input data format")
       }
 
-      guard let signatureHex = options.metadata?["signature"] else {
+      guard let signatureHex=options.metadata?["signature"] else {
         throw SignatureError.invalidInput("Missing signature to verify")
       }
-      
+
       let signature: SendableCryptoMaterial
       do {
-        signature = try SendableCryptoMaterial(hexString: signatureHex)
+        signature=try SendableCryptoMaterial(hexString: signatureHex)
       } catch {
         throw SignatureError.invalidInput("Invalid signature format")
       }
 
       // Check if key is provided directly in the options
-      if let keyHex = options.metadata?["key"] {
+      if let keyHex=options.metadata?["key"] {
         let key: SendableCryptoMaterial
         do {
-          key = try SendableCryptoMaterial(hexString: keyHex)
+          key=try SendableCryptoMaterial(hexString: keyHex)
         } catch {
           throw SignatureError.invalidInput("Invalid key format")
         }
         // Try to verify the signature using the provided key
-        let isValid = try await performVerification(
+        let isValid=try await performVerification(
           data: inputData,
           signature: signature,
           key: key,
@@ -363,12 +363,12 @@ final class SignatureService: SecurityServiceBase {
         // If key not provided directly, try to retrieve from key manager
 
         // Attempt to get key ID from config options
-        guard let keyID = options.metadata?["keyId"] else {
+        guard let keyID=options.metadata?["keyId"] else {
           throw SignatureError.invalidInput("Neither key nor keyId provided for verification")
         }
 
         // Request key from key manager
-        let keyResult = await keyManagementService.retrieveKey(withIdentifier: keyID)
+        let keyResult=await keyManagementService.retrieveKey(withIdentifier: keyID)
 
         switch keyResult {
           case let .success(keyMaterial):
@@ -502,28 +502,30 @@ final class SignatureService: SecurityServiceBase {
   private func generateTestMaterial() throws -> SendableCryptoMaterial {
     // Implement secure random material generation
     // For now, this is a placeholder that would be replaced with actual implementation
-    try SendableCryptoMaterial(hexString: "72616E646F6D2D6D6174657269616C") // "random-material" in hex
+    try SendableCryptoMaterial(hexString: "72616E646F6D2D6D6174657269616C") // "random-material" in
+    // hex
   }
 
   private func secureRandomMaterial(byteCount _: Int) throws -> SendableCryptoMaterial {
     // Implement secure random material generation
     // For now, this is a placeholder that would be replaced with actual implementation
-    try SendableCryptoMaterial(hexString: "72616E646F6D2D6D6174657269616C") // "random-material" in hex
+    try SendableCryptoMaterial(hexString: "72616E646F6D2D6D6174657269616C") // "random-material" in
+    // hex
   }
 }
 
 // Extension to convert between [UInt8] and SendableCryptoMaterial
-private extension SendableCryptoMaterial {
+extension SendableCryptoMaterial {
   // Convert to Data
-  func asData() -> Data {
-    return Data(self.toByteArray())
+  fileprivate func asData() -> Data {
+    Data(toByteArray())
   }
 }
 
 // Extension to convert [UInt8] to SendableCryptoMaterial
-private extension Array where Element == UInt8 {
-  func toSendableCryptoMaterial() -> SendableCryptoMaterial {
-    return SendableCryptoMaterial(bytes: self)
+extension [UInt8] {
+  fileprivate func toSendableCryptoMaterial() -> SendableCryptoMaterial {
+    SendableCryptoMaterial(bytes: self)
   }
 }
 

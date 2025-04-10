@@ -106,7 +106,8 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
       .withPublic(key: "providerType", value: configuration.providerType.rawValue)
 
     // Log initialization
-    await secureLogger.info("Security service initialized", 
+    await secureLogger.info(
+      "Security service initialized",
       context: LoggingTypes.BaseLogContextDTO(
         domainName: "SecurityImplementation",
         source: "SecurityServiceActor.initialize",
@@ -147,31 +148,32 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
   ) async throws -> CoreSecurityTypes.SecurityResultDTO {
     // Validate that service has been properly initialised
     try validateInitialisation()
-    
+
     // Log the start of the operation
     await logSecurityOperationStart(operation: operation, config: config)
-    
+
     // Execute the appropriate operation based on the operation parameter
     switch operation {
-    case .encrypt:
-      return try await encrypt(config: config)
-    case .decrypt:
-      return try await decrypt(config: config)
-    case .hash:
-      return try await hash(config: config)
-    case .sign:
-      return try await sign(config: config)
-    case .verify:
-      return try await verify(config: config)
-    default:
-      // For unsupported operations, throw an error
-      throw CoreSecurityTypes.SecurityError.invalidInputData // Use existing error type
+      case .encrypt:
+        return try await encrypt(config: config)
+      case .decrypt:
+        return try await decrypt(config: config)
+      case .hash:
+        return try await hash(config: config)
+      case .sign:
+        return try await sign(config: config)
+      case .verify:
+        return try await verify(config: config)
+      default:
+        // For unsupported operations, throw an error
+        throw CoreSecurityTypes.SecurityError.invalidInputData // Use existing error type
     }
   }
 
   /// Create a secure configuration with the specified options
-  public func createSecureConfig(options: SecurityConfigOptions) async -> CoreSecurityTypes.SecurityConfigDTO {
-    return CoreSecurityTypes.SecurityConfigDTO(
+  public func createSecureConfig(options: SecurityConfigOptions) async -> CoreSecurityTypes
+  .SecurityConfigDTO {
+    CoreSecurityTypes.SecurityConfigDTO(
       encryptionAlgorithm: CoreSecurityTypes.EncryptionAlgorithm.aes256GCM,
       hashAlgorithm: CoreSecurityTypes.HashAlgorithm.sha256,
       providerType: CoreSecurityTypes.SecurityProviderType.system,
@@ -180,44 +182,61 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
   }
 
   /// Generate a key with the specified configuration
-  public func generateKey(config: CoreSecurityTypes.SecurityConfigDTO) async throws -> CoreSecurityTypes.SecurityResultDTO {
+  public func generateKey(
+    config _: CoreSecurityTypes
+      .SecurityConfigDTO
+  ) async throws -> CoreSecurityTypes.SecurityResultDTO {
     // Implementation logic
     throw CoreSecurityError.configurationError("Key generation not implemented yet")
   }
 
   /// Store data securely with the specified configuration
-  public func secureStore(config: CoreSecurityTypes.SecurityConfigDTO) async throws -> CoreSecurityTypes.SecurityResultDTO {
+  public func secureStore(
+    config _: CoreSecurityTypes
+      .SecurityConfigDTO
+  ) async throws -> CoreSecurityTypes.SecurityResultDTO {
     // Implementation logic
     throw CoreSecurityError.configurationError("Secure store not implemented yet")
   }
 
   /// Retrieve data securely with the specified configuration
-  public func secureRetrieve(config: CoreSecurityTypes.SecurityConfigDTO) async throws -> CoreSecurityTypes.SecurityResultDTO {
+  public func secureRetrieve(
+    config _: CoreSecurityTypes
+      .SecurityConfigDTO
+  ) async throws -> CoreSecurityTypes.SecurityResultDTO {
     // Implementation logic
     throw CoreSecurityError.configurationError("Secure retrieve not implemented yet")
   }
 
   /// Delete data securely with the specified configuration
-  public func secureDelete(config: CoreSecurityTypes.SecurityConfigDTO) async throws -> CoreSecurityTypes.SecurityResultDTO {
+  public func secureDelete(
+    config _: CoreSecurityTypes
+      .SecurityConfigDTO
+  ) async throws -> CoreSecurityTypes.SecurityResultDTO {
     // Implementation logic
     throw CoreSecurityError.configurationError("Secure delete not implemented yet")
   }
 
   /// Encrypts data with the specified configuration
-  public func encrypt(config: CoreSecurityTypes.SecurityConfigDTO) async throws -> CoreSecurityTypes.SecurityResultDTO {
+  public func encrypt(config: CoreSecurityTypes.SecurityConfigDTO) async throws -> CoreSecurityTypes
+  .SecurityResultDTO {
     try validateInitialisation()
 
     // Create a UUID for operation tracking
-    let operationID = UUID().uuidString
+    let operationID=UUID().uuidString
 
     // Log operation start
-    await secureLogger.info("Starting encryption operation", 
+    await secureLogger.info(
+      "Starting encryption operation",
       context: LoggingTypes.BaseLogContextDTO(
         domainName: "SecurityImplementation",
         source: "SecurityServiceActor.encrypt",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "operation", value: "encrypt")
-          .withPublic(key: "encryptionAlgorithm", value: config.encryptionAlgorithm.rawValue)
+          .withPublic(
+            key: "encryptionAlgorithm",
+            value: config.encryptionAlgorithm.rawValue
+          )
           .withPublic(key: "operationID", value: operationID)
       )
     )
@@ -236,17 +255,22 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
   }
 
   /// Decrypts data with the specified configuration
-  public func decrypt(config: CoreSecurityTypes.SecurityConfigDTO) async throws -> CoreSecurityTypes.SecurityResultDTO {
+  public func decrypt(config: CoreSecurityTypes.SecurityConfigDTO) async throws -> CoreSecurityTypes
+  .SecurityResultDTO {
     try validateInitialisation()
 
     // Log operation start
-    await secureLogger.info("Starting decryption operation", 
+    await secureLogger.info(
+      "Starting decryption operation",
       context: LoggingTypes.BaseLogContextDTO(
         domainName: "SecurityImplementation",
         source: "SecurityServiceActor.decrypt",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "operation", value: "decrypt")
-          .withPublic(key: "encryptionAlgorithm", value: config.encryptionAlgorithm.rawValue)
+          .withPublic(
+            key: "encryptionAlgorithm",
+            value: config.encryptionAlgorithm.rawValue
+          )
       )
     )
 
@@ -264,17 +288,22 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
   }
 
   /// Hashes data with the specified configuration
-  public func hash(config: CoreSecurityTypes.SecurityConfigDTO) async throws -> CoreSecurityTypes.SecurityResultDTO {
+  public func hash(config: CoreSecurityTypes.SecurityConfigDTO) async throws -> CoreSecurityTypes
+  .SecurityResultDTO {
     try validateInitialisation()
 
     // Log operation start
-    await secureLogger.info("Starting hash operation",
+    await secureLogger.info(
+      "Starting hash operation",
       context: LoggingTypes.BaseLogContextDTO(
         domainName: "SecurityImplementation",
         source: "SecurityServiceActor.hash",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "operation", value: "hash")
-          .withPublic(key: "hashAlgorithm", value: config.hashAlgorithm.rawValue)
+          .withPublic(
+            key: "hashAlgorithm",
+            value: config.hashAlgorithm.rawValue
+          )
       )
     )
 
@@ -292,17 +321,22 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
   }
 
   /// Signs data with the specified configuration
-  public func sign(config: CoreSecurityTypes.SecurityConfigDTO) async throws -> CoreSecurityTypes.SecurityResultDTO {
+  public func sign(config: CoreSecurityTypes.SecurityConfigDTO) async throws -> CoreSecurityTypes
+  .SecurityResultDTO {
     try validateInitialisation()
 
     // Log operation start
-    await secureLogger.info("Starting sign operation",
+    await secureLogger.info(
+      "Starting sign operation",
       context: LoggingTypes.BaseLogContextDTO(
         domainName: "SecurityImplementation",
         source: "SecurityServiceActor.sign",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "operation", value: "sign")
-          .withPublic(key: "hashAlgorithm", value: config.hashAlgorithm.rawValue)
+          .withPublic(
+            key: "hashAlgorithm",
+            value: config.hashAlgorithm.rawValue
+          )
       )
     )
 
@@ -320,17 +354,22 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
   }
 
   /// Verifies a signature with the specified configuration
-  public func verify(config: CoreSecurityTypes.SecurityConfigDTO) async throws -> CoreSecurityTypes.SecurityResultDTO {
+  public func verify(config: CoreSecurityTypes.SecurityConfigDTO) async throws -> CoreSecurityTypes
+  .SecurityResultDTO {
     try validateInitialisation()
 
     // Log operation start
-    await secureLogger.info("Starting verification operation",
+    await secureLogger.info(
+      "Starting verification operation",
       context: LoggingTypes.BaseLogContextDTO(
         domainName: "SecurityImplementation",
         source: "SecurityServiceActor.verify",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "operation", value: "verify")
-          .withPublic(key: "hashAlgorithm", value: config.hashAlgorithm.rawValue)
+          .withPublic(
+            key: "hashAlgorithm",
+            value: config.hashAlgorithm.rawValue
+          )
       )
     )
 
@@ -352,14 +391,14 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
     operation: CoreSecurityTypes.SecurityOperation,
     config: CoreSecurityTypes.SecurityConfigDTO
   ) async {
-    let operationID = UUID().uuidString
-    
-    let metadata = LogMetadataDTOCollection()
+    let operationID=UUID().uuidString
+
+    let metadata=LogMetadataDTOCollection()
       .withPublic(key: "operationId", value: operationID)
       .withPublic(key: "operation", value: String(describing: operation))
       .withPublic(key: "encryptionAlgorithm", value: config.encryptionAlgorithm.rawValue)
       .withPublic(key: "hashAlgorithm", value: config.hashAlgorithm.rawValue)
-    
+
     await logger.info(
       "Starting security operation: \(operation)",
       context: LoggingTypes.BaseLogContextDTO(

@@ -71,9 +71,15 @@ final class OperationsHandler {
         await processEncryptionOperation(config, operation: operation)
       case .decrypt:
         await processDecryptionOperation(config, operation: operation)
+      case .sign:
+        await processSigningOperation(config, operation: operation)
+      case .verify:
+        await processVerificationOperation(config, operation: operation)
       case .hash:
-        await handleHashing(config: config, operation: operation)
-      case .sign, .verify, .deriveKey, .generateRandom, .storeKey, .retrieveKey, .deleteKey:
+        await processHashingOperation(config, operation: operation)
+      case .verifyHash:
+        await processHashVerificationOperation(config, operation: operation)
+      case .deriveKey, .generateRandom, .storeKey, .retrieveKey, .deleteKey:
         // Return error for unsupported operations
         .failure(
           errorDetails: "Unsupported operation: \(operation.rawValue)",
@@ -185,8 +191,8 @@ final class OperationsHandler {
     operation: SecurityOperation
   ) async -> SecurityResultDTO {
     // First check if we need to retrieve a key
-    let keyResult=await retrieveKeyForOperation(config)
-
+    let keyResult = await retrieveKeyForOperation(config)
+    
     switch keyResult {
       case let .success(key):
         // Extract input data from config
@@ -231,8 +237,8 @@ final class OperationsHandler {
     operation: SecurityOperation
   ) async -> SecurityResultDTO {
     // First check if we need to retrieve a key
-    let keyResult=await retrieveKeyForOperation(config)
-
+    let keyResult = await retrieveKeyForOperation(config)
+    
     switch keyResult {
       case let .success(key):
         // Extract input data from config
@@ -352,35 +358,43 @@ final class OperationsHandler {
   -> CoreSecurityTypes.SecurityProtocolError {
     switch storageError {
       case .storageUnavailable:
-        .operationFailed(reason: "Secure storage is not available")
+        return .operationFailed(reason: "Secure storage is not available")
       case .dataNotFound:
-        .operationFailed(reason: "Data not found in secure storage")
+        return .operationFailed(reason: "Data not found in secure storage")
       case .keyNotFound:
-        .operationFailed(reason: "Key not found in secure storage")
+        return .operationFailed(reason: "Key not found in secure storage")
       case .hashNotFound:
-        .operationFailed(reason: "Hash not found in secure storage")
+        return .operationFailed(reason: "Hash not found in secure storage")
       case .encryptionFailed:
-        .operationFailed(reason: "Encryption operation failed")
+        return .operationFailed(reason: "Encryption operation failed")
       case .decryptionFailed:
-        .operationFailed(reason: "Decryption operation failed")
+        return .operationFailed(reason: "Decryption operation failed")
       case .hashingFailed:
-        .operationFailed(reason: "Hashing operation failed")
+        return .operationFailed(reason: "Hash operation failed")
       case .hashVerificationFailed:
-        .operationFailed(reason: "Hash verification failed")
+        return .operationFailed(reason: "Hash verification failed")
       case .keyGenerationFailed:
-        .operationFailed(reason: "Key generation failed")
+        return .operationFailed(reason: "Key generation failed")
+      case let .invalidIdentifier(reason):
+        return .operationFailed(reason: "Invalid identifier: \(reason)")
+      case let .identifierNotFound(identifier):
+        return .operationFailed(reason: "Identifier not found: \(identifier)")
+      case let .storageFailure(reason):
+        return .operationFailed(reason: "Storage failure: \(reason)")
+      case let .generalError(reason):
+        return .operationFailed(reason: "General error: \(reason)")
       case .unsupportedOperation:
-        .operationFailed(reason: "The operation is not supported")
+        return .operationFailed(reason: "The operation is not supported")
       case .implementationUnavailable:
-        .operationFailed(reason: "The protocol implementation is not available")
+        return .operationFailed(reason: "The protocol implementation is not available")
       case let .operationFailed(message):
-        .operationFailed(reason: message)
+        return .operationFailed(reason: message)
       case let .invalidInput(message):
-        .inputError(message)
+        return .inputError(message)
       case .operationRateLimited:
-        .operationFailed(reason: "Operation was rate limited for security purposes")
+        return .operationFailed(reason: "Operation was rate limited for security purposes")
       case .storageError:
-        .operationFailed(reason: "Generic storage error occurred")
+        return .operationFailed(reason: "Generic storage error occurred")
     }
   }
 
@@ -394,9 +408,390 @@ final class OperationsHandler {
   -> Result<T, CoreSecurityTypes.SecurityProtocolError> {
     switch result {
       case let .success(value):
-        .success(value)
+        return .success(value)
       case let .failure(error):
-        .failure(convertStorageErrorToProtocolError(error))
+        return .failure(convertStorageErrorToProtocolError(error))
     }
+  }
+
+  /**
+   Process a signing operation.
+   
+   - Parameters:
+     - config: Configuration for the operation
+     - operation: The security operation being performed
+   - Returns: A result DTO with the operation result
+   */
+  private func processSigningOperation(
+    _ config: SecurityConfigDTO,
+    operation: SecurityOperation
+  ) async -> SecurityResultDTO {
+    // Start timing the operation
+    let startTime = Date().timeIntervalSince1970
+    
+    // Validate input
+    guard let inputData = config.options?.metadata?["inputData"] else {
+      return .failure(
+        errorDetails: "Missing input data in configuration",
+        executionTimeMs: (Date().timeIntervalSince1970 - startTime) * 1000
+      )
+    }
+    
+    // Import data to secure storage
+    let importResult = await cryptoService.importData(
+      Array(inputData.utf8),
+      customIdentifier: nil
+    )
+    
+    // Process import result
+    switch importResult {
+    case .success(let dataIdentifier):
+      // Check if key identifier is provided
+      guard let keyIdentifier = config.options?.metadata?["keyIdentifier"] else {
+        return .failure(
+          errorDetails: "Missing key identifier in configuration",
+          executionTimeMs: (Date().timeIntervalSince1970 - startTime) * 1000
+        )
+      }
+      
+      // Create hash options
+      let hashOptions = HashingOptions(
+        algorithm: config.hashAlgorithm
+      )
+      
+      // Attempt to generate hash (which serves as a signature in this case)
+      let hashResult = await cryptoService.generateHash(
+        dataIdentifier: dataIdentifier,
+        options: hashOptions
+      )
+      
+      switch hashResult {
+      case .success(let hashIdentifier):
+        // Get the signature data
+        let signatureResult = await cryptoService.exportData(identifier: hashIdentifier)
+        
+        switch signatureResult {
+        case .success(let signatureData):
+          // Calculate operation time
+          let executionTime = Date().timeIntervalSince1970 - startTime
+          
+          // Return success
+          return .success(
+            resultData: Data(signatureData),
+            executionTimeMs: executionTime * 1000,
+            metadata: ["algorithm": config.hashAlgorithm.rawValue]
+          )
+          
+        case .failure(let error):
+          return .failure(
+            errorDetails: "Failed to export signature: \(error)",
+            executionTimeMs: (Date().timeIntervalSince1970 - startTime) * 1000
+          )
+        }
+        
+      case .failure(let error):
+        return .failure(
+          errorDetails: "Signature generation failed: \(error)",
+          executionTimeMs: (Date().timeIntervalSince1970 - startTime) * 1000
+        )
+      }
+      
+    case .failure(let error):
+      return .failure(
+        errorDetails: "Failed to import data: \(error)",
+        executionTimeMs: (Date().timeIntervalSince1970 - startTime) * 1000
+      )
+    }
+  }
+  
+  /**
+   Process a verification operation.
+   
+   - Parameters:
+     - config: Configuration for the operation
+     - operation: The security operation being performed
+   - Returns: A result DTO with the operation result
+   */
+  private func processVerificationOperation(
+    _ config: SecurityConfigDTO,
+    operation: SecurityOperation
+  ) async -> SecurityResultDTO {
+    // Start timing the operation
+    let startTime = Date().timeIntervalSince1970
+    
+    // Validate inputs
+    guard let inputData = config.options?.metadata?["inputData"] else {
+      return .failure(
+        errorDetails: "Missing input data in configuration",
+        executionTimeMs: (Date().timeIntervalSince1970 - startTime) * 1000
+      )
+    }
+    
+    guard let signatureStr = config.options?.metadata?["signature"],
+          let signatureData = signatureStr.data(using: .utf8) else {
+      return .failure(
+        errorDetails: "Missing or invalid signature in configuration",
+        executionTimeMs: (Date().timeIntervalSince1970 - startTime) * 1000
+      )
+    }
+    
+    // Import data to secure storage
+    let importDataResult = await cryptoService.importData(
+      Array(inputData.utf8),
+      customIdentifier: nil
+    )
+    
+    // Process import result
+    switch importDataResult {
+    case .success(let dataIdentifier):
+      // Import signature to secure storage
+      let importSignatureResult = await cryptoService.importData(
+        [UInt8](signatureData),
+        customIdentifier: nil
+      )
+      
+      switch importSignatureResult {
+      case .success(let hashIdentifier):
+        // Create hash options
+        let hashOptions = HashingOptions(
+          algorithm: config.hashAlgorithm
+        )
+        
+        // Verify the hash
+        let verifyResult = await cryptoService.verifyHash(
+          dataIdentifier: dataIdentifier,
+          hashIdentifier: hashIdentifier,
+          options: hashOptions
+        )
+        
+        switch verifyResult {
+        case .success(let isValid):
+          // Calculate operation time
+          let executionTime = Date().timeIntervalSince1970 - startTime
+          
+          // Return success with verification result
+          return .success(
+            resultData: Data([isValid ? 1 : 0]),
+            executionTimeMs: executionTime * 1000,
+            metadata: ["isValid": isValid ? "true" : "false"]
+          )
+          
+        case .failure(let error):
+          return .failure(
+            errorDetails: "Verification failed: \(error)",
+            executionTimeMs: (Date().timeIntervalSince1970 - startTime) * 1000
+          )
+        }
+        
+      case .failure(let error):
+        return .failure(
+          errorDetails: "Failed to import signature: \(error)",
+          executionTimeMs: (Date().timeIntervalSince1970 - startTime) * 1000
+        )
+      }
+      
+    case .failure(let error):
+      return .failure(
+        errorDetails: "Failed to import data: \(error)",
+        executionTimeMs: (Date().timeIntervalSince1970 - startTime) * 1000
+      )
+    }
+  }
+  
+  /**
+   Process a hashing operation.
+   
+   - Parameters:
+     - config: Configuration for the operation
+     - operation: The security operation being performed
+   - Returns: A result DTO with the operation result
+   */
+  private func processHashingOperation(
+    _ config: SecurityConfigDTO,
+    operation: SecurityOperation
+  ) async -> SecurityResultDTO {
+    // Start timing the operation
+    let startTime = Date().timeIntervalSince1970
+    
+    // Validate input
+    guard let inputData = config.options?.metadata?["inputData"] else {
+      return .failure(
+        errorDetails: "Missing input data in configuration",
+        executionTimeMs: (Date().timeIntervalSince1970 - startTime) * 1000
+      )
+    }
+    
+    // Import data to secure storage
+    let importResult = await cryptoService.importData(
+      Array(inputData.utf8),
+      customIdentifier: nil
+    )
+    
+    // Process import result
+    switch importResult {
+    case .success(let dataIdentifier):
+      // Create hash options
+      let hashOptions = HashingOptions(
+        algorithm: config.hashAlgorithm
+      )
+      
+      // Generate hash
+      let hashResult = await cryptoService.hash(
+        dataIdentifier: dataIdentifier,
+        options: hashOptions
+      )
+      
+      switch hashResult {
+      case .success(let hashIdentifier):
+        // Get the hash data
+        let exportResult = await cryptoService.exportData(identifier: hashIdentifier)
+        
+        switch exportResult {
+        case .success(let hashData):
+          // Calculate operation time
+          let executionTime = Date().timeIntervalSince1970 - startTime
+          
+          // Return success
+          return .success(
+            resultData: Data(hashData),
+            executionTimeMs: executionTime * 1000,
+            metadata: ["algorithm": config.hashAlgorithm.rawValue]
+          )
+          
+        case .failure(let error):
+          return .failure(
+            errorDetails: "Failed to export hash: \(error)",
+            executionTimeMs: (Date().timeIntervalSince1970 - startTime) * 1000
+          )
+        }
+        
+      case .failure(let error):
+        return .failure(
+          errorDetails: "Hashing failed: \(error)",
+          executionTimeMs: (Date().timeIntervalSince1970 - startTime) * 1000
+        )
+      }
+      
+    case .failure(let error):
+      return .failure(
+        errorDetails: "Failed to import data: \(error)",
+        executionTimeMs: (Date().timeIntervalSince1970 - startTime) * 1000
+      )
+    }
+  }
+  
+  /**
+   Process a hash verification operation.
+   
+   - Parameters:
+     - config: Configuration for the operation
+     - operation: The security operation being performed
+   - Returns: A result DTO with the operation result
+   */
+  private func processHashVerificationOperation(
+    _ config: SecurityConfigDTO,
+    operation: SecurityOperation
+  ) async -> SecurityResultDTO {
+    // Start timing the operation
+    let startTime = Date().timeIntervalSince1970
+    
+    // Validate inputs
+    guard let inputData = config.options?.metadata?["inputData"] else {
+      return .failure(
+        errorDetails: "Missing input data in configuration",
+        executionTimeMs: (Date().timeIntervalSince1970 - startTime) * 1000
+      )
+    }
+    
+    guard let expectedHashStr = config.options?.metadata?["expectedHash"],
+          let expectedHashData = expectedHashStr.data(using: .utf8) else {
+      return .failure(
+        errorDetails: "Missing or invalid expected hash in configuration",
+        executionTimeMs: (Date().timeIntervalSince1970 - startTime) * 1000
+      )
+    }
+    
+    // Import data to secure storage
+    let importDataResult = await cryptoService.importData(
+      Array(inputData.utf8),
+      customIdentifier: nil
+    )
+    
+    // Process import result
+    switch importDataResult {
+    case .success(let dataIdentifier):
+      // Import expected hash to secure storage
+      let importHashResult = await cryptoService.importData(
+        [UInt8](expectedHashData),
+        customIdentifier: nil
+      )
+      
+      switch importHashResult {
+      case .success(let hashIdentifier):
+        // Create hash options
+        let hashOptions = HashingOptions(
+          algorithm: config.hashAlgorithm
+        )
+        
+        // Verify the hash
+        let verifyResult = await cryptoService.verifyHash(
+          dataIdentifier: dataIdentifier,
+          hashIdentifier: hashIdentifier,
+          options: hashOptions
+        )
+        
+        switch verifyResult {
+        case .success(let isValid):
+          // Calculate operation time
+          let executionTime = Date().timeIntervalSince1970 - startTime
+          
+          // Return success with verification result
+          return .success(
+            resultData: Data([isValid ? 1 : 0]),
+            executionTimeMs: executionTime * 1000,
+            metadata: ["isValid": isValid ? "true" : "false"]
+          )
+          
+        case .failure(let error):
+          return .failure(
+            errorDetails: "Hash verification failed: \(error)",
+            executionTimeMs: (Date().timeIntervalSince1970 - startTime) * 1000
+          )
+        }
+        
+      case .failure(let error):
+        return .failure(
+          errorDetails: "Failed to import expected hash: \(error)",
+          executionTimeMs: (Date().timeIntervalSince1970 - startTime) * 1000
+        )
+      }
+      
+    case .failure(let error):
+      return .failure(
+        errorDetails: "Failed to import data: \(error)",
+        executionTimeMs: (Date().timeIntervalSince1970 - startTime) * 1000
+      )
+    }
+  }
+  
+  /**
+   Handle an operation error.
+   
+   - Parameters:
+     - error: The error that occurred
+     - operationName: The name of the operation that failed
+     - executionTimeMs: The execution time of the operation in milliseconds
+   - Returns: A result DTO with the error details
+   */
+  private func handleOperationError(
+    _ error: Error,
+    operationName: String,
+    executionTimeMs: TimeInterval
+  ) -> SecurityResultDTO {
+    return .failure(
+      errorDetails: "Operation '\(operationName)' failed: \(error.localizedDescription)",
+      executionTimeMs: executionTimeMs,
+      metadata: ["errorType": String(describing: error)]
+    )
   }
 }

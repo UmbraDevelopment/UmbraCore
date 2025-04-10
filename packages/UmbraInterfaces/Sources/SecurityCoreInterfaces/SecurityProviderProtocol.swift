@@ -99,6 +99,22 @@ public protocol SecurityProviderProtocol: Sendable, AsyncServiceInitializable {
   func verify(config: SecurityConfigDTO) async throws -> SecurityResultDTO
 
   /**
+   Computes a cryptographic hash with the specified configuration.
+
+   - Parameter config: Configuration for the hashing operation
+   - Returns: Result containing hash data or error
+   */
+  func hash(config: SecurityConfigDTO) async throws -> SecurityResultDTO
+
+  /**
+   Verifies a hash against data with the specified configuration.
+
+   - Parameter config: Configuration for the hash verification operation
+   - Returns: Result containing verification status or error
+   */
+  func verifyHash(config: SecurityConfigDTO) async throws -> SecurityResultDTO
+
+  /**
    Performs a generic secure operation with appropriate error handling.
 
    - Parameters:

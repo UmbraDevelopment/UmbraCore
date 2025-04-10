@@ -35,18 +35,18 @@ private func createSecurityEventMetadata(_ metadata: [String: (
 // Helper to convert LogPrivacyLevel to LogPrivacy
 private func convertPrivacyLevel(_ level: LogPrivacyLevel) -> LoggingTypes.LogPrivacy {
   switch level {
-  case .public:
-    return .public
-  case .private:
-    return .private
-  case .sensitive:
-    return .private // Map sensitive to private as fallback
-  case .hash:
-    return .private // Map hash to private
-  case .auto:
-    return .public // Map auto to public by default
-  @unknown default:
-    return .private // Default to private for unknown values
+    case .public:
+      return .public
+    case .private:
+      return .private
+    case .sensitive:
+      return .private // Map sensitive to private as fallback
+    case .hash:
+      return .private // Map hash to private
+    case .auto:
+      return .public // Map auto to public by default
+    @unknown default:
+      return .private // Default to private for unknown values
   }
 }
 
@@ -102,20 +102,20 @@ final class SecurityOperationsErrorHandler {
     coreErrorHandler: SecurityErrorHandler
   ) {
     self.logger=logger
-    
+
     // Create a basic logger to use with the secure logger if one isn't provided
-    if let secureLogger = secureLogger {
-      self.secureLogger = secureLogger
+    if let secureLogger {
+      self.secureLogger=secureLogger
     } else {
-      self.secureLogger = SecureLoggerActor(baseLogger: logger)
+      self.secureLogger=SecureLoggerActor(baseLogger: logger)
     }
-    
+
     self.coreErrorHandler=coreErrorHandler
   }
 
   /**
    Handles an operation error and produces appropriate logs
-   
+
    - Parameters:
      - error: The error that occurred
      - operation: The operation that failed
@@ -124,29 +124,29 @@ final class SecurityOperationsErrorHandler {
   func handleOperationError(
     error: Error,
     operation: CoreSecurityTypes.SecurityOperation,
-    config: SecurityConfigDTO
+    config _: SecurityConfigDTO
   ) async {
     // Calculate duration
-    _ = Date().timeIntervalSince1970 * 1000
-    
+    _=Date().timeIntervalSince1970 * 1000
+
     // Use a simple error code since getErrorCode doesn't exist
-    let errorCode = 500 // Default error code
-    
+    let errorCode=500 // Default error code
+
     // Create a log context for better structured logging
-    let logContext = SecurityLogContext(
+    let logContext=SecurityLogContext(
       operation: operation.rawValue,
-      component: "SecurityOperationsErrorHandler", 
+      component: "SecurityOperationsErrorHandler",
       operationID: UUID().uuidString,
       correlationID: nil,
       source: "SecurityImplementation"
     )
-    
+
     // Log to standard logger with context
     await logger.error(
       "Security operation \(operation.rawValue) failed: \(error.localizedDescription)",
       context: logContext
     )
-    
+
     // Log to secure logger with privacy metadata
     await secureLogger.securityEvent(
       action: "SecurityOperationError",
@@ -176,7 +176,7 @@ final class SecurityOperationsErrorHandler {
 
   /**
    Logs detailed error information with privacy controls
-   
+
    - Parameters:
      - error: The error that occurred
      - operation: The operation that was being performed
@@ -186,26 +186,26 @@ final class SecurityOperationsErrorHandler {
     operation: CoreSecurityTypes.SecurityOperation
   ) async {
     // Use a placeholder operation ID
-    let placeholderOpID = UUID().uuidString
-    
+    let placeholderOpID=UUID().uuidString
+
     // Create a log context for better structured logging
-    let logContext = SecurityLogContext(
+    let logContext=SecurityLogContext(
       operation: operation.rawValue,
       component: "SecurityOperationsErrorHandler",
       operationID: placeholderOpID,
       correlationID: nil,
       source: "SecurityImplementation"
     )
-    
+
     // Log to standard logger with privacy-safe information
     await logger.error(
       "Security operation failed: \(sanitizeErrorMessage(error.localizedDescription))",
       context: logContext
     )
-    
+
     // Simple implementation for stack trace
-    let stackTrace = "Stack trace unavailable: \(error.localizedDescription)"
-    
+    let stackTrace="Stack trace unavailable: \(error.localizedDescription)"
+
     // Log to secure logger with complete information
     await secureLogger.securityEvent(
       action: "SecurityOperationDetailedError",

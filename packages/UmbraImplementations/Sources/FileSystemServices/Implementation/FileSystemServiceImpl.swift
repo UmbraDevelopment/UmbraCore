@@ -1,11 +1,11 @@
+import CoreDTOs
 import Darwin.C
 import FileSystemInterfaces
 import FileSystemTypes
 import Foundation
+import LoggingAdapters
 import LoggingInterfaces
 import LoggingTypes
-import LoggingAdapters
-import CoreDTOs
 
 /**
  # File System Service Implementation
@@ -29,16 +29,16 @@ public actor FileSystemServiceImpl: FileServiceProtocol {
 
   /// The underlying file manager isolated within this actor
   let fileManager: Foundation.FileManager
-  
+
   /// Logger for this service
   private let logger: any LoggingProtocol
-  
+
   /// Secure file operations implementation
   public let secureOperations: SecureFileOperationsProtocol
-    
+
   /**
    Initialises a new file system service implementation.
-   
+
    - Parameters:
       - fileManager: Optional custom file manager to use.
       - logger: Optional logger.
@@ -46,12 +46,12 @@ public actor FileSystemServiceImpl: FileServiceProtocol {
    */
   public init(
     fileManager: Foundation.FileManager = .default,
-    logger: (any LoggingProtocol)? = nil,
-    secureOperations: SecureFileOperationsProtocol? = nil
+    logger: (any LoggingProtocol)?=nil,
+    secureOperations: SecureFileOperationsProtocol?=nil
   ) {
-    self.fileManager = fileManager
-    self.logger = logger ?? NullLogger()
-    self.secureOperations = secureOperations ?? SandboxedSecureFileOperations(rootDirectory: nil)
+    self.fileManager=fileManager
+    self.logger=logger ?? NullLogger()
+    self.secureOperations=secureOperations ?? SandboxedSecureFileOperations(rootDirectory: nil)
   }
 
   // MARK: - Helper Methods
@@ -282,19 +282,19 @@ public actor FileSystemServiceImpl: FileServiceProtocol {
         reason: "Empty path provided"
       )
     }
-    
+
     guard !name.isEmpty else {
       throw FileSystemInterfaces.FileSystemError.invalidPath(
         path: path.path,
         reason: "Empty attribute name provided"
       )
     }
-    
+
     // Check if file exists
     if !fileManager.fileExists(atPath: path.path) {
       throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
     }
-    
+
     await logger.debug(
       "Getting extended attribute \(name) from \(path.path)",
       context: FileSystemLogContext(
@@ -305,10 +305,10 @@ public actor FileSystemServiceImpl: FileServiceProtocol {
           .withPublic(key: "attributeName", value: name)
       )
     )
-    
+
     do {
-      let data = try fileManager.getExtendedAttribute(withName: name, fromItemAtPath: path.path)
-      
+      let data=try fileManager.getExtendedAttribute(withName: name, fromItemAtPath: path.path)
+
       await logger.debug(
         "Successfully read extended attribute \(name)",
         context: FileSystemLogContext(
@@ -320,17 +320,17 @@ public actor FileSystemServiceImpl: FileServiceProtocol {
             .withPublic(key: "byteSize", value: "\(data.count)")
         )
       )
-      
+
       return SafeAttributeValue(from: data)
     } catch let fsError as FileSystemInterfaces.FileSystemError {
       // Rethrow FileSystemError directly
       throw fsError
     } catch {
-      let errorMetadata = LogMetadataDTOCollection()
+      let errorMetadata=LogMetadataDTOCollection()
         .withPublic(key: "attributeName", value: name)
         .withPublic(key: "errorType", value: "\(type(of: error))")
         .withPrivate(key: "errorMessage", value: error.localizedDescription)
-      
+
       await logger.error(
         "Failed to get extended attribute: \(error.localizedDescription)",
         context: FileSystemLogContext(
@@ -340,7 +340,7 @@ public actor FileSystemServiceImpl: FileServiceProtocol {
           metadata: errorMetadata
         )
       )
-      
+
       throw FileSystemInterfaces.FileSystemError.readError(
         path: path.path,
         reason: "Failed to read extended attribute '\(name)': \(error.localizedDescription)"
@@ -371,19 +371,19 @@ public actor FileSystemServiceImpl: FileServiceProtocol {
         reason: "Empty path provided"
       )
     }
-    
+
     guard !name.isEmpty else {
       throw FileSystemInterfaces.FileSystemError.invalidPath(
         path: path.path,
         reason: "Empty attribute name provided"
       )
     }
-    
+
     // Check if file exists
     if !fileManager.fileExists(atPath: path.path) {
       throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
     }
-    
+
     await logger.debug(
       "Setting extended attribute \(name) on \(path.path)",
       context: FileSystemLogContext(
@@ -394,11 +394,11 @@ public actor FileSystemServiceImpl: FileServiceProtocol {
           .withPublic(key: "attributeName", value: name)
       )
     )
-    
+
     do {
-      let data = value.toData()
+      let data=value.toData()
       try fileManager.setExtendedAttribute(data, withName: name, forItemAtPath: path.path)
-      
+
       await logger.debug(
         "Successfully set extended attribute \(name)",
         context: FileSystemLogContext(
@@ -414,11 +414,11 @@ public actor FileSystemServiceImpl: FileServiceProtocol {
       // Rethrow FileSystemError directly
       throw fsError
     } catch {
-      let errorMetadata = LogMetadataDTOCollection()
+      let errorMetadata=LogMetadataDTOCollection()
         .withPublic(key: "attributeName", value: name)
         .withPublic(key: "errorType", value: "\(type(of: error))")
         .withPrivate(key: "errorMessage", value: error.localizedDescription)
-      
+
       await logger.error(
         "Failed to set extended attribute: \(error.localizedDescription)",
         context: FileSystemLogContext(
@@ -428,7 +428,7 @@ public actor FileSystemServiceImpl: FileServiceProtocol {
           metadata: errorMetadata
         )
       )
-      
+
       throw FileSystemInterfaces.FileSystemError.writeError(
         path: path.path,
         reason: "Failed to set extended attribute '\(name)': \(error.localizedDescription)"
@@ -455,12 +455,12 @@ public actor FileSystemServiceImpl: FileServiceProtocol {
         reason: "Empty path provided"
       )
     }
-    
+
     // Check if file exists
     if !fileManager.fileExists(atPath: path.path) {
       throw FileSystemInterfaces.FileSystemError.pathNotFound(path: path.path)
     }
-    
+
     await logger.debug(
       "Listing extended attributes for \(path.path)",
       context: FileSystemLogContext(
@@ -469,13 +469,13 @@ public actor FileSystemServiceImpl: FileServiceProtocol {
         source: "FileSystemService"
       )
     )
-    
+
     do {
-      let attributes = try fileManager.listExtendedAttributes(atPath: path.path)
-      
-      let resultMetadata = LogMetadataDTOCollection()
+      let attributes=try fileManager.listExtendedAttributes(atPath: path.path)
+
+      let resultMetadata=LogMetadataDTOCollection()
         .withPublic(key: "attributeCount", value: "\(attributes.count)")
-      
+
       await logger.debug(
         "Found \(attributes.count) extended attributes",
         context: FileSystemLogContext(
@@ -485,13 +485,13 @@ public actor FileSystemServiceImpl: FileServiceProtocol {
           metadata: resultMetadata
         )
       )
-      
+
       return attributes
     } catch {
-      let errorMetadata = LogMetadataDTOCollection()
+      let errorMetadata=LogMetadataDTOCollection()
         .withPublic(key: "errorType", value: "\(type(of: error))")
         .withPrivate(key: "errorMessage", value: error.localizedDescription)
-      
+
       await logger.error(
         "Failed to list extended attributes: \(error.localizedDescription)",
         context: FileSystemLogContext(
@@ -501,7 +501,7 @@ public actor FileSystemServiceImpl: FileServiceProtocol {
           metadata: errorMetadata
         )
       )
-      
+
       throw FileSystemInterfaces.FileSystemError.readError(
         path: path.path,
         reason: "Failed to list extended attributes: \(error.localizedDescription)"
@@ -566,4 +566,36 @@ public actor FileSystemServiceImpl: FileServiceProtocol {
     }
   }
 
-  // ... rest of the code remains the same ...
+  // MARK: - Helper Methods
+
+  /**
+   Converts file attributes to FileMetadata structure.
+
+   - Parameter attributes: The file attributes to convert
+   - Returns: A FileMetadata object with the appropriate attributes
+   */
+  private func convertToMetadata(_ attributes: [FileAttributeKey: Any]) -> FileMetadata {
+    let creationDate=attributes[.creationDate] as? Date ?? Date.distantPast
+    let modificationDate=attributes[.modificationDate] as? Date ?? Date.distantPast
+    let size=attributes[.size] as? UInt64 ?? 0
+    let fileType=attributes[.type] as? String ?? ""
+
+    let fileTypeValue: FileType=switch fileType {
+      case FileAttributeType.typeDirectory.rawValue:
+        .directory
+      case FileAttributeType.typeRegular.rawValue:
+        .file
+      case FileAttributeType.typeSymbolicLink.rawValue:
+        .symlink
+      default:
+        .unknown
+    }
+
+    return FileMetadata(
+      size: size,
+      creationDate: creationDate,
+      modificationDate: modificationDate,
+      type: fileTypeValue
+    )
+  }
+}

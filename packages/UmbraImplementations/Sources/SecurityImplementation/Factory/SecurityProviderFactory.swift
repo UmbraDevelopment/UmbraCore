@@ -39,11 +39,11 @@ public enum SecurityProviderFactory {
     logger: LoggingInterfaces.LoggingProtocol?=nil
   ) async -> SecurityProviderProtocol {
     // Create standard crypto service
-    let _ = await CryptoServiceFactory.shared
+    _=await CryptoServiceFactory.shared
       .createDefault(logger: logger)
 
     // Create the key manager with appropriate logger
-    let _ = KeyManagementFactory.createKeyManager(
+    _=KeyManagementFactory.createKeyManager(
       logger: logger as? LoggingServiceProtocol
     )
 
@@ -97,14 +97,14 @@ public enum SecurityProviderFactory {
     logger: LoggingInterfaces.LoggingProtocol?=nil
   ) async -> SecurityProviderProtocol {
     // Create high-security crypto service
-    let _ = await CryptoServiceFactory
+    _=await CryptoServiceFactory
       .createHighSecurityCryptoService(
         keySize: 256,
         hashAlgorithm: .sha256,
         saltSize: 16,
         iterations: 100_000
       )
-    let _ = KeyManagementFactory.createKeyManager(
+    _=KeyManagementFactory.createKeyManager(
       logger: logger as? LoggingServiceProtocol
     )
 
@@ -159,7 +159,7 @@ public enum SecurityProviderFactory {
     logger: LoggingInterfaces.LoggingProtocol?=nil
   ) async -> SecurityProviderProtocol {
     // Create max-security crypto service
-    let _ = await CryptoServiceFactory
+    _=await CryptoServiceFactory
       .createMaxSecurityCryptoService(
         keySize: 512,
         hashAlgorithm: .sha512,
@@ -168,7 +168,7 @@ public enum SecurityProviderFactory {
         memorySize: 1024 * 1024 * 1024,
         parallelism: 4
       )
-    let _ = KeyManagementFactory.createKeyManager(
+    _=KeyManagementFactory.createKeyManager(
       logger: logger as? LoggingServiceProtocol
     )
 

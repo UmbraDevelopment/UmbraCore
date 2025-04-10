@@ -88,21 +88,21 @@ public enum RandomDataServiceFactory {
 private final actor PrivacyAwareLoggingAdapter: LoggingProtocol {
   /// The underlying logger actor instance
   private let logger: PrivacyAwareLoggingActor
-  
+
   /// Required by LoggingProtocol - access to the underlying logging actor
   nonisolated var loggingActor: LoggingActor {
     fatalError("Direct LoggingActor access not supported in this adapter")
   }
-  
+
   init(logger: PrivacyAwareLoggingActor) {
-    self.logger = logger
+    self.logger=logger
   }
-  
+
   /// Core protocol requirement for the LoggingProtocol
   func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
     await logger.log(level, message, context: context)
   }
-  
+
   func debug(_ message: String, metadata: LogMetadataDTOCollection?) async {
     await logger.debug(
       message,
@@ -122,16 +122,16 @@ private final actor PrivacyAwareLoggingAdapter: LoggingProtocol {
       )
     )
   }
-  
+
   @available(*, deprecated, message: "Use info(_:context:) instead")
-  func info(_ message: String, metadata: PrivacyMetadata?, source: String) async {
+  func info(_ message: String, metadata _: PrivacyMetadata?, source: String) async {
     // Create a simple metadata collection instead of trying to convert
-    let logMetadata = LogMetadataDTOCollection()
+    let logMetadata=LogMetadataDTOCollection()
       .withPublic(key: "operation", value: "info")
       .withPublic(key: "source", value: source)
-    
+
     await logger.info(
-      message, 
+      message,
       context: LoggingTypes.BaseLogContextDTO(
         domainName: "SecurityImplementation",
         source: source,
@@ -144,7 +144,7 @@ private final actor PrivacyAwareLoggingAdapter: LoggingProtocol {
     await logger.warning(
       message,
       context: LoggingTypes.BaseLogContextDTO(
-        domainName: "SecurityImplementation", 
+        domainName: "SecurityImplementation",
         metadata: metadata ?? LogMetadataDTOCollection()
       )
     )
@@ -159,16 +159,16 @@ private final actor PrivacyAwareLoggingAdapter: LoggingProtocol {
       )
     )
   }
-  
+
   @available(*, deprecated, message: "Use error(_:context:) instead")
-  func error(_ message: String, metadata: PrivacyMetadata?, source: String) async {
+  func error(_ message: String, metadata _: PrivacyMetadata?, source: String) async {
     // Create a simple metadata collection instead of trying to convert
-    let logMetadata = LogMetadataDTOCollection()
+    let logMetadata=LogMetadataDTOCollection()
       .withPublic(key: "operation", value: "error")
       .withPublic(key: "source", value: source)
-    
+
     await logger.error(
-      message, 
+      message,
       context: LoggingTypes.BaseLogContextDTO(
         domainName: "SecurityImplementation",
         source: source,
@@ -176,7 +176,7 @@ private final actor PrivacyAwareLoggingAdapter: LoggingProtocol {
       )
     )
   }
-  
+
   func critical(_ message: String, metadata: LogMetadataDTOCollection?) async {
     await logger.critical(
       message,
@@ -186,19 +186,19 @@ private final actor PrivacyAwareLoggingAdapter: LoggingProtocol {
       )
     )
   }
-  
+
   func info(_ message: String, context: LogContextDTO) async {
     await logger.info(message, context: context)
   }
-  
+
   func notice(_ message: String, context: LogContextDTO) async {
     await logger.notice(message, context: context)
   }
-  
+
   func error(_ message: String, context: LogContextDTO) async {
     await logger.error(message, context: context)
   }
-  
+
   func critical(_ message: String, context: LogContextDTO) async {
     await logger.critical(message, context: context)
   }
