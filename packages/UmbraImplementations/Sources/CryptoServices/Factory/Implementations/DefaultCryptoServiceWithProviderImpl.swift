@@ -126,7 +126,7 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
     }
 
     // Create security configuration
-    let configOptions=SecurityConfigOptions(
+    var configOptions=SecurityConfigOptions(
       enableDetailedLogging: false,
       keyDerivationIterations: 10000,
       memoryLimitBytes: 65536,
@@ -291,7 +291,7 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
     }
 
     // Create security configuration for decryption
-    let configOptions=SecurityConfigOptions(
+    var configOptions=SecurityConfigOptions(
       enableDetailedLogging: false,
       keyDerivationIterations: 10000,
       memoryLimitBytes: 65536,
@@ -313,10 +313,25 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
     // Create the security config
     let securityConfig=await provider.createSecureConfig(options: configOptions)
 
+    // Create a new security config with the desired hash algorithm
+    let securityConfigWithAlgorithm = SecurityConfigDTO(
+      encryptionAlgorithm: securityConfig.encryptionAlgorithm,
+      hashAlgorithm: .sha256, // Default to SHA-256 rather than using options?.algorithm which is an EncryptionAlgorithm
+      providerType: securityConfig.providerType,
+      options: SecurityConfigOptions(
+        enableDetailedLogging: securityConfig.options?.enableDetailedLogging ?? false,
+        keyDerivationIterations: securityConfig.options?.keyDerivationIterations ?? 10000,
+        memoryLimitBytes: securityConfig.options?.memoryLimitBytes ?? 65536,
+        useHardwareAcceleration: securityConfig.options?.useHardwareAcceleration ?? true,
+        operationTimeoutSeconds: securityConfig.options?.operationTimeoutSeconds ?? 30,
+        verifyOperations: securityConfig.options?.verifyOperations ?? true
+      )
+    )
+
     // Perform decryption using the provider
     let resultDTO: SecurityResultDTO
     do {
-      resultDTO=try await provider.decrypt(config: securityConfig)
+      resultDTO=try await provider.decrypt(config: securityConfigWithAlgorithm)
     } catch {
       let errorContext=contextWithOptions.withUpdatedMetadata(
         contextWithOptions.metadata.withPublic(
@@ -458,7 +473,7 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
     }
 
     // Create security configuration for hashing
-    let configOptions=SecurityConfigOptions(
+    var configOptions=SecurityConfigOptions(
       enableDetailedLogging: false,
       keyDerivationIterations: 10000,
       memoryLimitBytes: 65536,
@@ -485,15 +500,15 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
     // Create a new security config with the desired hash algorithm
     let securityConfigWithAlgorithm = SecurityConfigDTO(
       encryptionAlgorithm: securityConfig.encryptionAlgorithm,
-      hashAlgorithm: options?.algorithm ?? .sha256,
+      hashAlgorithm: .sha256, // Default to SHA-256 rather than using options?.algorithm which is an EncryptionAlgorithm
       providerType: securityConfig.providerType,
       options: SecurityConfigOptions(
-        enableDetailedLogging: securityConfig.options.enableDetailedLogging,
-        keyDerivationIterations: securityConfig.options.keyDerivationIterations,
-        memoryLimitBytes: securityConfig.options.memoryLimitBytes,
-        useHardwareAcceleration: securityConfig.options.useHardwareAcceleration,
-        operationTimeoutSeconds: securityConfig.options.operationTimeoutSeconds,
-        verifyOperations: securityConfig.options.verifyOperations
+        enableDetailedLogging: securityConfig.options?.enableDetailedLogging ?? false,
+        keyDerivationIterations: securityConfig.options?.keyDerivationIterations ?? 10000,
+        memoryLimitBytes: securityConfig.options?.memoryLimitBytes ?? 65536,
+        useHardwareAcceleration: securityConfig.options?.useHardwareAcceleration ?? true,
+        operationTimeoutSeconds: securityConfig.options?.operationTimeoutSeconds ?? 30,
+        verifyOperations: securityConfig.options?.verifyOperations ?? true
       )
     )
 
@@ -681,7 +696,7 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
     }
 
     // Create security configuration for hash verification
-    let configOptions=SecurityConfigOptions(
+    var configOptions=SecurityConfigOptions(
       enableDetailedLogging: false,
       keyDerivationIterations: 10000,
       memoryLimitBytes: 65536,
@@ -709,15 +724,15 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
     // Create a new security config with the desired hash algorithm
     let securityConfigWithAlgorithm = SecurityConfigDTO(
       encryptionAlgorithm: securityConfig.encryptionAlgorithm,
-      hashAlgorithm: options?.algorithm ?? .sha256,
+      hashAlgorithm: .sha256, // Default to SHA-256 rather than using options?.algorithm which is an EncryptionAlgorithm
       providerType: securityConfig.providerType,
       options: SecurityConfigOptions(
-        enableDetailedLogging: securityConfig.options.enableDetailedLogging,
-        keyDerivationIterations: securityConfig.options.keyDerivationIterations,
-        memoryLimitBytes: securityConfig.options.memoryLimitBytes,
-        useHardwareAcceleration: securityConfig.options.useHardwareAcceleration,
-        operationTimeoutSeconds: securityConfig.options.operationTimeoutSeconds,
-        verifyOperations: securityConfig.options.verifyOperations
+        enableDetailedLogging: securityConfig.options?.enableDetailedLogging ?? false,
+        keyDerivationIterations: securityConfig.options?.keyDerivationIterations ?? 10000,
+        memoryLimitBytes: securityConfig.options?.memoryLimitBytes ?? 65536,
+        useHardwareAcceleration: securityConfig.options?.useHardwareAcceleration ?? true,
+        operationTimeoutSeconds: securityConfig.options?.operationTimeoutSeconds ?? 30,
+        verifyOperations: securityConfig.options?.verifyOperations ?? true
       )
     )
 
@@ -813,7 +828,7 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
     )
 
     // Create security configuration for key generation
-    let configOptions=SecurityConfigOptions(
+    var configOptions=SecurityConfigOptions(
       enableDetailedLogging: false,
       keyDerivationIterations: 10000,
       memoryLimitBytes: 65536,

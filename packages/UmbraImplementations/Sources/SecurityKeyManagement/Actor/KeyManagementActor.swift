@@ -166,19 +166,32 @@ public actor KeyManagementActor: KeyManagementProtocol {
     }
   }
 
+  // MARK: - Protocol Conformance
+
   /**
-   Stores a key with the specified identifier and optional metadata.
-
-   This method securely stores a cryptographic key with proper privacy controls
-   and creates associated metadata for key management purposes.
-
+   Implements the protocol-compliant version of storeKey.
+   
    - Parameters:
-     - key: The key to store
-     - identifier: The identifier to associate with the key
-     - additionalInfo: Optional additional information about the key
-   - Returns: A Result indicating success or an error
+     - key: The security key as a byte array.
+     - identifier: A string identifier for the key.
+   - Returns: A Result indicating success or an error.
    */
-  public func storeKey(
+  public func storeKey(_ key: [UInt8], withIdentifier identifier: String) async
+    -> Result<Void, SecurityProtocolError> {
+    // Call the more comprehensive implementation with empty additionalInfo
+    return await storeKeyInternal(key, withIdentifier: identifier, additionalInfo: [:])
+  }
+
+  /**
+   Enhanced version of storeKey that supports additional metadata.
+   
+   - Parameters:
+     - key: The security key as a byte array.
+     - identifier: A string identifier for the key.
+     - additionalInfo: Optional dictionary of additional metadata about the key.
+   - Returns: A Result indicating success or an error.
+   */
+  internal func storeKeyInternal(
     _ key: [UInt8],
     withIdentifier identifier: String,
     additionalInfo: [String: String]=[:]
@@ -205,8 +218,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
     // Log operation start with enhanced context
     await securityLogger.logOperationStart(
       keyIdentifier: identifier,
-      operation: "store",
-      additionalContext: logMetadata
+      operation: "store"
     )
 
     let sanitizedIdentifier=sanitizeIdentifier(identifier)
@@ -218,8 +230,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
       await securityLogger.logOperationFailure(
         keyIdentifier: "invalid",
         operation: "store",
-        error: error,
-        additionalContext: logMetadata.withPublic(key: "validationFailed", value: "emptyIdentifier")
+        error: error
       )
 
       return Result<Void, SecurityProtocolError>.failure(error.toStandardError())
@@ -232,8 +243,7 @@ public actor KeyManagementActor: KeyManagementProtocol {
       await securityLogger.logOperationFailure(
         keyIdentifier: identifier,
         operation: "store",
-        error: error,
-        additionalContext: logMetadata.withPublic(key: "validationFailed", value: "emptyKey")
+        error: error
       )
 
       return Result<Void, SecurityProtocolError>.failure(error.toStandardError())
@@ -241,15 +251,12 @@ public actor KeyManagementActor: KeyManagementProtocol {
 
     // Store the key securely
     do {
-      // Measure operation duration for performance monitoring
-      let startTime=Date()
-
       // Store the key in the secure storage
       try await keyStore.storeKey(key, identifier: sanitizedIdentifier)
 
       // Create and store metadata with additional information
       var keyPurpose=additionalInfo["purpose"] ?? "encryption"
-      var keyAlgorithm: KeyAlgorithm = .aes // Default
+      var keyAlgorithm: CryptoAlgorithm = .aes // Default
 
       // Determine algorithm from metadata if available
       if let algorithmStr=additionalInfo["algorithm"] {
@@ -259,44 +266,33 @@ public actor KeyManagementActor: KeyManagementProtocol {
           case "rsa":
             keyAlgorithm = .rsa
           case "ec", "ecdsa", "ecdh":
-            keyAlgorithm = .ec
+            keyAlgorithm = .curve25519
           case "hmac", "hmac-sha256":
             keyAlgorithm = .hmac
             keyPurpose="authentication"
           default:
-            keyAlgorithm = .other(algorithmStr)
+            // Handle other algorithms - CryptoAlgorithm doesn't have an .other case
+            // Use default algorithm
+            keyAlgorithm = .aes
         }
       }
 
       // Create comprehensive metadata
       let metadata=KeyMetadata(
         id: identifier,
+        createdAt: Date().timeIntervalSinceReferenceDate,
         algorithm: keyAlgorithm,
         keySize: key.count * 8, // Size in bits
         purpose: keyPurpose,
-        createdAt: Date(),
-        expiresAt: additionalInfo["expiresAt"].flatMap { ISO8601DateFormatter().date(from: $0) },
-        lastUsed: Date(),
-        usageCount: 0,
-        additionalData: additionalInfo
+        attributes: additionalInfo
       )
 
       try await metadataStore.storeKeyMetadata(metadata)
 
-      // Calculate operation duration
-      let duration=Date().timeIntervalSince(startTime) * 1000
-
-      // Log the success with enhanced context
-      let successMetadata=logMetadata
-        .withPublic(key: "algorithm", value: keyAlgorithm.description)
-        .withPublic(key: "purpose", value: keyPurpose)
-        .withPublic(key: "durationMs", value: String(format: "%.2f", duration))
-        .withPublic(key: "status", value: "success")
-
+      // Log the success
       await securityLogger.logOperationSuccess(
         keyIdentifier: identifier,
-        operation: "store",
-        additionalContext: successMetadata
+        operation: "store"
       )
 
       return .success(())
@@ -313,17 +309,11 @@ public actor KeyManagementActor: KeyManagementProtocol {
         secError=KeyManagementError.keyManagementError(details: errorDescription)
       }
 
-      // Log failure with comprehensive context
-      let failureMetadata=logMetadata
-        .withPublic(key: "errorType", value: String(describing: type(of: error)))
-        .withPrivate(key: "errorMessage", value: errorDescription)
-        .withPublic(key: "status", value: "failed")
-
+      // Log failure
       await securityLogger.logOperationFailure(
         keyIdentifier: identifier,
         operation: "store",
-        error: secError,
-        additionalContext: failureMetadata
+        error: secError
       )
 
       return Result<Void, SecurityProtocolError>.failure(secError.toStandardError())

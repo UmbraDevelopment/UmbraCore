@@ -2,38 +2,26 @@ load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
 umbra_swift_library(
     name = "CryptoServices",
-    srcs = glob(
-        include = [
-            "**/*.swift",
-        ],
-        exclude = [
-            # Exclude duplicate or conflicting implementations
-            "Types/EncryptionAlgorithm.swift",
-            "Types/AlgorithmConverters.swift",
-            "Implementation/CryptoServiceImpl.swift",
-            "Implementation/LoggingCryptoService.swift",
-            "Implementation/MockCryptoService.swift",
-            "DefaultCryptoService.swift",
-        ],
-    ),
+    srcs = glob([
+        "**/*.swift",
+    ], exclude = [
+        "**/*Tests.swift",
+        "Logging/**/*.swift",  # Exclude Logging files as they're in a separate target
+    ]),
     visibility = ["//visibility:public"],
     deps = [
         "//packages/UmbraCoreTypes/Sources/CoreSecurityTypes",
+        "//packages/UmbraCoreTypes/Sources/KeychainTypes",
+        "//packages/UmbraCoreTypes/Sources/LoggingTypes",
         "//packages/UmbraCoreTypes/Sources/CryptoTypes",
         "//packages/UmbraCoreTypes/Sources/DomainSecurityTypes",
-        "//packages/UmbraCoreTypes/Sources/LoggingTypes",
-        "//packages/UmbraCoreTypes/Sources/UmbraErrors",
-        "//packages/UmbraInterfaces/Sources/CoreInterfaces",
-        "//packages/UmbraInterfaces/Sources/CryptoInterfaces",
         "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
         "//packages/UmbraInterfaces/Sources/SecurityCoreInterfaces",
         "//packages/UmbraInterfaces/Sources/SecurityInterfaces",
+        "//packages/UmbraInterfaces/Sources/CryptoInterfaces",
+        "//packages/UmbraInterfaces/Sources/CoreInterfaces",
         "//packages/UmbraImplementations/Sources/LoggingServices",
-        "//packages/UmbraImplementations/Sources/LoggingAdapters",
         "//packages/UmbraImplementations/Sources/SecurityProviders",
-        # Removed dependency on APIServices to break the dependency cycle
-        # "//packages/UmbraImplementations/Sources/APIServices",
         "//packages/UmbraImplementations/Sources/CryptoServices/Logging:CryptoLogger",
-        "//packages/UmbraImplementations/Sources/KeychainServices:KeychainServices", # Added potential SecureStorage provider
     ],
 )

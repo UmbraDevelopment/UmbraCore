@@ -17,6 +17,8 @@ extension EncryptionAlgorithm {
         .aes256CBC
       case .aes256GCM:
         .aes256GCM
+      case .chacha20Poly1305:
+        .chacha20Poly1305
     }
   }
 
