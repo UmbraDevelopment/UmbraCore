@@ -67,7 +67,7 @@ public class ArchiveLogsCommand: BaseLogCommand, LogCommand {
         
         do {
             // Check if destination exists
-            guard let destination = getDestination(id: destinationId) else {
+            guard let destination = await getDestination(id: destinationId) else {
                 throw LoggingError.destinationNotFound(
                     "Cannot archive logs for destination with ID \(destinationId): not found"
                 )

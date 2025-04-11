@@ -209,19 +209,30 @@ public struct PrivacyAwareLogDTO: LogContextDTO, Sendable {
    */
   public func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> Self {
     // Create a new metadata collection
-    let mergedMetadata = LogMetadataDTOCollection()
+    var mergedMetadata = LogMetadataDTOCollection()
     
     // Copy existing metadata
     for key in self.metadata.getKeys() {
       if let value = self.metadata.getString(key: key) {
-        mergedMetadata.set(key: key, value: value)
+        // Store the result of the set operation
+        mergedMetadata = mergedMetadata.set(key: key, value: value)
       }
     }
     
     // Add all entries from the additional metadata
     for key in additionalMetadata.getKeys() {
       if let value = additionalMetadata.getString(key: key) {
-        mergedMetadata.set(key: key, value: value)
+        // Store the result of the set operation 
+        mergedMetadata = mergedMetadata.set(key: key, value: value)
+      }
+    }
+    
+    // Convert the metadata to the legacy format required by the initializer
+    var legacyMetadata: [String: (value: Any, privacy: LogPrivacyLevel)] = [:]
+    for key in mergedMetadata.getKeys() {
+      if let value = mergedMetadata.getString(key: key) {
+        // Assume a default privacy level of private for compatibility
+        legacyMetadata[key] = (value as Any, .private)
       }
     }
     
@@ -232,7 +243,7 @@ public struct PrivacyAwareLogDTO: LogContextDTO, Sendable {
       operation: operation,
       category: category,
       correlationID: correlationID,
-      metadata: mergedMetadata,
+      metadata: legacyMetadata,
       environment: environment
     )
   }

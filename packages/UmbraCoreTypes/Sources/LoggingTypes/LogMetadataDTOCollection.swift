@@ -100,6 +100,19 @@ public struct LogMetadataDTOCollection: Sendable, Equatable, Hashable {
     return result
   }
 
+  /// Sets a metadata value with automatic privacy classification
+  ///
+  /// This method is provided for backward compatibility with older code.
+  /// It adds a metadata entry with automatic privacy classification.
+  ///
+  /// - Parameters:
+  ///   - key: The metadata key
+  ///   - value: The metadata value
+  /// - Returns: The updated collection
+  public func set(key: String, value: String) -> LogMetadataDTOCollection {
+    return withAuto(key: key, value: value)
+  }
+
   /// Adds a metadata entry with "protected" privacy level to the collection
   /// This is an alias for withPrivate for compatibility with existing code
   ///

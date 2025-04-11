@@ -39,4 +39,10 @@ public struct PrivacyAnnotatedString: Sendable, Hashable {
   public static func sensitiveString(_ content: String) -> PrivacyAnnotatedString {
     PrivacyAnnotatedString(content, privacy: .sensitive)
   }
+  
+  /// The string value of this annotated string
+  /// This is provided for compatibility with existing code
+  public var stringValue: String {
+    content
+  }
 }

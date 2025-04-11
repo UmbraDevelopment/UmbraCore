@@ -541,6 +541,33 @@ public struct PrivacyString: Sendable, Hashable {
   /// Privacy annotations for different parts of the string
   public let privacyAnnotations: [Range<String.Index>: LogPrivacyLevel]
 
+  /// The content of the privacy string
+  public var content: String {
+    return rawValue
+  }
+  
+  /// The overall privacy level for the string
+  public var privacy: LogPrivacyLevel {
+    // Default to private if no annotations exist
+    guard !privacyAnnotations.isEmpty else {
+      return .private
+    }
+    
+    // Find the most restrictive privacy level
+    return privacyAnnotations.values.reduce(.public) { result, level in
+      switch (result, level) {
+      case (.sensitive, _), (_, .sensitive):
+        return .sensitive
+      case (.private, _), (_, .private):
+        return .private
+      case (.hash, _), (_, .hash):
+        return .hash
+      default:
+        return .public
+      }
+    }
+  }
+
   /// Creates a new PrivacyString with the given value and privacy annotations
   public init(rawValue: String, privacyAnnotations: [Range<String.Index>: LogPrivacyLevel]=[:]) {
     self.rawValue=rawValue

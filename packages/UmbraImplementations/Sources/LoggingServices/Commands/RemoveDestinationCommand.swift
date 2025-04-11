@@ -64,7 +64,7 @@ public class RemoveDestinationCommand: BaseLogCommand, LogCommand {
         
         do {
             // Check if destination exists
-            guard let destination = getDestination(id: destinationId) else {
+            guard let destination = await getDestination(id: destinationId) else {
                 throw LoggingError.destinationNotFound(
                     "Cannot remove destination with ID \(destinationId): not found"
                 )
@@ -125,7 +125,7 @@ public class RemoveDestinationCommand: BaseLogCommand, LogCommand {
             }
             
             // Unregister the destination
-            unregisterDestination(id: destinationId)
+            await unregisterDestination(id: destinationId)
             
             // Log success
             await logOperationSuccess(

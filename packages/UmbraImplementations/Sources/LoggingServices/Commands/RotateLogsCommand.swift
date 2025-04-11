@@ -64,14 +64,14 @@ public class RotateLogsCommand: BaseLogCommand, LogCommand {
         
         do {
             // Check if destination exists
-            guard let destination = getDestination(id: destinationId) else {
+            guard let destination = await getDestination(id: destinationId) else {
                 throw LoggingError.destinationNotFound(
                     "Cannot rotate logs for destination with ID \(destinationId): not found"
                 )
             }
             
             // Check if the destination type supports rotation
-            if destination.type != .file {
+            if destination.type != LogDestinationType.file {
                 throw LoggingError.invalidDestinationConfig(
                     "Log rotation is only supported for file destinations"
                 )

@@ -65,7 +65,7 @@ public class AddDestinationCommand: BaseLogCommand, LogCommand {
         
         do {
             // Check if destination already exists
-            if let existing = getDestination(id: destination.id) {
+            if let existing = await getDestination(id: destination.id) {
                 if !options.overwriteExisting {
                     throw LoggingError.destinationAlreadyExists(identifier: "Destination with ID \(destination.id) already exists")
                 } else {
@@ -79,7 +79,7 @@ public class AddDestinationCommand: BaseLogCommand, LogCommand {
             
             // Validate destination configuration if requested
             if options.validateConfiguration {
-                let validationResult = validateDestination(destination, for: provider)
+                let validationResult = await validateDestination(destination, for: provider)
                 
                 if !validationResult.isValid {
                     let issues = validationResult.issues.joined(separator: ", ")
@@ -118,7 +118,7 @@ public class AddDestinationCommand: BaseLogCommand, LogCommand {
             }
             
             // Register the destination
-            registerDestination(destination)
+            await registerDestination(destination)
             
             // Log success
             await logOperationSuccess(

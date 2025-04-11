@@ -120,7 +120,7 @@ public struct RedactionRule: Sendable {
                 let redactedValue = redact(value)
                 if value != redactedValue {
                     // Only update if actually changed
-                    result = result.with(key: key, value: redactedValue)
+                    result = result.with(key: key, value: redactedValue, privacyLevel: .public)
                 }
             }
         }

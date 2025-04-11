@@ -67,7 +67,7 @@ public class PurgeLogsCommand: BaseLogCommand, LogCommand {
         
         do {
             // Get target destinations
-            let destinations = try getTargetDestinations()
+            let destinations = try await getTargetDestinations()
             
             if destinations.isEmpty {
                 throw LoggingError.noDestinationsFound(
@@ -178,34 +178,39 @@ public class PurgeLogsCommand: BaseLogCommand, LogCommand {
      - Returns: The destinations to purge logs from
      - Throws: LoggingError if a specified destination isn't found
      */
-    private func getTargetDestinations() throws -> [LogDestinationDTO] {
+    private func getTargetDestinations() async throws -> [LogDestinationDTO] {
         if let destinationId = destinationId {
             // Use specific destination
-            if let destination = getDestination(id: destinationId) {
+            if let destination = await getDestination(id: destinationId) {
                 return [destination]
             } else {
                 throw LoggingError.destinationNotFound(
-                    "Destination not found: \(destinationId)"
+                    "Cannot purge logs for destination with ID \(destinationId): not found"
                 )
             }
         } else if !options.destinationIds.isEmpty {
-            // Use destination IDs from options
+            // Use specified list of destinations
             var result: [LogDestinationDTO] = []
             
             for id in options.destinationIds {
-                if let destination = getDestination(id: id) {
+                if let destination = await getDestination(id: id) {
                     result.append(destination)
                 } else {
-                    throw LoggingError.destinationNotFound(
-                        "Destination not found: \(id)"
-                    )
+                    // Log a warning that destination wasn't found
+                    await logWarning("Skipping unknown destination with ID \(id)")
                 }
+            }
+            
+            if result.isEmpty {
+                throw LoggingError.noDestinationsFound(
+                    "None of the specified destinations could be found"
+                )
             }
             
             return result
         } else {
             // Use all registered destinations
-            return getAllDestinations()
+            return await getAllDestinations()
         }
     }
     

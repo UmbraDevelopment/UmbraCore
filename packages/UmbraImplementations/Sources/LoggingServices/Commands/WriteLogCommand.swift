@@ -24,20 +24,19 @@ public class WriteLogCommand: BaseLogCommand, LogCommand {
      
      - Parameters:
         - entry: The log entry to write
-        - destinationIds: The destinations to write to (empty means all registered destinations)
-        - provider: Provider for logging operations
-        - logger: Logger instance for logging operations
+        - destinationIds: The destinations to write to
+        - provider: Provider for writing logs
+        - loggingServices: The logging services actor
      */
-    public init(
+    init(
         entry: LogEntryDTO,
         destinationIds: [String] = [],
         provider: LoggingProviderProtocol,
-        logger: PrivacyAwareLoggingProtocol
+        loggingServices: LoggingServicesActor
     ) {
         self.entry = entry
         self.destinationIds = destinationIds
-        
-        super.init(provider: provider, logger: logger)
+        super.init(provider: provider, loggingServices: loggingServices)
     }
     
     /**
@@ -66,16 +65,12 @@ public class WriteLogCommand: BaseLogCommand, LogCommand {
         
         do {
             // Determine which destinations to write to
-            let destinations = try getTargetDestinations()
+            let destinations = try await getTargetDestinations()
             
             if destinations.isEmpty {
                 // No eligible destinations found
                 if entry.level == .debug || entry.level == .trace {
-                    await logger.log(
-                        .warning,
-                        "No eligible destinations found for log entry",
-                        context: operationContext
-                    )
+                    await logWarning("No eligible destinations found for log entry")
                 }
                 return true
             }
@@ -84,9 +79,9 @@ public class WriteLogCommand: BaseLogCommand, LogCommand {
             var allSuccessful = true
             
             for destination in destinations {
-                if shouldWriteToDestination(destination) {
+                if await shouldWriteToDestination(destination) {
                     // Apply redaction if needed
-                    let processedEntry = applyRedactionRules(
+                    let processedEntry = await applyRedactionRules(
                         to: entry,
                         rules: destination.configuration.redactionRules
                     )
@@ -153,21 +148,22 @@ public class WriteLogCommand: BaseLogCommand, LogCommand {
      - Returns: The destinations to write to
      - Throws: LoggingError if a specified destination isn't found
      */
-    private func getTargetDestinations() throws -> [LogDestinationDTO] {
+    private func getTargetDestinations() async throws -> [LogDestinationDTO] {
         if destinationIds.isEmpty {
             // Use all registered destinations
-            return getAllDestinations().filter { $0.isEnabled }
+            return await getAllDestinations().filter { $0.isEnabled }
         } else {
             // Use specific destinations
             var result: [LogDestinationDTO] = []
             
             for destinationId in destinationIds {
-                if let destination = getDestination(id: destinationId) {
+                if let destination = await getDestination(id: destinationId) {
                     if destination.isEnabled {
                         result.append(destination)
                     }
                 } else {
-                    throw LoggingError.destinationNotFound("Destination not found: \(destinationId)")
+                    // Log warning if destination not found
+                    await logWarning("Skipping unknown destination with ID \(destinationId)")
                 }
             }
             
@@ -183,14 +179,14 @@ public class WriteLogCommand: BaseLogCommand, LogCommand {
         - destination: The destination to check
      - Returns: Whether the entry should be written to the destination
      */
-    private func shouldWriteToDestination(_ destination: LogDestinationDTO) -> Bool {
+    private func shouldWriteToDestination(_ destination: LogDestinationDTO) async -> Bool {
         // Check log level
         if entry.level.rawValue < destination.minimumLevel.rawValue {
             return false
         }
         
         // Apply filter rules if they exist
-        return applyFilterRules(
+        return await applyFilterRules(
             to: entry,
             rules: destination.configuration.filterRules
         )

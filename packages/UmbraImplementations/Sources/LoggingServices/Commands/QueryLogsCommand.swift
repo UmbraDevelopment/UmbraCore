@@ -68,7 +68,7 @@ public class QueryLogsCommand: BaseLogCommand, LogCommand {
         
         do {
             // Check if destination exists
-            guard let destination = getDestination(id: destinationId) else {
+            guard let destination = await getDestination(id: destinationId) else {
                 throw LoggingError.destinationNotFound(
                     "Cannot query logs for destination with ID \(destinationId): not found"
                 )

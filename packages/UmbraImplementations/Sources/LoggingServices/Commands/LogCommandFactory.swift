@@ -16,19 +16,25 @@ public class LogCommandFactory {
     /// Map of providers by destination type
     private let providers: [LogDestinationType: LoggingProviderProtocol]
     
+    /// Reference to the LoggingServicesActor
+    private let loggingServicesActor: LoggingServicesActor
+    
     /**
      Initialises a new logging command factory.
      
      - Parameters:
         - providers: Map of providers by destination type
         - logger: Logger instance for logging operations
+        - loggingServicesActor: Reference to the LoggingServicesActor
      */
     public init(
         providers: [LogDestinationType: LoggingProviderProtocol],
-        logger: PrivacyAwareLoggingProtocol
+        logger: PrivacyAwareLoggingProtocol,
+        loggingServicesActor: LoggingServicesActor
     ) {
         self.providers = providers
         self.logger = logger
+        self.loggingServicesActor = loggingServicesActor
     }
     
     /**
@@ -53,7 +59,7 @@ public class LogCommandFactory {
             entry: entry,
             destinationIds: destinationIds,
             provider: provider,
-            logger: logger
+            loggingServices: loggingServicesActor
         )
     }
     
@@ -78,7 +84,7 @@ public class LogCommandFactory {
             destination: destination,
             options: options,
             provider: provider,
-            logger: logger
+            loggingServices: loggingServicesActor
         )
     }
     
@@ -104,7 +110,7 @@ public class LogCommandFactory {
             destinationId: destinationId,
             options: options,
             provider: provider,
-            logger: logger
+            loggingServices: loggingServicesActor
         )
     }
     
@@ -131,7 +137,7 @@ public class LogCommandFactory {
             destinationId: destinationId,
             options: options,
             provider: provider,
-            logger: logger
+            loggingServices: loggingServicesActor
         )
     }
     
@@ -158,7 +164,7 @@ public class LogCommandFactory {
             destinationId: destinationId,
             options: options,
             provider: provider,
-            logger: logger
+            loggingServices: loggingServicesActor
         )
     }
     
@@ -185,7 +191,7 @@ public class LogCommandFactory {
             destinationId: destinationId,
             options: options,
             provider: provider,
-            logger: logger
+            loggingServices: loggingServicesActor
         )
     }
     
@@ -212,7 +218,7 @@ public class LogCommandFactory {
             destinationId: destinationId,
             options: options,
             provider: provider,
-            logger: logger
+            loggingServices: loggingServicesActor
         )
     }
     
@@ -238,7 +244,7 @@ public class LogCommandFactory {
             destinationId: destinationId,
             options: options,
             provider: provider,
-            logger: logger
+            loggingServices: loggingServicesActor
         )
     }
     
