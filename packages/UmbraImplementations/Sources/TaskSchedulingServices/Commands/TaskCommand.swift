@@ -5,146 +5,129 @@ import TaskSchedulingInterfaces
 import CoreDTOs
 
 /**
- Base protocol for all task scheduling operation commands.
+ Protocol for all task scheduling commands.
  
- This protocol defines the contract that all task command implementations
- must fulfil, following the command pattern to encapsulate task operations in
- discrete command objects with a consistent interface.
+ This protocol defines the contract that all task scheduling commands must adhere to,
+ following the command pattern architecture.
  */
 public protocol TaskCommand {
-    /// The type of result returned by this command when executed
-    associatedtype ResultType: Sendable
+    /// The type of result that the command produces
+    associatedtype ResultType
     
     /**
-     Executes the task operation.
+     Executes the command.
      
      - Parameters:
         - context: The logging context for the operation
-     - Returns: The result of the operation
-     - Throws: TaskSchedulingError if the operation fails
+     - Returns: The result of the command execution
+     - Throws: Error if the command execution fails
      */
     func execute(context: LogContextDTO) async throws -> ResultType
 }
 
 /**
- Base class for task commands providing common functionality.
+ Base class for task scheduling commands.
  
- This abstract base class provides shared functionality for all task commands,
- including standardised logging and utility methods that are commonly needed across
- task scheduling operations.
+ This class provides common functionality for all task scheduling commands,
+ such as accessing the in-memory task store and creating log contexts.
  */
 public class BaseTaskCommand {
-    /// Logging instance for task operations
-    protected let logger: PrivacyAwareLoggingProtocol
+    /// In-memory storage for scheduled tasks (shared across all command instances)
+    static var scheduledTasks: [String: ScheduledTaskDTO] = [:]
     
-    /// In-memory store of scheduled tasks
-    protected static var scheduledTasks: [String: ScheduledTaskDTO] = [:]
+    /// Logger instance for task operations
+    let logger: PrivacyAwareLoggingProtocol
     
     /**
-     Initializes a new base task command.
+     Initialises a new base task command.
      
      - Parameters:
         - logger: Logger instance for task operations
      */
-    public init(logger: PrivacyAwareLoggingProtocol) {
+    init(logger: PrivacyAwareLoggingProtocol) {
         self.logger = logger
     }
     
     /**
-     Creates a logging context with standardised metadata.
+     Creates a log context for a task operation.
      
      - Parameters:
-        - operation: The name of the operation
-        - taskID: The unique task identifier (if applicable)
-        - additionalMetadata: Additional metadata for the log context
-     - Returns: A configured log context
+        - operation: The operation being performed
+        - taskID: The ID of the task being operated on (optional)
+        - additionalMetadata: Additional metadata to include in the context
+     - Returns: A log context for the operation
      */
-    protected func createLogContext(
+    func createLogContext(
         operation: String,
         taskID: String? = nil,
         additionalMetadata: [String: (value: String, privacyLevel: PrivacyLevel)] = [:]
     ) -> LogContextDTO {
-        // Create a base metadata collection
-        var metadata = LogMetadataDTOCollection()
-            .withPublic(key: "operation", value: operation)
-            .withPublic(key: "source", value: "TaskSchedulingService")
+        var metadata = LogMetadataDTOCollection.empty
         
-        // Add task ID if provided
         if let taskID = taskID {
             metadata = metadata.withPublic(key: "taskID", value: taskID)
         }
         
-        // Add additional metadata with specified privacy levels
         for (key, value) in additionalMetadata {
-            switch value.privacyLevel {
-            case .public:
-                metadata = metadata.withPublic(key: key, value: value.value)
-            case .protected:
-                metadata = metadata.withProtected(key: key, value: value.value)
-            case .private:
-                metadata = metadata.withPrivate(key: key, value: value.value)
-            }
+            metadata = metadata.with(
+                key: key,
+                value: value.value,
+                privacyLevel: value.privacyLevel
+            )
         }
         
-        // Create and return the log context
         return LogContextDTO(
-            operationName: operation,
-            sourceComponent: "TaskSchedulingService",
+            operation: operation,
+            category: "TaskScheduling",
             metadata: metadata
         )
     }
     
     /**
-     Updates a task in the shared task store.
-     
-     - Parameters:
-        - task: The task to update
-     */
-    protected func updateTask(_ task: ScheduledTaskDTO) {
-        Self.scheduledTasks[task.id] = task
-    }
-    
-    /**
-     Removes a task from the shared task store.
-     
-     - Parameters:
-        - taskID: The ID of the task to remove
-     */
-    protected func removeTask(taskID: String) {
-        Self.scheduledTasks.removeValue(forKey: taskID)
-    }
-    
-    /**
      Checks if a task with the given ID exists.
      
-     - Parameter taskID: The task ID to check
+     - Parameters:
+        - taskID: The ID of the task to check
      - Returns: True if the task exists, false otherwise
      */
-    protected func taskExists(taskID: String) -> Bool {
+    func taskExists(taskID: String) -> Bool {
         return Self.scheduledTasks[taskID] != nil
     }
     
     /**
      Gets a task by its ID.
      
-     - Parameter taskID: The task ID to retrieve
+     - Parameters:
+        - taskID: The ID of the task to retrieve
      - Returns: The task if found, nil otherwise
      */
-    protected func getTask(taskID: String) -> ScheduledTaskDTO? {
+    func getTask(taskID: String) -> ScheduledTaskDTO? {
         return Self.scheduledTasks[taskID]
     }
     
     /**
-     Validates that a task exists and throws an error if it doesn't.
+     Updates a task in the store.
      
-     - Parameter taskID: The task ID to validate
-     - Throws: TaskSchedulingError.taskNotFound if the task doesn't exist
-     - Returns: The task if found
+     - Parameters:
+        - task: The task to update
      */
-    protected func validateTaskExists(taskID: String) throws -> ScheduledTaskDTO {
-        guard let task = getTask(taskID) else {
-            throw TaskSchedulingError.taskNotFound(taskID)
+    func updateTask(_ task: ScheduledTaskDTO) {
+        Self.scheduledTasks[task.id] = task
+    }
+    
+    /**
+     Validates that a task with the given ID exists.
+     
+     - Parameters:
+        - taskID: The ID of the task to validate
+     - Returns: The task if found
+     - Throws: TaskSchedulingError.taskNotFound if the task doesn't exist
+     */
+    func validateTaskExists(taskID: String) throws -> ScheduledTaskDTO {
+        guard let task = Self.scheduledTasks[taskID] else {
+            throw TaskSchedulingError.taskNotFound("Task with ID \(taskID) not found")
         }
+        
         return task
     }
 }
