@@ -1,7 +1,7 @@
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
-import CoreDTOs
+import SchedulingTypes
 
 /**
  Protocol defining the logging provider operations.

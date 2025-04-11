@@ -20,24 +20,30 @@ public struct SnapshotLogContext: LogContextDTO, Sendable {
 
   /// The operation being performed
   public let operation: String
+  
+  /// The category for the log entry
+  public let category: String
 
   /// Creates a new snapshot log context
   ///
   /// - Parameters:
   ///   - snapshotID: The snapshot identifier
   ///   - operation: The operation being performed
+  ///   - category: The category for the log entry
   ///   - correlationId: Optional correlation identifier for tracing related logs
   ///   - source: Optional source information (e.g., file, function, line)
   ///   - additionalContext: Optional additional context with privacy annotations
   public init(
     snapshotID: String,
     operation: String,
+    category: String = "Snapshot",
     correlationID: String?=nil,
     source: String?=nil,
     additionalContext: LogMetadataDTOCollection=LogMetadataDTOCollection()
   ) {
     self.snapshotID=snapshotID
     self.operation=operation
+    self.category=category
     self.correlationID=correlationID
     self.source=source
 
@@ -49,8 +55,25 @@ public struct SnapshotLogContext: LogContextDTO, Sendable {
 
     // Add operation as public metadata
     contextMetadata=contextMetadata.withPublic(key: "operation", value: operation)
+    
+    // Add category as public metadata
+    contextMetadata=contextMetadata.withPublic(key: "category", value: category)
 
     metadata=contextMetadata
+  }
+  
+  /// Creates a new context with additional metadata merged with the existing metadata
+  /// - Parameter additionalMetadata: Additional metadata to include
+  /// - Returns: New context with merged metadata
+  public func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> SnapshotLogContext {
+    return SnapshotLogContext(
+      snapshotID: snapshotID,
+      operation: operation,
+      category: category,
+      correlationID: correlationID,
+      source: source,
+      additionalContext: self.metadata.merging(with: additionalMetadata)
+    )
   }
 
   /// Creates a new instance of this context with updated metadata
@@ -61,6 +84,7 @@ public struct SnapshotLogContext: LogContextDTO, Sendable {
     SnapshotLogContext(
       snapshotID: snapshotID,
       operation: operation,
+      category: category,
       correlationID: correlationID,
       source: source,
       additionalContext: self.metadata.merging(with: metadata)
@@ -75,6 +99,7 @@ public struct SnapshotLogContext: LogContextDTO, Sendable {
     SnapshotLogContext(
       snapshotID: snapshotID,
       operation: operation,
+      category: category,
       correlationID: correlationID,
       source: source,
       additionalContext: metadata
@@ -89,6 +114,7 @@ public struct SnapshotLogContext: LogContextDTO, Sendable {
     SnapshotLogContext(
       snapshotID: snapshotID,
       operation: operation,
+      category: category,
       correlationID: correlationID,
       source: source,
       additionalContext: metadata

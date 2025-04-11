@@ -101,8 +101,9 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
       CryptoLogContext(
         operation: "generic",
         source: context.source,
+        metadata: metadata,
         correlationID: context.correlationID,
-        metadata: metadata
+        category: context.category
       )
     }
 
@@ -213,14 +214,15 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
     let cryptoContext=CryptoLogContext(
       operation: "sensitive_operation",
       source: context.source,
+      metadata: context.metadata,
       correlationID: context.correlationID,
-      metadata: context.metadata
+      category: context.category
     )
 
     // Add sensitive values with proper privacy classification
     var enhancedContext=cryptoContext
     for (key, value) in sensitiveValues.asDictionary {
-      enhancedContext=enhancedContext.withMetadata(key: key, value: value, privacy: .sensitive)
+      enhancedContext=enhancedContext.withSensitiveMetadata(key: key, value: value)
     }
 
     // Delegate to the base logger
@@ -259,8 +261,10 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
 
     let context=CryptoLogContext(
       operation: "encrypt",
-      identifier: dataIdentifier,
-      metadata: contextMetadata
+      source: "encryption",
+      metadata: contextMetadata,
+      correlationID: nil,
+      category: "Security"
     )
 
     await info(message, context: context)
@@ -296,8 +300,10 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
 
     let context=CryptoLogContext(
       operation: "decrypt",
-      identifier: dataIdentifier,
-      metadata: contextMetadata
+      source: "decryption",
+      metadata: contextMetadata,
+      correlationID: nil,
+      category: "Security"
     )
 
     await info(message, context: context)
@@ -327,8 +333,10 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
 
     let context=CryptoLogContext(
       operation: "generateKey",
-      identifier: keyIdentifier,
-      metadata: contextMetadata
+      source: "keyGeneration",
+      metadata: contextMetadata,
+      correlationID: nil,
+      category: "Security"
     )
 
     await info(message, context: context)
@@ -358,8 +366,10 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
 
     let context=CryptoLogContext(
       operation: "storeData",
-      identifier: dataIdentifier,
-      metadata: contextMetadata
+      source: "dataStorage",
+      metadata: contextMetadata,
+      correlationID: nil,
+      category: "Security"
     )
 
     await info(message, context: context)
@@ -392,8 +402,10 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
 
     let context=CryptoLogContext(
       operation: "hash",
-      identifier: dataIdentifier,
-      metadata: contextMetadata
+      source: "hashing",
+      metadata: contextMetadata,
+      correlationID: nil,
+      category: "Security"
     )
 
     await info(message, context: context)
@@ -426,8 +438,10 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
 
     let context=CryptoLogContext(
       operation: "verifySignature",
-      identifier: dataIdentifier,
-      metadata: contextMetadata
+      source: "signatureVerification",
+      metadata: contextMetadata,
+      correlationID: nil,
+      category: "Security"
     )
 
     await info(message, context: context)
@@ -463,8 +477,10 @@ public actor CryptoLogger: PrivacyAwareLoggingProtocol {
 
     let context=CryptoLogContext(
       operation: "sign",
-      identifier: dataIdentifier,
-      metadata: contextMetadata
+      source: "signing",
+      metadata: contextMetadata,
+      correlationID: nil,
+      category: "Security"
     )
 
     await info(message, context: context)

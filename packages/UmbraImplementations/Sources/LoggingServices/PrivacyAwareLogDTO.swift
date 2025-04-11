@@ -23,7 +23,9 @@ import LoggingTypes
  // Create a simple log context
  let context = PrivacyAwareLogDTO(
      source: "UserService",
-     domainName: "Authentication"
+     domainName: "Authentication",
+     operation: "login",
+     category: "security"
  )
 
  // Log with the context
@@ -37,6 +39,8 @@ import LoggingTypes
  let context = PrivacyAwareLogDTO(
      source: "PaymentService",
      domainName: "Transactions",
+     operation: "processPayment",
+     category: "finance",
      metadata: [
          "transaction_id": (value: transactionId, privacy: .public),
          "amount": (value: amount, privacy: .public),
@@ -68,6 +72,12 @@ public struct PrivacyAwareLogDTO: LogContextDTO, Sendable {
 
   /// Domain name for the log context
   public let domainName: String
+  
+  /// Operation name for the log context
+  public let operation: String
+  
+  /// Category name for the log context
+  public let category: String
 
   /// Correlation ID for tracking related logs
   public let correlationID: String?
@@ -87,6 +97,8 @@ public struct PrivacyAwareLogDTO: LogContextDTO, Sendable {
    - Parameters:
      - source: The source of the log, typically the class or component name
      - domainName: The domain name for the log context, used for filtering and categorization
+     - operation: The operation name for the log context
+     - category: The category name for the log context
      - correlationID: Optional correlation ID for tracking related logs across services
      - metadata: Dictionary of metadata with privacy classifications for each value
      - environment: The deployment environment, which affects how privacy controls are applied
@@ -97,6 +109,8 @@ public struct PrivacyAwareLogDTO: LogContextDTO, Sendable {
    let context = PrivacyAwareLogDTO(
        source: "AuthenticationService",
        domainName: "Security",
+       operation: "login",
+       category: "security",
        correlationID: requestID,
        metadata: [
            "user_id": (value: userId, privacy: .private),
@@ -108,12 +122,16 @@ public struct PrivacyAwareLogDTO: LogContextDTO, Sendable {
   public init(
     source: String?=nil,
     domainName: String="UmbraCore",
+    operation: String="",
+    category: String="",
     correlationID: String?=nil,
     metadata: [String: (value: Any, privacy: LogPrivacyLevel)]=[:],
     environment: LoggingTypes.DeploymentEnvironment = .development
   ) {
     self.source=source
     self.domainName=domainName
+    self.operation=operation
+    self.category=category
     self.correlationID=correlationID
     self.environment=environment
     self.metadata=PrivacyAwareLogDTO.createMetadataCollection(from: metadata)
@@ -149,6 +167,8 @@ public struct PrivacyAwareLogDTO: LogContextDTO, Sendable {
     return PrivacyAwareLogDTO(
       source: source,
       domainName: domainName,
+      operation: operation,
+      category: category,
       correlationID: correlationID,
       metadata: updatedMetadata,
       environment: environment
@@ -173,8 +193,46 @@ public struct PrivacyAwareLogDTO: LogContextDTO, Sendable {
     PrivacyAwareLogDTO(
       source: source,
       domainName: domainName,
+      operation: operation,
+      category: category,
       correlationID: correlationID,
       metadata: extractRawMetadata(),
+      environment: environment
+    )
+  }
+
+  /**
+   Creates a new instance with additional metadata merged into the existing metadata
+   ///
+   - Parameter additionalMetadata: Additional metadata to be merged
+   - Returns: A new instance with the merged metadata
+   */
+  public func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> Self {
+    // Create a new metadata collection
+    let mergedMetadata = LogMetadataDTOCollection()
+    
+    // Copy existing metadata
+    for key in self.metadata.getKeys() {
+      if let value = self.metadata.getString(key: key) {
+        mergedMetadata.set(key: key, value: value)
+      }
+    }
+    
+    // Add all entries from the additional metadata
+    for key in additionalMetadata.getKeys() {
+      if let value = additionalMetadata.getString(key: key) {
+        mergedMetadata.set(key: key, value: value)
+      }
+    }
+    
+    // Use the type's initializer to create a new instance with the merged metadata
+    return Self(
+      source: source,
+      domainName: domainName,
+      operation: operation,
+      category: category,
+      correlationID: correlationID,
+      metadata: mergedMetadata,
       environment: environment
     )
   }

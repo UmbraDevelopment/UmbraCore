@@ -60,7 +60,12 @@ public actor CryptoServiceMonitor {
    - Returns: Boolean indicating if monitoring started successfully
    */
   public func startMonitoring() async -> Bool {
-    let context=BaseLogContextDTO(domainName: "CryptoService", source: "CryptoServiceMonitor")
+    let context=BaseLogContextDTO(
+      domainName: "CryptoService", 
+      operation: "startMonitoring",
+      category: "ServiceMonitoring",
+      source: "CryptoServiceMonitor"
+    )
     await logger.info("Starting crypto service monitoring", context: context)
 
     // Reset event storage
@@ -77,7 +82,12 @@ public actor CryptoServiceMonitor {
    - Returns: Boolean indicating if monitoring stopped successfully
    */
   public func stopMonitoring() async -> Bool {
-    let context=BaseLogContextDTO(domainName: "CryptoService", source: "CryptoServiceMonitor")
+    let context=BaseLogContextDTO(
+      domainName: "CryptoService", 
+      operation: "stopMonitoring",
+      category: "ServiceMonitoring",
+      source: "CryptoServiceMonitor"
+    )
     await logger.info("Stopping crypto service monitoring", context: context)
 
     // No cleanup needed for in-memory monitoring
@@ -94,6 +104,8 @@ public actor CryptoServiceMonitor {
   public func recordEvent(_ event: CryptoEventDTO) async {
     let context=BaseLogContextDTO(
       domainName: "CryptoXPC",
+      operation: "recordEvent",
+      category: "EventMonitoring",
       source: "CryptoServiceMonitor.recordEvent",
       metadata: LogMetadataDTOCollection()
     )
@@ -121,6 +133,8 @@ public actor CryptoServiceMonitor {
   public func recordEvents(_ events: [CryptoEventDTO]) async {
     let context=BaseLogContextDTO(
       domainName: "CryptoXPC",
+      operation: "recordEvents",
+      category: "EventMonitoring",
       source: "CryptoServiceMonitor.recordEvents",
       metadata: LogMetadataDTOCollection()
     )
@@ -166,7 +180,12 @@ public actor CryptoServiceMonitor {
    - Returns: Boolean indicating successful clearing
    */
   public func clearEvents() async -> Bool {
-    let context=BaseLogContextDTO(domainName: "CryptoService", source: "CryptoServiceMonitor")
+    let context=BaseLogContextDTO(
+      domainName: "CryptoService", 
+      operation: "clearEvents",
+      category: "EventManagement",
+      source: "CryptoServiceMonitor"
+    )
     await logger.info("Clearing all crypto events", context: context)
 
     events=[]

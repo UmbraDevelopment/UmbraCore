@@ -45,6 +45,10 @@
       "rule": "swift_library"
     },
     {
+      "name": "rule //packages/UmbraCoreTypes/Sources/FileSystemCommonTypes:FileSystemCommonTypes",
+      "rule": "swift_library"
+    },
+    {
       "name": "rule //packages/UmbraCoreTypes/Sources/FileSystemTypes:FileSystemTypes",
       "rule": "swift_library"
     },
@@ -70,6 +74,10 @@
     },
     {
       "name": "rule //packages/UmbraCoreTypes/Sources/Scheduling:Scheduling",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraCoreTypes/Sources/SchedulingTypes:SchedulingTypes",
       "rule": "swift_library"
     },
     {
@@ -165,6 +173,10 @@
       "rule": "swift_library"
     },
     {
+      "name": "rule //packages/UmbraImplementations/Sources/CoreFileOperations:CoreFileOperations",
+      "rule": "swift_library"
+    },
+    {
       "name": "rule //packages/UmbraImplementations/Sources/CoreServices:CoreServices",
       "rule": "swift_library"
     },
@@ -194,6 +206,14 @@
     },
     {
       "name": "rule //packages/UmbraImplementations/Sources/ErrorLoggingServices:ErrorLoggingServices",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/FileMetadataOperations:FileMetadataOperations",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/FileSandboxing:FileSandboxing",
       "rule": "swift_library"
     },
     {
@@ -242,6 +262,10 @@
     },
     {
       "name": "rule //packages/UmbraImplementations/Sources/ResticServices:ResticServices",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/SecureFileOperations:SecureFileOperations",
       "rule": "swift_library"
     },
     {
@@ -294,6 +318,10 @@
     },
     {
       "name": "rule //packages/UmbraImplementations/Sources/XPCServices:XPCServices",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraInterfaces:UmbraInterfaces",
       "rule": "swift_library"
     },
     {

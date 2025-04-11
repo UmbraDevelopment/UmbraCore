@@ -96,6 +96,8 @@ public actor KeychainLogger: DomainLoggerProtocol {
       // Create a new context for the error
       var errorContext=BaseLogContextDTO(
         domainName: domainName,
+        operation: "logError",
+        category: "Error",
         source: context.getSource()
       )
 
@@ -360,17 +362,23 @@ public actor KeychainLogger: DomainLoggerProtocol {
  */
 private struct BaseLogContextDTO: LogContextDTO {
   let domainName: String
+  let operation: String
+  let category: String
   let source: String?
   let correlationID: String?
   private let metadataCollection: LogMetadataDTOCollection
 
   init(
     domainName: String,
-    source: String?,
+    operation: String,
+    category: String,
+    source: String?=nil,
     correlationID: String?=nil,
     metadataCollection: LogMetadataDTOCollection=LogMetadataDTOCollection()
   ) {
     self.domainName=domainName
+    self.operation=operation
+    self.category=category
     self.source=source
     self.correlationID=correlationID
     self.metadataCollection=metadataCollection
@@ -397,6 +405,8 @@ private struct BaseLogContextDTO: LogContextDTO {
   func withUpdatedMetadata(_ updatedMetadata: LogMetadataDTOCollection) -> BaseLogContextDTO {
     BaseLogContextDTO(
       domainName: domainName,
+      operation: operation,
+      category: category,
       source: source,
       correlationID: correlationID,
       metadataCollection: updatedMetadata

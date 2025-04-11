@@ -17,7 +17,7 @@
 /// - Is Foundation-independent where possible
 
 /// Standard log levels representing the severity of log entries.
-public enum LogLevel: String, Sendable, Equatable, CaseIterable, Comparable, Hashable {
+public enum LogLevel: String, Sendable, Equatable, CaseIterable, Comparable, Hashable, Codable {
   case trace
   case debug
   case info
@@ -360,6 +360,12 @@ public struct LogContext: Sendable, Equatable, Hashable, LogContextDTO {
 
   /// Domain name identifying the log scope
   public let domainName: String
+  
+  /// The operation being performed
+  public let operation: String
+  
+  /// The category for the log entry
+  public let category: String
 
   /// Correlation ID for tracing related logs
   public let correlationID: String?
@@ -382,18 +388,24 @@ public struct LogContext: Sendable, Equatable, Hashable, LogContextDTO {
   ///   - metadata: Optional metadata collection
   ///   - correlationId: Unique identifier for correlating related logs
   ///   - timestamp: Timestamp (defaults to a pre-generated value)
+  ///   - operation: The operation being performed
+  ///   - category: The category for this log entry
   public init(
     source: String,
     metadata: LogMetadataDTOCollection?=nil,
     correlationID: LogIdentifier=LogIdentifier.unique(),
     timestamp: LogTimestamp=LogTimestamp(secondsSinceEpoch: 1_609_459_200.0),
-    domainName: String="DefaultDomain"
+    domainName: String="DefaultDomain",
+    operation: String="default",
+    category: String="General"
   ) {
     self.source=source
     metadataCollection=metadata
     self.correlationID=correlationID.description
     self.timestamp=timestamp
     self.domainName=domainName
+    self.operation=operation
+    self.category=category
   }
 
   /// Async initialiser that generates a current timestamp
@@ -402,11 +414,15 @@ public struct LogContext: Sendable, Equatable, Hashable, LogContextDTO {
   ///   - source: Source component identifier
   ///   - metadata: Optional metadata collection
   ///   - correlationId: Unique identifier for correlating related logs
+  ///   - operation: The operation being performed
+  ///   - category: The category for this log entry
   public static func create(
     source: String,
     metadata: LogMetadataDTOCollection?=nil,
     correlationID: LogIdentifier=LogIdentifier.unique(),
-    domainName: String="DefaultDomain"
+    domainName: String="DefaultDomain",
+    operation: String="default",
+    category: String="General"
   ) async -> LogContext {
     let timestamp=await LogTimestamp.now()
     return LogContext(
@@ -414,7 +430,9 @@ public struct LogContext: Sendable, Equatable, Hashable, LogContextDTO {
       metadata: metadata,
       correlationID: correlationID,
       timestamp: timestamp,
-      domainName: domainName
+      domainName: domainName,
+      operation: operation,
+      category: category
     )
   }
 
@@ -422,6 +440,23 @@ public struct LogContext: Sendable, Equatable, Hashable, LogContextDTO {
   /// - Returns: Source information for logs, or a default if not available
   public func getSource() -> String {
     source ?? "UnknownSource"
+  }
+  
+  /// Creates a new context with additional metadata merged with the existing metadata
+  /// - Parameter additionalMetadata: Additional metadata to include
+  /// - Returns: New context with merged metadata
+  public func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> LogContext {
+    let combinedMetadata = metadataCollection?.merging(with: additionalMetadata) ?? additionalMetadata
+    
+    return LogContext(
+      source: getSource(),
+      metadata: combinedMetadata,
+      correlationID: LogIdentifier(value: correlationID ?? ""),
+      timestamp: timestamp,
+      domainName: domainName,
+      operation: operation,
+      category: category
+    )
   }
 
   /// Create a new context with updated metadata
@@ -435,7 +470,9 @@ public struct LogContext: Sendable, Equatable, Hashable, LogContextDTO {
       metadata: combinedMetadata,
       correlationID: LogIdentifier(value: correlationID ?? ""),
       timestamp: timestamp,
-      domainName: domainName
+      domainName: domainName,
+      operation: operation,
+      category: category
     )
   }
 
@@ -449,6 +486,8 @@ public struct LogContext: Sendable, Equatable, Hashable, LogContextDTO {
 
     return BaseLogContextDTO(
       domainName: domainName,
+      operation: operation,
+      category: category,
       source: source,
       metadata: finalMetadata,
       correlationID: correlationID
@@ -464,7 +503,9 @@ public struct LogContext: Sendable, Equatable, Hashable, LogContextDTO {
       metadata: metadataCollection,
       correlationID: LogIdentifier(value: correlationID ?? ""),
       timestamp: timestamp,
-      domainName: domainName
+      domainName: domainName,
+      operation: operation,
+      category: category
     )
   }
 
@@ -475,6 +516,8 @@ public struct LogContext: Sendable, Equatable, Hashable, LogContextDTO {
     hasher.combine(correlationID)
     hasher.combine(timestamp)
     hasher.combine(domainName)
+    hasher.combine(operation)
+    hasher.combine(category)
   }
 
   /// Required for Equatable conformance
@@ -483,7 +526,9 @@ public struct LogContext: Sendable, Equatable, Hashable, LogContextDTO {
       lhs.metadataCollection == rhs.metadataCollection &&
       lhs.correlationID == rhs.correlationID &&
       lhs.timestamp == rhs.timestamp &&
-      lhs.domainName == rhs.domainName
+      lhs.domainName == rhs.domainName &&
+      lhs.operation == rhs.operation &&
+      lhs.category == rhs.category
   }
 }
 

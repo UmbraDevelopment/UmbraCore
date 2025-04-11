@@ -95,6 +95,8 @@ public struct BaseDomainLogger: DomainLogger {
     let logMessage=message ?? "Operation completed successfully"
     let updatedContext=BaseLogContextDTO(
       domainName: context.domainName,
+      operation: context.operation,
+      category: context.category,
       source: context.source,
       metadata: updatedMetadata,
       correlationID: context.correlationID
@@ -140,6 +142,8 @@ public struct BaseDomainLogger: DomainLogger {
     let logMessage=message ?? "Operation failed"
     let updatedContext=BaseLogContextDTO(
       domainName: context.domainName,
+      operation: context.operation,
+      category: context.category,
       source: context.source,
       metadata: updatedMetadata,
       correlationID: context.correlationID
@@ -169,6 +173,8 @@ public struct BaseDomainLogger: DomainLogger {
     // Create a context directly using the metadata collection
     let context=BaseLogContextDTO(
       domainName: "Error",
+      operation: "logError",
+      category: "ErrorHandling",
       source: source,
       metadata: metadata,
       correlationID: nil
@@ -659,6 +665,8 @@ public class EnhancedErrorLogger: LegacyErrorLoggingProtocol {
     let metadataDTO=createMetadataCollection(from: metadata)
     let context=BaseLogContextDTO(
       domainName: "Error",
+      operation: "logError",
+      category: "ErrorHandling",
       source: source,
       metadata: metadataDTO,
       correlationID: nil
@@ -689,6 +697,8 @@ public class EnhancedErrorLogger: LegacyErrorLoggingProtocol {
     // Create a context from the error information
     let context=BaseLogContextDTO(
       domainName: "Error",
+      operation: "logError",
+      category: "ErrorHandling",
       source: source,
       metadata: createMetadataCollection(from: metadata),
       correlationID: nil
@@ -740,6 +750,8 @@ public class EnhancedErrorLogger: LegacyErrorLoggingProtocol {
     // Create a context with updated metadata
     let logContext=BaseLogContextDTO(
       domainName: "Error",
+      operation: "logContextualError",
+      category: "ErrorHandling",
       source: context.source,
       metadata: updatedMetadata.merging(with: context.metadata),
       correlationID: nil
@@ -779,6 +791,8 @@ public class EnhancedErrorLogger: LegacyErrorLoggingProtocol {
       let metadataDTO=createMetadataCollection(from: metadata)
       let context=BaseLogContextDTO(
         domainName: "Error",
+        operation: "logStructuredError",
+        category: "ErrorHandling",
         source: errorSource,
         metadata: metadataDTO,
         correlationID: nil
@@ -806,6 +820,8 @@ public class EnhancedErrorLogger: LegacyErrorLoggingProtocol {
       // Create basic context
       let context=BaseLogContextDTO(
         domainName: "Error",
+        operation: "logStructuredError",
+        category: "ErrorHandling",
         source: source ?? "UnknownSource",
         metadata: metadata,
         correlationID: nil

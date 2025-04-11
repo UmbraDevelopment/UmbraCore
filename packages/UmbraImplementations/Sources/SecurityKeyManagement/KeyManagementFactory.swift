@@ -114,6 +114,8 @@ private actor DefaultLoggingService: LoggingServiceProtocol, PrivacyAwareLogging
   ) async {
     await log(.trace, message, context: BaseLogContextDTO(
       domainName: "SecurityKeyManagement",
+      operation: "trace",
+      category: "Security",
       source: source,
       metadataCollection: metadata
     ))
@@ -126,6 +128,8 @@ private actor DefaultLoggingService: LoggingServiceProtocol, PrivacyAwareLogging
   ) async {
     await log(.trace, message, context: BaseLogContextDTO(
       domainName: "SecurityKeyManagement",
+      operation: "trace",
+      category: "Security",
       source: source,
       metadataCollection: metadata
     ))
@@ -138,6 +142,8 @@ private actor DefaultLoggingService: LoggingServiceProtocol, PrivacyAwareLogging
   ) async {
     await log(.debug, message, context: BaseLogContextDTO(
       domainName: "SecurityKeyManagement",
+      operation: "debug",
+      category: "Security",
       source: source,
       metadataCollection: metadata
     ))
@@ -146,6 +152,8 @@ private actor DefaultLoggingService: LoggingServiceProtocol, PrivacyAwareLogging
   func info(_ message: String, metadata: LogMetadataDTOCollection?=nil, source: String?=nil) async {
     await log(.info, message, context: BaseLogContextDTO(
       domainName: "SecurityKeyManagement",
+      operation: "info",
+      category: "Security",
       source: source,
       metadataCollection: metadata
     ))
@@ -158,6 +166,8 @@ private actor DefaultLoggingService: LoggingServiceProtocol, PrivacyAwareLogging
   ) async {
     await log(.warning, message, context: BaseLogContextDTO(
       domainName: "SecurityKeyManagement",
+      operation: "warning",
+      category: "Security",
       source: source,
       metadataCollection: metadata
     ))
@@ -170,6 +180,8 @@ private actor DefaultLoggingService: LoggingServiceProtocol, PrivacyAwareLogging
   ) async {
     await log(.error, message, context: BaseLogContextDTO(
       domainName: "SecurityKeyManagement",
+      operation: "error",
+      category: "Security",
       source: source,
       metadataCollection: metadata
     ))
@@ -182,6 +194,8 @@ private actor DefaultLoggingService: LoggingServiceProtocol, PrivacyAwareLogging
   ) async {
     await log(.critical, message, context: BaseLogContextDTO(
       domainName: "SecurityKeyManagement",
+      operation: "critical",
+      category: "Security",
       source: source,
       metadataCollection: metadata
     ))
@@ -276,17 +290,23 @@ private actor DefaultLoggingService: LoggingServiceProtocol, PrivacyAwareLogging
  */
 private struct BaseLogContextDTO: LogContextDTO {
   let domainName: String
+  let operation: String
+  let category: String
   let source: String?
   let correlationID: String?
   let metadata: LogMetadataDTOCollection
 
   init(
     domainName: String,
+    operation: String,
+    category: String,
     source: String?=nil,
     correlationID: String?=nil,
     metadataCollection: LogMetadataDTOCollection?=nil
   ) {
     self.domainName=domainName
+    self.operation=operation
+    self.category=category
     self.source=source
     self.correlationID=correlationID
     metadata=metadataCollection ?? LogMetadataDTOCollection()

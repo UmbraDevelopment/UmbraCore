@@ -22,7 +22,7 @@ umbra_swift_library(
         
         # Modules still to be migrated
         "//packages/UmbraCoreTypes/Sources/Notification",
-        "//packages/UmbraCoreTypes/Sources/Scheduling",
+        "//packages/UmbraCoreTypes/Sources/SchedulingTypes",
     ],
 )
 

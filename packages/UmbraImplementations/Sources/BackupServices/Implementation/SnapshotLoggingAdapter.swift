@@ -233,6 +233,8 @@ public struct SnapshotLoggingAdapter {
     // Create a context for this log message
     let context=BaseLogContextDTO(
       domainName: "SnapshotService",
+      operation: operation,
+      category: "Backup",
       source: "SnapshotService.\(operation)",
       metadata: metadataCollection
     )
@@ -288,6 +290,8 @@ public struct SnapshotLoggingAdapter {
     // Create a context for this log message
     let context=BaseLogContextDTO(
       domainName: "SnapshotService",
+      operation: operation,
+      category: "Backup",
       source: "SnapshotService.\(operation)",
       metadata: metadataCollection
     )
@@ -353,6 +357,8 @@ public struct SnapshotLoggingAdapter {
     // Create a context for this log message
     let context=BaseLogContextDTO(
       domainName: "SnapshotService",
+      operation: operation,
+      category: "Backup",
       source: "SnapshotService.\(operation)",
       metadata: metadataCollection
     )

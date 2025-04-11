@@ -1,7 +1,7 @@
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
-import CoreDTOs
+import SchedulingTypes
 
 /**
  Protocol for all logging commands.
@@ -38,7 +38,7 @@ public class BaseLogCommand {
     let provider: LoggingProviderProtocol
     
     /// Shared registered destinations
-    static var registeredDestinations: [String: LogDestinationDTO] = [:]
+    @MainActor static var registeredDestinations: [String: LogDestinationDTO] = [:]
     
     /**
      Initialises a new base logging command.
@@ -64,7 +64,7 @@ public class BaseLogCommand {
     func createLogContext(
         operation: String,
         destinationId: String? = nil,
-        additionalMetadata: [String: (value: String, privacyLevel: PrivacyLevel)] = [:]
+        additionalMetadata: [String: (value: String, privacyLevel: LogPrivacyLevel)] = [:]
     ) -> LogContextDTO {
         var metadata = LogMetadataDTOCollection.empty
         
@@ -76,11 +76,12 @@ public class BaseLogCommand {
             metadata = metadata.with(
                 key: key,
                 value: value.value,
-                privacyLevel: value.privacyLevel
+                privacyLevel: value.privacyLevel.toPrivacyClassification()
             )
         }
         
-        return LogContextDTO(
+        return BaseLogContextDTO(
+            domainName: "LoggingCommand",
             operation: operation,
             category: "LoggingSystem",
             metadata: metadata
@@ -109,7 +110,7 @@ public class BaseLogCommand {
     func logOperationSuccess(
         operation: String,
         context: LogContextDTO,
-        additionalMetadata: [String: (value: String, privacyLevel: PrivacyLevel)] = [:]
+        additionalMetadata: [String: (value: String, privacyLevel: LogPrivacyLevel)] = [:]
     ) async {
         var enrichedContext = context
         
@@ -118,7 +119,7 @@ public class BaseLogCommand {
                 LogMetadataDTOCollection().with(
                     key: key,
                     value: value.value,
-                    privacyLevel: value.privacyLevel
+                    privacyLevel: value.privacyLevel.toPrivacyClassification()
                 )
             )
         }
@@ -153,6 +154,7 @@ public class BaseLogCommand {
      - Parameters:
         - destination: The destination to register
      */
+    @MainActor
     func registerDestination(_ destination: LogDestinationDTO) {
         Self.registeredDestinations[destination.id] = destination
     }
@@ -163,6 +165,7 @@ public class BaseLogCommand {
      - Parameters:
         - destinationId: The ID of the destination to unregister
      */
+    @MainActor
     func unregisterDestination(id destinationId: String) {
         Self.registeredDestinations.removeValue(forKey: destinationId)
     }
@@ -172,97 +175,42 @@ public class BaseLogCommand {
      
      - Parameters:
         - destinationId: The ID of the destination to retrieve
-     - Returns: The destination if registered, or nil if not found
+     - Returns: The destination if found
+     - Throws: LoggingError.destinationNotFound if the destination does not exist
      */
-    func getDestination(id destinationId: String) -> LogDestinationDTO? {
-        return Self.registeredDestinations[destinationId]
+    @MainActor
+    func getRegisteredDestination(id destinationId: String) throws -> LogDestinationDTO {
+        guard let destination = Self.registeredDestinations[destinationId] else {
+            throw LoggingError.destinationNotFound("Destination with ID '\(destinationId)' not found")
+        }
+        
+        return destination
     }
     
     /**
-     Retrieves all registered destinations.
-     
-     - Returns: Array of all registered destinations
-     */
-    func getAllDestinations() -> [LogDestinationDTO] {
-        return Array(Self.registeredDestinations.values)
-    }
-    
-    /**
-     Checks if a destination is valid for the provided provider.
-     
-     - Parameters:
-        - destination: The destination to validate
-        - provider: The provider to validate against
-     - Returns: Result of the validation with any issues found
-     */
-    func validateDestination(
-        _ destination: LogDestinationDTO,
-        for provider: LoggingProviderProtocol
-    ) -> (isValid: Bool, issues: [String]) {
-        var issues: [String] = []
-        
-        // Check if provider can handle this destination type
-        if provider.canHandleDestinationType() != destination.type {
-            issues.append("Provider cannot handle destination type: \(destination.type.rawValue)")
-            return (false, issues)
-        }
-        
-        // Validate required parameters based on destination type
-        switch destination.type {
-        case .file:
-            if destination.configuration.parameters["filePath"] == nil {
-                issues.append("Missing required parameter for file destination: filePath")
-            }
-            
-        case .network:
-            if destination.configuration.parameters["endpoint"] == nil {
-                issues.append("Missing required parameter for network destination: endpoint")
-            }
-            
-        default:
-            // No specific validation for other types
-            break
-        }
-        
-        // Check for valid minimum log level
-        if destination.minimumLevel == .unknown {
-            issues.append("Invalid minimum log level: unknown")
-        }
-        
-        return (issues.isEmpty, issues)
-    }
-    
-    /**
-     Applies filter rules to a log entry.
+     Applies log filters to a log entry.
      
      - Parameters:
         - entry: The log entry to filter
-        - rules: The filter rules to apply
-     - Returns: Whether the entry passes the filters
+        - filters: The filters to apply
+     - Returns: True if the entry passes all filters, false otherwise
      */
-    func applyFilterRules(
-        to entry: LogEntryDTO,
-        rules: [LogFilterRuleDTO]?
-    ) -> Bool {
-        guard let rules = rules, !rules.isEmpty else {
-            // No rules means entry passes
+    func applyLogFilters(entry: LogEntryDTO, filters: [UmbraLogFilterRuleDTO]?) -> Bool {
+        guard let filters = filters, !filters.isEmpty else {
+            // No filters means all entries pass
             return true
         }
         
-        for rule in rules {
-            let matches = matchesFilterRule(entry: entry, rule: rule)
-            
-            if matches && !rule.isIncludeRule {
-                // Entry matches an exclude rule, so filter it out
-                return false
-            } else if !matches && rule.isIncludeRule {
-                // Entry doesn't match an include rule, so filter it out
-                return false
+        // Check each filter rule
+        for rule in filters {
+            if matchesFilterRule(entry: entry, rule: rule) {
+                // If any rule matches, include the entry
+                return true
             }
         }
         
-        // Entry passed all filter rules
-        return true
+        // No rules matched, exclude the entry
+        return false
     }
     
     /**
@@ -273,26 +221,24 @@ public class BaseLogCommand {
         - rule: The filter rule to apply
      - Returns: Whether the entry matches the rule
      */
-    private func matchesFilterRule(entry: LogEntryDTO, rule: LogFilterRuleDTO) -> Bool {
+    private func matchesFilterRule(entry: LogEntryDTO, rule: UmbraLogFilterRuleDTO) -> Bool {
         // Extract the field value from the entry based on the rule's field
-        let fieldValue: String
+        var fieldValue: String = ""
         
-        switch rule.field.lowercased() {
+        // Process special fields first
+        switch rule.field {
         case "level":
             fieldValue = entry.level.rawValue
-        case "category", "subsystem":
-            fieldValue = entry.category
-        case "message":
-            fieldValue = entry.message
         case "timestamp":
+            let date = Date(timeIntervalSince1970: entry.timestamp)
             let formatter = ISO8601DateFormatter()
-            fieldValue = formatter.string(from: entry.timestamp)
+            fieldValue = formatter.string(from: date)
         default:
             // Check metadata fields
-            if let metadataValue = entry.metadata.getString(key: rule.field) {
+            if let metadata = entry.metadata, let metadataValue = metadata.getString(key: rule.field) {
                 fieldValue = metadataValue
             } else {
-                return false
+                fieldValue = ""
             }
         }
         
@@ -368,33 +314,121 @@ public class BaseLogCommand {
             }
             
             // Process metadata fields
+            if var redactedMetadata = redactedMetadata {
+                for key in redactedMetadata.getKeys() {
+                    if rule.targetFields.isEmpty || rule.targetFields.contains(key) {
+                        if let stringValue = redactedMetadata.getString(key: key) {
+                            var redactedValue = stringValue
+                            
+                            if rule.isRegex {
+                                if let regex = try? NSRegularExpression(pattern: rule.pattern) {
+                                    let range = NSRange(location: 0, length: redactedValue.utf16.count)
+                                    redactedValue = regex.stringByReplacingMatches(
+                                        in: redactedValue,
+                                        options: [],
+                                        range: range,
+                                        withTemplate: rule.replacement
+                                    )
+                                }
+                            } else {
+                                redactedValue = redactedValue.replacingOccurrences(
+                                    of: rule.pattern,
+                                    with: rule.replacement
+                                )
+                            }
+                            
+                            // Update metadata with redacted value
+                            redactedMetadata = redactedMetadata.with(
+                                key: key,
+                                value: redactedValue,
+                                privacyLevel: .public
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Create a new entry with redacted content
+        return LogEntryDTO(
+            timestamp: entry.timestamp,
+            level: entry.level,
+            message: redactedMessage,
+            category: entry.category,
+            metadata: redactedMetadata,
+            source: entry.source,
+            entryID: entry.entryID
+        )
+    }
+    
+    /**
+     Redacts sensitive information in a log entry.
+     
+     - Parameters:
+        - entry: The log entry to redact
+        - redactionRules: Rules for redaction
+     - Returns: A redacted copy of the log entry
+     */
+    private func redactLogEntry(
+        _ entry: LogEntryDTO,
+        withRules redactionRules: [RedactionRule]
+    ) -> LogEntryDTO {
+        // If no redaction rules, return the original entry
+        if redactionRules.isEmpty {
+            return entry
+        }
+        
+        // Start with the original entry's message
+        var redactedMessage = entry.message
+        var redactedMetadata = entry.metadata
+        
+        // Apply each redaction rule
+        for rule in redactionRules {
+            // Skip rules that don't apply to this entry
+            if !rule.categories.isEmpty && !rule.categories.contains(entry.category) {
+                continue
+            }
+            
+            // Apply rule to message if it matches
+            if rule.targetFields.isEmpty || rule.targetFields.contains("message") {
+                if let pattern = rule.pattern {
+                    redactedMessage = pattern.stringByReplacingMatches(
+                        in: redactedMessage,
+                        options: [],
+                        range: NSRange(location: 0, length: redactedMessage.count),
+                        withTemplate: rule.replacement
+                    )
+                }
+            }
+            
+            // Process metadata fields
             for key in redactedMetadata.getKeys() {
                 if rule.targetFields.isEmpty || rule.targetFields.contains(key) {
                     if let stringValue = redactedMetadata.getString(key: key) {
-                        var redactedValue = stringValue
+                        // Skip fields that should be preserved
+                        if rule.preserveFields.contains(key) {
+                            continue
+                        }
                         
-                        if rule.isRegex {
-                            if let regex = try? NSRegularExpression(pattern: rule.pattern) {
-                                let range = NSRange(location: 0, length: redactedValue.utf16.count)
-                                redactedValue = regex.stringByReplacingMatches(
-                                    in: redactedValue,
-                                    options: [],
-                                    range: range,
-                                    withTemplate: rule.replacement
-                                )
-                            }
-                        } else {
-                            redactedValue = redactedValue.replacingOccurrences(
-                                of: rule.pattern,
-                                with: rule.replacement
+                        // Apply pattern if provided
+                        var redactedValue = stringValue
+                        if let pattern = rule.pattern {
+                            redactedValue = pattern.stringByReplacingMatches(
+                                in: stringValue,
+                                options: [],
+                                range: NSRange(location: 0, length: stringValue.count),
+                                withTemplate: rule.replacement
                             )
+                        } else {
+                            // Use default redaction if no pattern
+                            redactedValue = rule.replacement
                         }
                         
                         // Update metadata with redacted value
                         redactedMetadata = redactedMetadata.with(
                             key: key,
                             value: redactedValue,
-                            privacyLevel: redactedMetadata.getPrivacyLevel(for: key) ?? .protected
+                            privacyLevel: .public
                         )
                     }
                 }
@@ -403,13 +437,38 @@ public class BaseLogCommand {
         
         // Create a new entry with redacted content
         return LogEntryDTO(
-            id: entry.id,
             timestamp: entry.timestamp,
             level: entry.level,
-            category: entry.category,
             message: redactedMessage,
+            category: entry.category,
             metadata: redactedMetadata,
-            sourceLocation: entry.sourceLocation
+            source: entry.source,
+            entryID: entry.entryID
         )
+    }
+    
+    /**
+     Converts LogPrivacyLevel to PrivacyClassification.
+     
+     - Parameter level: The LogPrivacyLevel to convert
+     - Returns: The corresponding PrivacyClassification
+     */
+    private func convertPrivacyLevel(_ level: LogPrivacyLevel) -> PrivacyClassification {
+        switch level {
+        case .public:
+            return .public
+        case .private:
+            return .private
+        case .sensitive:
+            return .sensitive
+        case .hash:
+            return .hash
+        case .auto:
+            return .auto
+        case .never:
+            return .public // Map 'never' to public classification
+        case .protected:
+            return .private // Map 'protected' to private classification
+        }
     }
 }

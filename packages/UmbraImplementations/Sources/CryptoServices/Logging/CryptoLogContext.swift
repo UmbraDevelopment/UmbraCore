@@ -40,6 +40,9 @@ public struct CryptoLogContext: LogContextDTO, Sendable {
 
   /// The type of cryptographic operation being performed
   public let operation: String
+  
+  /// The category for the log entry
+  public let category: String
 
   /// Optional identifier for the data or key being operated on
   public let identifier: String?
@@ -53,30 +56,33 @@ public struct CryptoLogContext: LogContextDTO, Sendable {
   // MARK: - Initialization
 
   /**
-   Creates a new crypto logging context.
+   Creates a new log context with the given properties.
 
    - Parameters:
-      - operation: The type of operation (encrypt, decrypt, etc.)
-      - identifier: Optional identifier for the data or key
-      - status: Optional status of the operation
-      - source: Optional source of the log entry
-      - correlationID: Optional ID for correlation
-      - metadata: Optional additional metadata
+     - operation: The cryptographic operation being performed
+     - identifier: Optional identifier for the operation or entity
+     - source: Optional source component
+     - status: Optional operation status
+     - metadata: Optional initial metadata
+     - correlationID: Optional correlation ID for tracing related logs
+     - category: The category for the log entry
    */
   public init(
     operation: String,
     identifier: String?=nil,
+    source: String?=nil,
     status: String?=nil,
-    source: String?="CryptoServices",
+    metadata: LogMetadataDTOCollection=LogMetadataDTOCollection(),
     correlationID: String?=nil,
-    metadata: LogMetadataDTOCollection=LogMetadataDTOCollection()
+    category: String="Security"
   ) {
     self.operation=operation
     self.identifier=identifier
-    self.status=status
     self.source=source
-    self.correlationID=correlationID
+    self.status=status
     self.metadata=metadata
+    self.correlationID=correlationID
+    self.category=category
   }
 
   // MARK: - LogContextDTO Protocol
@@ -136,39 +142,78 @@ public struct CryptoLogContext: LogContextDTO, Sendable {
     return collection
   }
 
+  /**
+   Creates a new context with additional metadata merged with the existing metadata
+   
+   - Parameter additionalMetadata: Additional metadata to include
+   - Returns: New context with merged metadata
+   */
+  public func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> Self {
+    let mergedMetadata = metadata.merging(with: additionalMetadata)
+    return CryptoLogContext(
+      operation: operation,
+      identifier: identifier,
+      source: source,
+      status: status,
+      metadata: mergedMetadata,
+      correlationID: correlationID,
+      category: category
+    )
+  }
+
   // MARK: - Functional Update Methods
 
   /**
-   Creates a new context with the specified status.
+   Creates a new context with the specified operation.
 
-   - Parameter status: The new status value
-   - Returns: A new context with the updated status
+   - Parameter operation: The new operation name
+   - Returns: A new context with the updated operation
    */
-  public func withStatus(_ status: String) -> CryptoLogContext {
+  public func withOperation(_ operation: String) -> CryptoLogContext {
     CryptoLogContext(
       operation: operation,
       identifier: identifier,
-      status: status,
       source: source,
+      status: status,
+      metadata: metadata,
       correlationID: correlationID,
-      metadata: metadata
+      category: category
     )
   }
 
   /**
    Creates a new context with the specified identifier.
 
-   - Parameter identifier: The new identifier value
+   - Parameter identifier: The new identifier
    - Returns: A new context with the updated identifier
    */
-  public func withIdentifier(_ identifier: String) -> CryptoLogContext {
+  public func withIdentifier(_ identifier: String?) -> CryptoLogContext {
     CryptoLogContext(
       operation: operation,
       identifier: identifier,
-      status: status,
       source: source,
+      status: status,
+      metadata: metadata,
       correlationID: correlationID,
-      metadata: metadata
+      category: category
+    )
+  }
+
+  /**
+   Creates a new context with the specified status.
+
+   - Parameter status: The new status
+   - Returns: A new context with the updated status
+   */
+  public func withStatus(_ status: String?) -> CryptoLogContext {
+    CryptoLogContext(
+      operation: operation,
+      identifier: identifier,
+      source: source,
+      status: status,
+      metadata: metadata,
+      correlationID: correlationID,
+      category: category
     )
   }
 
@@ -182,10 +227,11 @@ public struct CryptoLogContext: LogContextDTO, Sendable {
     CryptoLogContext(
       operation: operation,
       identifier: identifier,
-      status: status,
       source: source,
+      status: status,
+      metadata: metadata,
       correlationID: correlationID,
-      metadata: metadata
+      category: category
     )
   }
 
@@ -201,10 +247,11 @@ public struct CryptoLogContext: LogContextDTO, Sendable {
     CryptoLogContext(
       operation: operation,
       identifier: identifier,
-      status: status,
       source: source,
+      status: status,
+      metadata: metadata.withPublic(key: key, value: value),
       correlationID: correlationID,
-      metadata: metadata.withPublic(key: key, value: value)
+      category: category
     )
   }
 
@@ -220,10 +267,11 @@ public struct CryptoLogContext: LogContextDTO, Sendable {
     CryptoLogContext(
       operation: operation,
       identifier: identifier,
-      status: status,
       source: source,
+      status: status,
+      metadata: metadata.withPrivate(key: key, value: value),
       correlationID: correlationID,
-      metadata: metadata.withPrivate(key: key, value: value)
+      category: category
     )
   }
 
@@ -239,10 +287,11 @@ public struct CryptoLogContext: LogContextDTO, Sendable {
     CryptoLogContext(
       operation: operation,
       identifier: identifier,
-      status: status,
       source: source,
+      status: status,
+      metadata: metadata.withSensitive(key: key, value: value),
       correlationID: correlationID,
-      metadata: metadata.withSensitive(key: key, value: value)
+      category: category
     )
   }
 
@@ -258,10 +307,11 @@ public struct CryptoLogContext: LogContextDTO, Sendable {
     CryptoLogContext(
       operation: operation,
       identifier: identifier,
-      status: status,
       source: source,
+      status: status,
+      metadata: metadata.withHashed(key: key, value: value),
       correlationID: correlationID,
-      metadata: metadata.withHashed(key: key, value: value)
+      category: category
     )
   }
 
@@ -295,10 +345,11 @@ public struct CryptoLogContext: LogContextDTO, Sendable {
     return CryptoLogContext(
       operation: operation,
       identifier: identifier,
-      status: status,
       source: source,
+      status: status,
+      metadata: newMetadata,
       correlationID: correlationID,
-      metadata: newMetadata
+      category: category
     )
   }
 
@@ -330,10 +381,42 @@ public struct CryptoLogContext: LogContextDTO, Sendable {
     return CryptoLogContext(
       operation: operation,
       identifier: identifier,
-      status: status,
       source: source,
+      status: status,
+      metadata: mergedMetadata,
       correlationID: correlationID,
-      metadata: mergedMetadata
+      category: category
+    )
+  }
+
+  public func withKeyID(_ keyID: String) -> Self {
+    var newMetadata=metadata
+    newMetadata=newMetadata.withPublic(key: "keyID", value: keyID)
+
+    return CryptoLogContext(
+      operation: operation,
+      identifier: identifier,
+      source: source,
+      status: status,
+      metadata: newMetadata,
+      correlationID: correlationID,
+      category: category
+    )
+  }
+
+  public func withErrorDetails(_ error: Error) -> Self {
+    var mergedMetadata=metadata
+    mergedMetadata=mergedMetadata.withPublic(key: "errorType", value: "\(type(of: error))")
+    mergedMetadata=mergedMetadata.withPrivate(key: "errorMessage", value: error.localizedDescription)
+
+    return CryptoLogContext(
+      operation: operation,
+      identifier: identifier,
+      source: source,
+      status: status,
+      metadata: mergedMetadata,
+      correlationID: correlationID,
+      category: category
     )
   }
 }

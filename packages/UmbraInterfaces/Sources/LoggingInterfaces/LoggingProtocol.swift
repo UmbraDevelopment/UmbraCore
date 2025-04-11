@@ -93,38 +93,7 @@ extension LoggingProtocol {
   }
 }
 
-/// Errors that can occur during logging operations
-public enum LoggingError: Error, Sendable, Hashable {
-  /// Failed to initialise logging system
-  case initialisationFailed(reason: String)
-
-  /// Failed to write log
-  case writeFailed(reason: String)
-
-  /// Failed to write to log destination
-  case destinationWriteFailed(destination: String, reason: String)
-
-  /// Log level filter prevented message from being logged
-  case filteredByLevel(
-    messageLevel: LogLevel,
-    minimumLevel: LogLevel
-  )
-
-  /// Invalid configuration provided
-  case invalidConfiguration(description: String)
-
-  /// Operation not supported by this logger
-  case operationNotSupported(description: String)
-
-  /// Destination with specified identifier not found
-  case destinationNotFound(identifier: String)
-
-  /// Duplicate destination identifier
-  case duplicateDestination(identifier: String)
-
-  /// Error during privacy processing
-  case privacyProcessingFailed(reason: String)
-}
+// NOTE: LoggingError is now consolidated in Models/LoggingError.swift
 
 // MARK: - Log Context DTO Protocol
 

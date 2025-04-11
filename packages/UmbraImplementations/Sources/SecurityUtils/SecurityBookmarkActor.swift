@@ -547,6 +547,8 @@ private struct BookmarkLogger {
 
     let context=BaseLogContextDTO(
       domainName: "SecurityUtils",
+      operation: "processSecurityBookmarkAction",
+      category: "SecurityBookmarks",
       source: "SecurityBookmark",
       metadata: metadata
     )
@@ -569,6 +571,8 @@ private struct BookmarkLogger {
 
     let context=BaseLogContextDTO(
       domainName: "SecurityUtils",
+      operation: "processSecurityBookmarkAction",
+      category: "SecurityBookmarks",
       source: "SecurityBookmark",
       metadata: metadata
     )
@@ -618,6 +622,8 @@ private struct BookmarkLogger {
 
     let context=BaseLogContextDTO(
       domainName: "SecurityUtils",
+      operation: "processSecurityBookmarkAction",
+      category: "SecurityBookmarks",
       source: "SecurityBookmark",
       metadata: metadata
     )

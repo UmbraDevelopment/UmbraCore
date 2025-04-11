@@ -1,5 +1,5 @@
 import Foundation
-import CoreDTOs
+import SchedulingTypes
 
 /**
  Options for configuring log operations.

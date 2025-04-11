@@ -1,3 +1,6 @@
+// Re-export SchedulingTypes module so clients don't need to change
+@_exported import SchedulingTypes
+
 // Export Foundation types that are needed for Scheduling
 @_exported import Foundation
 

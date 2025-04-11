@@ -7,6 +7,12 @@ import SecurityInterfacesTypes
 public struct CoreLogContext: LogContextDTO, Equatable {
   /// The domain name for this context
   public let domainName: String="CoreFramework"
+  
+  /// The operation being performed (e.g., "initialise", "configure")
+  public let operation: String
+  
+  /// The category for the log entry (e.g., "System", "Configuration")
+  public let category: String
 
   /// Source information (class name, function, etc.)
   public let source: String?
@@ -26,12 +32,16 @@ public struct CoreLogContext: LogContextDTO, Equatable {
   /// Create a new core log context with the specified parameters
   ///
   /// - Parameters:
+  ///   - operation: The operation being performed
+  ///   - category: The category for the log entry
   ///   - source: The source of the log (class name, function, etc.)
   ///   - correlationID: Optional ID for correlating related log entries
   ///   - metadata: Privacy-aware metadata collection
   ///   - operationalState: Current operational state of the framework
   ///   - component: Specific component within the framework
   public init(
+    operation: String,
+    category: String = "Core",
     source: String?=nil,
     correlationID: String?=nil,
     metadata: LogMetadataDTOCollection=LogMetadataDTOCollection(),
@@ -49,11 +59,28 @@ public struct CoreLogContext: LogContextDTO, Equatable {
       processedMetadata=processedMetadata.withPublic(key: "component", value: component)
     }
 
+    self.operation = operation
+    self.category = category
     self.source=source
     self.correlationID=correlationID
     self.metadata=processedMetadata
     self.operationalState=operationalState
     self.component=component
+  }
+  
+  /// Creates a new context with additional metadata merged with the existing metadata
+  /// - Parameter additionalMetadata: Additional metadata to include
+  /// - Returns: New context with merged metadata
+  public func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> CoreLogContext {
+    return CoreLogContext(
+      operation: self.operation,
+      category: self.category,
+      source: self.source,
+      correlationID: self.correlationID,
+      metadata: self.metadata.merging(with: additionalMetadata),
+      operationalState: self.operationalState,
+      component: self.component
+    )
   }
 
   /// Create a context for initialisation operations
@@ -69,6 +96,8 @@ public struct CoreLogContext: LogContextDTO, Equatable {
     metadata: LogMetadataDTOCollection=LogMetadataDTOCollection()
   ) -> CoreLogContext {
     CoreLogContext(
+      operation: "initialise",
+      category: "System",
       source: source,
       correlationID: correlationID,
       metadata: metadata,
@@ -89,6 +118,8 @@ public struct CoreLogContext: LogContextDTO, Equatable {
     metadata: LogMetadataDTOCollection=LogMetadataDTOCollection()
   ) -> CoreLogContext {
     CoreLogContext(
+      operation: "configure",
+      category: "Configuration",
       source: source,
       correlationID: correlationID,
       metadata: metadata,
@@ -99,77 +130,29 @@ public struct CoreLogContext: LogContextDTO, Equatable {
   /// Create a context for service operations
   ///
   /// - Parameters:
-  ///   - serviceName: The name of the service
+  ///   - service: The service name
   ///   - operation: The operation being performed
+  ///   - source: The source of the log
   ///   - correlationID: Optional correlation ID
   ///   - metadata: Additional metadata for the log
   /// - Returns: A configured CoreLogContext
   public static func service(
-    serviceName: String,
+    service: String,
     operation: String,
+    source: String,
     correlationID: String?=nil,
     metadata: LogMetadataDTOCollection=LogMetadataDTOCollection()
   ) -> CoreLogContext {
     var updatedMetadata=metadata
-    updatedMetadata=updatedMetadata.withPublic(key: "operation", value: operation)
+    updatedMetadata=updatedMetadata.withPublic(key: "service", value: service)
 
     return CoreLogContext(
-      source: "ServiceContainer",
+      operation: operation,
+      category: "Service",
+      source: source,
       correlationID: correlationID,
       metadata: updatedMetadata,
-      component: serviceName
-    )
-  }
-
-  /**
-   Creates a new context by adding state information to the metadata.
-
-   - Parameters:
-     - operationalState: The operational state to add
-     - component: Optional component name to add
-   - Returns: The updated context
-   */
-  public func withState(
-    operationalState: String?=nil,
-    component: String?=nil
-  ) -> CoreLogContext {
-    var updatedMetadata=metadata
-
-    if let operationalState {
-      updatedMetadata=updatedMetadata.withPublic(key: "state", value: operationalState)
-    }
-
-    if let component {
-      updatedMetadata=updatedMetadata.withPublic(key: "component", value: component)
-    }
-
-    return CoreLogContext(
-      source: source,
-      correlationID: correlationID,
-      metadata: updatedMetadata
-    )
-  }
-
-  /**
-   Creates a new context specifically for operation status reporting.
-
-   - Parameters:
-     - source: Source of the log
-     - operation: Operation name
-     - metadata: Optional metadata to include
-   - Returns: A context object configured for operation status
-   */
-  public static func operation(
-    source: String,
-    operation: String,
-    metadata: LogMetadataDTOCollection=LogMetadataDTOCollection()
-  ) -> CoreLogContext {
-    var updatedMetadata=metadata
-    updatedMetadata=updatedMetadata.withPublic(key: "operation", value: operation)
-
-    return CoreLogContext(
-      source: source,
-      metadata: updatedMetadata
+      operationalState: "running"
     )
   }
 }

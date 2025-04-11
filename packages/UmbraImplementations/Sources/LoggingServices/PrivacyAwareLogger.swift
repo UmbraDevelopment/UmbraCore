@@ -115,6 +115,8 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
   public func trace(_ message: String, metadata: LogMetadataDTOCollection?, source: String) async {
     let context=BaseLogContextDTO(
       domainName: identifier,
+      operation: "trace",
+      category: "Diagnostics",
       source: source,
       metadata: createMetadataCollection(from: metadata)
     )
@@ -125,6 +127,8 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
   public func debug(_ message: String, metadata: LogMetadataDTOCollection?, source: String) async {
     let context=BaseLogContextDTO(
       domainName: identifier,
+      operation: "debug",
+      category: "Diagnostics",
       source: source,
       metadata: createMetadataCollection(from: metadata)
     )
@@ -135,6 +139,8 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
   public func info(_ message: String, metadata: LogMetadataDTOCollection?, source: String) async {
     let context=BaseLogContextDTO(
       domainName: identifier,
+      operation: "info",
+      category: "Information",
       source: source,
       metadata: createMetadataCollection(from: metadata)
     )
@@ -149,6 +155,8 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
   ) async {
     let context=BaseLogContextDTO(
       domainName: identifier,
+      operation: "warning",
+      category: "Warning",
       source: source,
       metadata: createMetadataCollection(from: metadata)
     )
@@ -159,6 +167,8 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
   public func error(_ message: String, metadata: LogMetadataDTOCollection?, source: String) async {
     let context=BaseLogContextDTO(
       domainName: identifier,
+      operation: "error",
+      category: "Error",
       source: source,
       metadata: createMetadataCollection(from: metadata)
     )
@@ -173,6 +183,8 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
   ) async {
     let context=BaseLogContextDTO(
       domainName: identifier,
+      operation: "critical",
+      category: "Critical",
       source: source,
       metadata: createMetadataCollection(from: metadata)
     )
@@ -261,6 +273,8 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
   ) async {
     let context=BaseLogContextDTO(
       domainName: identifier,
+      operation: "log",
+      category: "General",
       source: source,
       metadata: createMetadataCollection(from: metadata)
     )
@@ -307,6 +321,8 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
   ) async {
     let context=BaseLogContextDTO(
       domainName: identifier,
+      operation: "logSensitive",
+      category: "General",
       source: source,
       metadata: createMetadataCollection(from: nil)
     )
@@ -352,6 +368,8 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
     // Create a new context with the updated metadata
     let updatedContext=BaseLogContextDTO(
       domainName: context.domainName,
+      operation: "logError",
+      category: "Error",
       source: context.source,
       metadata: updatedMetadata,
       correlationID: context.correlationID
@@ -414,6 +432,8 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
   ) async {
     let context=BaseLogContextDTO(
       domainName: identifier,
+      operation: "logError",
+      category: "Error",
       source: source,
       metadata: createMetadataCollection(from: metadata)
     )

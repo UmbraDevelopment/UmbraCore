@@ -17,6 +17,9 @@ public struct FileSystemLogContext: LogContextDTO, Sendable, Equatable {
 
   /// The file system operation being performed
   public let operation: String
+  
+  /// The category for the log entry
+  public let category: String
 
   /// The file path associated with the operation
   public let path: String?
@@ -25,18 +28,21 @@ public struct FileSystemLogContext: LogContextDTO, Sendable, Equatable {
   ///
   /// - Parameters:
   ///   - operation: The file system operation being performed
+  ///   - category: The category for the log entry
   ///   - path: Optional file path associated with the operation
   ///   - correlationId: Optional correlation identifier for tracing related logs
   ///   - source: Optional source information (e.g., file, function, line)
   ///   - additionalContext: Optional additional context with privacy annotations
   public init(
     operation: String,
+    category: String = "FileSystem",
     path: String?=nil,
     correlationID: String?=nil,
     source: String?=nil,
     additionalContext: LogMetadataDTOCollection=LogMetadataDTOCollection()
   ) {
     self.operation=operation
+    self.category=category
     self.path=path
     self.correlationID=correlationID
     self.source=source
@@ -46,6 +52,9 @@ public struct FileSystemLogContext: LogContextDTO, Sendable, Equatable {
 
     // Add operation as public metadata
     contextMetadata=contextMetadata.withPublic(key: "operation", value: operation)
+    
+    // Add category as public metadata
+    contextMetadata=contextMetadata.withPublic(key: "category", value: category)
 
     // Add path as private metadata if present
     if let path {
@@ -63,6 +72,20 @@ public struct FileSystemLogContext: LogContextDTO, Sendable, Equatable {
 
     metadata=contextMetadata
   }
+  
+  /// Creates a new context with additional metadata merged with the existing metadata
+  /// - Parameter additionalMetadata: Additional metadata to include
+  /// - Returns: New context with merged metadata
+  public func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> FileSystemLogContext {
+    return FileSystemLogContext(
+      operation: operation,
+      category: category,
+      path: path,
+      correlationID: correlationID,
+      source: source,
+      additionalContext: self.metadata.merging(with: additionalMetadata)
+    )
+  }
 
   /// Creates a new instance of this context with updated metadata
   ///
@@ -71,6 +94,7 @@ public struct FileSystemLogContext: LogContextDTO, Sendable, Equatable {
   public func withUpdatedMetadata(_ metadata: LogMetadataDTOCollection) -> FileSystemLogContext {
     FileSystemLogContext(
       operation: operation,
+      category: category,
       path: path,
       correlationID: correlationID,
       source: source,
@@ -85,6 +109,7 @@ public struct FileSystemLogContext: LogContextDTO, Sendable, Equatable {
   public func withCorrelationID(_ correlationID: String) -> FileSystemLogContext {
     FileSystemLogContext(
       operation: operation,
+      category: category,
       path: path,
       correlationID: correlationID,
       source: source,
@@ -99,6 +124,7 @@ public struct FileSystemLogContext: LogContextDTO, Sendable, Equatable {
   public func withSource(_ source: String) -> FileSystemLogContext {
     FileSystemLogContext(
       operation: operation,
+      category: category,
       path: path,
       correlationID: correlationID,
       source: source,
@@ -114,6 +140,7 @@ public struct FileSystemLogContext: LogContextDTO, Sendable, Equatable {
     let updatedMetadata=metadata.withPublic(key: "success", value: String(success))
     return FileSystemLogContext(
       operation: operation,
+      category: category,
       path: path,
       correlationID: correlationID,
       source: source,
@@ -129,6 +156,7 @@ public struct FileSystemLogContext: LogContextDTO, Sendable, Equatable {
     let updatedMetadata=metadata.withPublic(key: "fileSize", value: String(size))
     return FileSystemLogContext(
       operation: operation,
+      category: category,
       path: path,
       correlationID: correlationID,
       source: source,

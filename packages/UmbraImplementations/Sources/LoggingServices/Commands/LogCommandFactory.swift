@@ -1,7 +1,7 @@
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
-import CoreDTOs
+import SchedulingTypes
 
 /**
  Factory for creating logging commands.
@@ -46,7 +46,7 @@ public class LogCommandFactory {
     ) throws -> WriteLogCommand {
         // Use default provider for writing
         guard let provider = defaultProvider() else {
-            throw LoggingError.general("No default provider available")
+            throw LoggingError.initialisationFailed(reason: "No default provider available")
         }
         
         return WriteLogCommand(
@@ -71,9 +71,7 @@ public class LogCommandFactory {
         options: AddDestinationOptionsDTO = .default
     ) throws -> AddDestinationCommand {
         guard let provider = providerFor(destinationType: destination.type) else {
-            throw LoggingError.destinationNotFound(
-                "No provider available for destination type: \(destination.type.rawValue)"
-            )
+            throw LoggingError.destinationNotFound("No provider available for destination type: \(destination.type.rawValue)")
         }
         
         return AddDestinationCommand(
@@ -99,7 +97,7 @@ public class LogCommandFactory {
     ) throws -> RemoveDestinationCommand {
         // Use default provider for removing destinations
         guard let provider = defaultProvider() else {
-            throw LoggingError.general("No default provider available")
+            throw LoggingError.initialisationFailed(reason: "No default provider available")
         }
         
         return RemoveDestinationCommand(
@@ -126,7 +124,7 @@ public class LogCommandFactory {
         // Since we need the destination type to select a provider,
         // we'll defer provider selection to the command execution
         guard let provider = defaultProvider() else {
-            throw LoggingError.general("No default provider available")
+            throw LoggingError.initialisationFailed(reason: "No default provider available")
         }
         
         return RotateLogsCommand(
@@ -153,7 +151,7 @@ public class LogCommandFactory {
         // Since we need the destination type to select a provider,
         // we'll defer provider selection to the command execution
         guard let provider = defaultProvider() else {
-            throw LoggingError.general("No default provider available")
+            throw LoggingError.initialisationFailed(reason: "No default provider available")
         }
         
         return ExportLogsCommand(
@@ -180,7 +178,7 @@ public class LogCommandFactory {
         // Since we need the destination type to select a provider,
         // we'll defer provider selection to the command execution
         guard let provider = defaultProvider() else {
-            throw LoggingError.general("No default provider available")
+            throw LoggingError.initialisationFailed(reason: "No default provider available")
         }
         
         return QueryLogsCommand(
@@ -207,7 +205,7 @@ public class LogCommandFactory {
         // Since we need the destination type to select a provider,
         // we'll defer provider selection to the command execution
         guard let provider = defaultProvider() else {
-            throw LoggingError.general("No default provider available")
+            throw LoggingError.initialisationFailed(reason: "No default provider available")
         }
         
         return ArchiveLogsCommand(
@@ -233,7 +231,7 @@ public class LogCommandFactory {
     ) throws -> PurgeLogsCommand {
         // Use default provider for purging
         guard let provider = defaultProvider() else {
-            throw LoggingError.general("No default provider available")
+            throw LoggingError.initialisationFailed(reason: "No default provider available")
         }
         
         return PurgeLogsCommand(

@@ -1,7 +1,7 @@
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
-import CoreDTOs
+import SchedulingTypes
 
 /**
  Command for archiving logs from a destination.
@@ -92,7 +92,7 @@ public class ArchiveLogsCommand: BaseLogCommand, LogCommand {
                         withIntermediateDirectories: true
                     )
                 } catch {
-                    throw LoggingError.archiveFailed(
+                    throw LoggingError.writeFailure(
                         "Failed to create archive directory: \(error.localizedDescription)"
                     )
                 }
@@ -142,7 +142,7 @@ public class ArchiveLogsCommand: BaseLogCommand, LogCommand {
             
         } catch {
             // Map unknown error to LoggingError
-            let loggingError = LoggingError.archiveFailed(error.localizedDescription)
+            let loggingError = LoggingError.writeFailure(error.localizedDescription)
             
             // Log failure
             await logOperationFailure(

@@ -1,5 +1,5 @@
 import Foundation
-import CoreDTOs
+import SchedulingTypes
 
 /**
  Represents a destination for log entries.

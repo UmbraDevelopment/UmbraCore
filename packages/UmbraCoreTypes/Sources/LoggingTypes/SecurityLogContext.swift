@@ -17,6 +17,9 @@ public struct SecurityLogContext: LogContextDTO, Sendable, Equatable {
 
   /// The security operation being performed
   public let operation: String
+  
+  /// The category for the log entry
+  public let category: String
 
   /// The security component involved
   public let component: String
@@ -26,25 +29,43 @@ public struct SecurityLogContext: LogContextDTO, Sendable, Equatable {
   /// - Parameters:
   ///   - operation: The security operation being performed
   ///   - component: The security component involved
+  ///   - category: The category for the log entry
   ///   - correlationId: Optional correlation identifier for tracing related logs
   ///   - source: Optional source information (e.g., file, function, line)
   ///   - metadata: Privacy-aware metadata for this log context
   public init(
     operation: String,
     component: String,
+    category: String = "Security",
     correlationID: String?=nil,
     source: String?=nil,
     metadata: LogMetadataDTOCollection=LogMetadataDTOCollection()
   ) {
     self.operation=operation
     self.component=component
+    self.category=category
     self.correlationID=correlationID
     self.source=source
 
-    // Add operation and component as public metadata
+    // Add operation, component, and category as public metadata
     self.metadata=metadata
       .withPublic(key: "operation", value: operation)
       .withPublic(key: "component", value: component)
+      .withPublic(key: "category", value: category)
+  }
+  
+  /// Creates a new context with additional metadata merged with the existing metadata
+  /// - Parameter additionalMetadata: Additional metadata to include
+  /// - Returns: New context with merged metadata
+  public func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> SecurityLogContext {
+    return SecurityLogContext(
+      operation: operation,
+      component: component,
+      category: category,
+      correlationID: correlationID,
+      source: source,
+      metadata: self.metadata.merging(with: additionalMetadata)
+    )
   }
 
   /// Creates a new instance of this context with updated metadata
@@ -55,6 +76,7 @@ public struct SecurityLogContext: LogContextDTO, Sendable, Equatable {
     SecurityLogContext(
       operation: operation,
       component: component,
+      category: category,
       correlationID: correlationID,
       source: source,
       metadata: self.metadata.merging(with: metadata)
@@ -69,6 +91,7 @@ public struct SecurityLogContext: LogContextDTO, Sendable, Equatable {
     SecurityLogContext(
       operation: operation,
       component: component,
+      category: category,
       correlationID: correlationID,
       source: source,
       metadata: metadata
@@ -83,6 +106,7 @@ public struct SecurityLogContext: LogContextDTO, Sendable, Equatable {
     SecurityLogContext(
       operation: operation,
       component: component,
+      category: category,
       correlationID: correlationID,
       source: source,
       metadata: metadata
@@ -98,6 +122,7 @@ public struct SecurityLogContext: LogContextDTO, Sendable, Equatable {
     return SecurityLogContext(
       operation: operation,
       component: component,
+      category: category,
       correlationID: correlationID,
       source: source,
       metadata: updatedMetadata
@@ -113,6 +138,7 @@ public struct SecurityLogContext: LogContextDTO, Sendable, Equatable {
     return SecurityLogContext(
       operation: operation,
       component: component,
+      category: category,
       correlationID: correlationID,
       source: source,
       metadata: updatedMetadata

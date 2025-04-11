@@ -65,6 +65,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
     let debugContext=BaseLogContextDTO(
       domainName: "SecurityProvider",
+      operation: "initialize",
+      category: "Security",
       source: "SecurityProviderImpl",
       metadata: metadata.toLogMetadataDTOCollection()
     )
@@ -88,6 +90,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
       let infoContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
+        operation: "initialize",
+        category: "Security",
         source: "SecurityProviderImpl",
         metadata: LogMetadataDTOCollection().merging(with: metadata.toLogMetadataDTOCollection())
       )
@@ -122,6 +126,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
       let errorContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
+        operation: "initialize",
+        category: "Security",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
       )
@@ -220,6 +226,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
         let debugContext=BaseLogContextDTO(
           domainName: "SecurityProvider",
+          operation: "storeKey",
+          category: "Security",
           source: "SecurityProviderImpl",
           metadata: metadata.toLogMetadataDTOCollection()
         )
@@ -316,6 +324,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
       let debugContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
+        operation: "encrypt",
+        category: "Security",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
       )
@@ -342,6 +352,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
       let errorContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
+        operation: "encrypt",
+        category: "Security",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
       )
@@ -364,6 +376,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
       let errorContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
+        operation: "encrypt",
+        category: "Security",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
       )
@@ -442,6 +456,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
       let debugContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
+        operation: "decrypt",
+        category: "Security",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
       )
@@ -468,6 +484,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
       let errorContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
+        operation: "decrypt",
+        category: "Security",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
       )
@@ -490,6 +508,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
       let errorContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
+        operation: "decrypt",
+        category: "Security",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
       )
@@ -563,6 +583,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
       let debugContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
+        operation: "sign",
+        category: "Security",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
       )
@@ -589,6 +611,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
       let errorContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
+        operation: "sign",
+        category: "Security",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
       )
@@ -611,6 +635,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
       let errorContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
+        operation: "sign",
+        category: "Security",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
       )
@@ -699,6 +725,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
       let debugContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
+        operation: "verify",
+        category: "Security",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
       )
@@ -726,6 +754,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
       let errorContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
+        operation: "verify",
+        category: "Security",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
       )
@@ -748,6 +778,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
       let errorContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
+        operation: "verify",
+        category: "Security",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
       )
@@ -786,6 +818,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
       let logContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
+        operation: "hash",
+        category: "Security",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
       )
@@ -869,6 +903,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
       let errorContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
+        operation: "hash",
+        category: "Security",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
       )
@@ -905,6 +941,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
       let logContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
+        operation: "verifyHash",
+        category: "Security",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
       )
@@ -993,6 +1031,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
       let errorContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
+        operation: "verifyHash",
+        category: "Security",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
       )
@@ -1127,6 +1167,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
     let debugContext=BaseLogContextDTO(
       domainName: "SecurityProvider",
+      operation: "performSecureOperation",
+      category: "Security",
       source: "SecurityProviderImpl",
       metadata: metadata.toLogMetadataDTOCollection()
     )
@@ -1207,6 +1249,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
     let debugContext=BaseLogContextDTO(
       domainName: "SecurityProvider",
+      operation: "performOperationWithOptions",
+      category: "Security",
       source: "SecurityProviderImpl",
       metadata: metadata.toLogMetadataDTOCollection()
     )
@@ -1245,6 +1289,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
     let debugContext=BaseLogContextDTO(
       domainName: "SecurityProvider",
+      operation: "generateKey",
+      category: "Security",
       source: "SecurityProviderImpl",
       metadata: metadata.toLogMetadataDTOCollection()
     )
@@ -1274,6 +1320,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
       let errorContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
+        operation: "generateKey",
+        category: "Security",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
       )
@@ -1300,6 +1348,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
     let debugContext=BaseLogContextDTO(
       domainName: "SecurityProvider",
+      operation: "createSecureConfig",
+      category: "Security",
       source: "SecurityProviderImpl",
       metadata: metadata.toLogMetadataDTOCollection()
     )
@@ -1338,6 +1388,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
     let debugContext=BaseLogContextDTO(
       domainName: "SecurityProvider",
+      operation: "performOperationWithOptions",
+      category: "Security",
       source: "SecurityProviderImpl",
       metadata: metadata.toLogMetadataDTOCollection()
     )
@@ -1412,6 +1464,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
       let debugContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
+        operation: "generateKey",
+        category: "Security",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
       )
@@ -1440,6 +1494,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
       let errorContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
+        operation: "generateKey",
+        category: "Security",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
       )
@@ -1462,6 +1518,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
       let errorContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
+        operation: "generateKey",
+        category: "Security",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
       )
@@ -1518,6 +1576,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
       let debugContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
+        operation: "secureStore",
+        category: "Security",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
       )
@@ -1539,6 +1599,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
       let errorContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
+        operation: "secureStore",
+        category: "Security",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
       )
@@ -1586,6 +1648,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
           let debugContext=BaseLogContextDTO(
             domainName: "SecurityProvider",
+            operation: "secureRetrieve",
+            category: "Security",
             source: "SecurityProviderImpl",
             metadata: metadata.toLogMetadataDTOCollection()
           )
@@ -1602,7 +1666,6 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
               "identifier": identifier
             ]
           )
-
         case let .failure(error):
           throw SecurityProviderError.operationFailed(
             operation: "secureRetrieve",
@@ -1615,6 +1678,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
       let errorContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
+        operation: "secureRetrieve",
+        category: "Security",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
       )
@@ -1662,6 +1727,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
           let debugContext=BaseLogContextDTO(
             domainName: "SecurityProvider",
+            operation: "secureDelete",
+            category: "Security",
             source: "SecurityProviderImpl",
             metadata: metadata.toLogMetadataDTOCollection()
           )
@@ -1677,7 +1744,6 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
               "identifier": identifier
             ]
           )
-
         case let .failure(error):
           throw SecurityProviderError.operationFailed(
             operation: "secureDelete",
@@ -1690,6 +1756,8 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
       let errorContext=BaseLogContextDTO(
         domainName: "SecurityProvider",
+        operation: "secureDelete",
+        category: "Security",
         source: "SecurityProviderImpl",
         metadata: metadata.toLogMetadataDTOCollection()
       )

@@ -38,6 +38,8 @@ public actor ActorLogger: LoggingProtocol {
     // Create a context DTO from the legacy context
     let contextDTO=BaseLogContextDTO(
       domainName: "Legacy",
+      operation: context.operation ?? "unknown",
+      category: context.category ?? "General",
       source: context.source ?? defaultSource,
       metadata: context.metadata // Pass the metadata directly, no conversion needed
     )

@@ -115,7 +115,7 @@ public actor KeychainSecurityActor {
     let metadataCollection=LogMetadataDTOCollection(entries: metadataItems)
 
     let debugContext=BaseLogContextDTO(
-      domainName: "Keychain", source: "KeychainSecurityActor", metadata: metadataCollection
+      domainName: "Keychain", operation: "storeEncryptedSecret", category: "Security", source: "KeychainSecurityActor", metadata: metadataCollection
     )
     await logger.debug(
       "Storing encrypted secret for account", context: debugContext
@@ -167,7 +167,7 @@ public actor KeychainSecurityActor {
 
       // Log success
       let infoContext=BaseLogContextDTO(
-        domainName: "Keychain", source: "KeychainSecurityActor", metadata: metadataCollection
+        domainName: "Keychain", operation: "storeEncryptedSecret", category: "Security", source: "KeychainSecurityActor", metadata: metadataCollection
       )
       await logger.info(
         "Successfully stored encrypted secret for account", context: infoContext
@@ -192,7 +192,7 @@ public actor KeychainSecurityActor {
       let errorMetadataCollection=LogMetadataDTOCollection(entries: errorMetadataItems)
 
       let errorContext=BaseLogContextDTO(
-        domainName: "Keychain", source: "KeychainSecurityActor", metadata: errorMetadataCollection
+        domainName: "Keychain", operation: "storeEncryptedSecret", category: "Security", source: "KeychainSecurityActor", metadata: errorMetadataCollection
       )
       await logger.error(
         "Failed to store encrypted secret", context: errorContext
@@ -231,7 +231,7 @@ public actor KeychainSecurityActor {
     let metadataCollectionRetrieve=LogMetadataDTOCollection(entries: metadataItemsRetrieve)
 
     let debugContext=BaseLogContextDTO(
-      domainName: "Keychain", source: "KeychainSecurityActor", metadata: metadataCollectionRetrieve
+      domainName: "Keychain", operation: "retrieveEncryptedSecret", category: "Security", source: "KeychainSecurityActor", metadata: metadataCollectionRetrieve
     )
     await logger.debug(
       "Retrieving encrypted secret for account", context: debugContext
@@ -279,8 +279,7 @@ public actor KeychainSecurityActor {
 
       // Log success
       let infoContext=BaseLogContextDTO(
-        domainName: "Keychain", source: "KeychainSecurityActor",
-        metadata: metadataCollectionRetrieve
+        domainName: "Keychain", operation: "retrieveEncryptedSecret", category: "Security", source: "KeychainSecurityActor", metadata: metadataCollectionRetrieve
       )
       await logger.info(
         "Successfully retrieved encrypted secret", context: infoContext
@@ -302,13 +301,10 @@ public actor KeychainSecurityActor {
           privacyLevel: PrivacyClassification.public
         )
       ]
-      let errorMetadataCollectionRetrieve=LogMetadataDTOCollection(
-        entries: errorMetadataItemsRetrieve
-      )
+      let errorMetadataCollectionRetrieve=LogMetadataDTOCollection(entries: errorMetadataItemsRetrieve)
 
       let errorContext=BaseLogContextDTO(
-        domainName: "Keychain", source: "KeychainSecurityActor",
-        metadata: errorMetadataCollectionRetrieve
+        domainName: "Keychain", operation: "retrieveEncryptedSecret", category: "Security", source: "KeychainSecurityActor", metadata: errorMetadataCollectionRetrieve
       )
       await logger.error(
         "Failed to retrieve encrypted secret", context: errorContext
@@ -340,7 +336,7 @@ public actor KeychainSecurityActor {
       LogMetadataDTO(key: "account", value: account, privacyLevel: PrivacyClassification.private),
       LogMetadataDTO(
         key: "operation",
-        value: "deleteSecret",
+        value: "deleteEncryptedSecret",
         privacyLevel: PrivacyClassification.public
       ),
       LogMetadataDTO(key: "keyID", value: keyID, privacyLevel: PrivacyClassification.private)
@@ -348,7 +344,7 @@ public actor KeychainSecurityActor {
     let metadataCollectionDelete=LogMetadataDTOCollection(entries: metadataItemsDelete)
 
     let debugContext1=BaseLogContextDTO(
-      domainName: "Keychain", source: "KeychainSecurityActor", metadata: metadataCollectionDelete
+      domainName: "Keychain", operation: "deleteEncryptedSecret", category: "Security", source: "KeychainSecurityActor", metadata: metadataCollectionDelete
     )
     await logger.debug(
       "Attempting to delete secret for account", context: debugContext1
@@ -364,8 +360,7 @@ public actor KeychainSecurityActor {
         _=await keyManager.deleteKey(withIdentifier: keyID)
 
         let debugContext2=BaseLogContextDTO(
-          domainName: "Keychain", source: "KeychainSecurityActor",
-          metadata: metadataCollectionDelete
+          domainName: "Keychain", operation: "deleteEncryptedSecret", category: "Security", source: "KeychainSecurityActor", metadata: metadataCollectionDelete
         )
         await logger.debug(
           "Also deleting associated derived key", context: debugContext2
@@ -374,7 +369,7 @@ public actor KeychainSecurityActor {
 
       // Log success
       let infoContext=BaseLogContextDTO(
-        domainName: "Keychain", source: "KeychainSecurityActor", metadata: metadataCollectionDelete
+        domainName: "Keychain", operation: "deleteEncryptedSecret", category: "Security", source: "KeychainSecurityActor", metadata: metadataCollectionDelete
       )
       await logger.info(
         "Successfully deleted secret for account", context: infoContext
@@ -385,7 +380,7 @@ public actor KeychainSecurityActor {
         LogMetadataDTO(key: "account", value: account, privacyLevel: PrivacyClassification.private),
         LogMetadataDTO(
           key: "operation",
-          value: "deleteSecret",
+          value: "deleteEncryptedSecret",
           privacyLevel: PrivacyClassification.public
         ),
         LogMetadataDTO(
@@ -397,8 +392,7 @@ public actor KeychainSecurityActor {
       let errorMetadataCollectionDelete=LogMetadataDTOCollection(entries: errorMetadataItemsDelete)
 
       let errorContext=BaseLogContextDTO(
-        domainName: "Keychain", source: "KeychainSecurityActor",
-        metadata: errorMetadataCollectionDelete
+        domainName: "Keychain", operation: "deleteEncryptedSecret", category: "Security", source: "KeychainSecurityActor", metadata: errorMetadataCollectionDelete
       )
       await logger.error(
         "Failed to delete secret", context: errorContext

@@ -22,6 +22,9 @@ public struct SchedulingLogContext: LogContextDTO {
 
   /// The operation being performed
   public let operation: String
+  
+  /// The category for the log entry
+  public let category: String
 
   /// The source of the log entry (optional as per protocol)
   public let source: String?
@@ -40,18 +43,21 @@ public struct SchedulingLogContext: LogContextDTO {
       - source: The source component (defaults to "SchedulingService")
       - metadata: Privacy-aware metadata collection
       - correlationID: Optional correlation ID for tracing related log events
+      - category: The category for this log entry (defaults to "Scheduling")
    */
   public init(
     operation: String,
     source: String?="SchedulingService",
     metadata: LogMetadataDTOCollection=LogMetadataDTOCollection(),
-    correlationID: String?=nil
+    correlationID: String?=nil,
+    category: String="Scheduling"
   ) {
     domainName="Scheduling"
     self.operation=operation
     self.source=source
-    self.correlationID=correlationID
     self.metadata=metadata
+    self.correlationID=correlationID
+    self.category=category
   }
 
   /**
@@ -65,7 +71,8 @@ public struct SchedulingLogContext: LogContextDTO {
       operation: operation,
       source: source,
       metadata: metadata.withPublic(key: "scheduleID", value: scheduleID),
-      correlationID: correlationID
+      correlationID: correlationID,
+      category: category
     )
   }
 
@@ -80,7 +87,8 @@ public struct SchedulingLogContext: LogContextDTO {
       operation: operation,
       source: source,
       metadata: metadata.withPublic(key: "taskID", value: taskID),
-      correlationID: correlationID
+      correlationID: correlationID,
+      category: category
     )
   }
 
@@ -99,7 +107,8 @@ public struct SchedulingLogContext: LogContextDTO {
         .withPublic(key: "taskStatus", value: task.status.rawValue)
         .withPrivate(key: "taskName", value: task.name)
         .withPublic(key: "scheduleID", value: task.scheduleID),
-      correlationID: correlationID
+      correlationID: correlationID,
+      category: category
     )
   }
 
@@ -118,7 +127,8 @@ public struct SchedulingLogContext: LogContextDTO {
         .withPublic(key: "scheduleFrequency", value: schedule.frequency.rawValue)
         .withPublic(key: "scheduleEnabled", value: "\(schedule.isEnabled)")
         .withPrivate(key: "scheduleName", value: schedule.name),
-      correlationID: correlationID
+      correlationID: correlationID,
+      category: category
     )
   }
 
@@ -135,7 +145,8 @@ public struct SchedulingLogContext: LogContextDTO {
       metadata: metadata
         .withPublic(key: "errorType", value: "\(type(of: error))")
         .withPrivate(key: "errorMessage", value: error.localizedDescription),
-      correlationID: correlationID
+      correlationID: correlationID,
+      category: category
     )
   }
 
@@ -151,7 +162,8 @@ public struct SchedulingLogContext: LogContextDTO {
       operation: operation,
       source: source,
       metadata: metadata.withPublic(key: key, value: "\(date)"),
-      correlationID: correlationID
+      correlationID: correlationID,
+      category: category
     )
   }
 
@@ -166,7 +178,22 @@ public struct SchedulingLogContext: LogContextDTO {
       operation: operation,
       source: source,
       metadata: metadata.withPublic(key: "success", value: "\(success)"),
-      correlationID: correlationID
+      correlationID: correlationID,
+      category: category
+    )
+  }
+
+  /// Creates a new context with additional metadata merged with the existing metadata
+  /// - Parameter additionalMetadata: Additional metadata to include
+  /// - Returns: New context with merged metadata
+  public func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> Self {
+    let mergedMetadata = metadata.merging(with: additionalMetadata)
+    return SchedulingLogContext(
+      operation: operation,
+      source: source,
+      metadata: mergedMetadata,
+      correlationID: correlationID,
+      category: category
     )
   }
 }

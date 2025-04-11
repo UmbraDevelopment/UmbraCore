@@ -1,7 +1,7 @@
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
-import CoreDTOs
+import SchedulingTypes
 
 /**
  Command for purging logs from a destination.
@@ -70,7 +70,7 @@ public class PurgeLogsCommand: BaseLogCommand, LogCommand {
             let destinations = try getTargetDestinations()
             
             if destinations.isEmpty {
-                throw LoggingError.destinationNotFound(
+                throw LoggingError.noDestinationsFound(
                     "No destinations found for purging logs"
                 )
             }
@@ -157,7 +157,7 @@ public class PurgeLogsCommand: BaseLogCommand, LogCommand {
             
         } catch {
             // Map unknown error to LoggingError
-            let loggingError = LoggingError.general(error.localizedDescription)
+            let loggingError = LoggingError.initialisationFailed(reason: error.localizedDescription)
             
             // Log failure
             await logOperationFailure(

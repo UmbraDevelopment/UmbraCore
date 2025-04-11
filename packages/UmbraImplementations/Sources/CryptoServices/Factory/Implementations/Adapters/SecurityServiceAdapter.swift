@@ -165,6 +165,8 @@ struct SecurityServiceLogger {
     // Create and return the log context
     return BaseLogContextDTO(
       domainName: domain,
+      operation: "securityOperation",
+      category: "Security",
       source: source,
       metadata: metadataCollection
     )

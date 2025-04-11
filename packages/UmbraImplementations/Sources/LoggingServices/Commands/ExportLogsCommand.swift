@@ -1,7 +1,7 @@
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
-import CoreDTOs
+import SchedulingTypes
 
 /**
  Command for exporting logs to a specific format.
@@ -102,7 +102,7 @@ public class ExportLogsCommand: BaseLogCommand, LogCommand {
             
         } catch {
             // Map unknown error to LoggingError
-            let loggingError = LoggingError.exportFailed(error.localizedDescription)
+            let loggingError = LoggingError.serialisationFailed(reason: error.localizedDescription)
             
             // Log failure
             await logOperationFailure(

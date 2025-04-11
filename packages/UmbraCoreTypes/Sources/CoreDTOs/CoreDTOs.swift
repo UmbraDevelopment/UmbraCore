@@ -34,7 +34,7 @@
 // These will be uncommented during migration completion
 @_exported import FileSystemCommonTypes
 @_exported import Notification
-@_exported import Scheduling
+@_exported import SchedulingTypes
 
 /// Export key security-related interfaces
 @_exported import SecurityCoreInterfaces

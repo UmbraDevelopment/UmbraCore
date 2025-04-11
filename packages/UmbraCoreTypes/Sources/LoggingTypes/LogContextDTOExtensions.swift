@@ -19,6 +19,8 @@ extension LogContextDTO {
   -> BaseLogContextDTO {
     BaseLogContextDTO(
       domainName: domainName,
+      operation: operation, 
+      category: category,
       source: source,
       metadata: metadata.merging(with: metadataCollection),
       correlationID: correlationID

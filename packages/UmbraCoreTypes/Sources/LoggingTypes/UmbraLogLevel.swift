@@ -11,7 +11,7 @@
 /// }
 /// ```
 @frozen
-public enum UmbraLogLevel: Int, Sendable, Comparable {
+public enum UmbraLogLevel: Int, Sendable, Comparable, Codable {
   /// Detailed information, typically only useful for debugging.
   case verbose
 

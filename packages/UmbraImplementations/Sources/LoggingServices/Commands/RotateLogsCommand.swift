@@ -1,7 +1,7 @@
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
-import CoreDTOs
+import SchedulingTypes
 
 /**
  Command for rotating logs.
@@ -121,7 +121,7 @@ public class RotateLogsCommand: BaseLogCommand, LogCommand {
             
         } catch {
             // Map unknown error to LoggingError
-            let loggingError = LoggingError.rotationFailed(error.localizedDescription)
+            let loggingError = LoggingError.writeFailure(error.localizedDescription)
             
             // Log failure
             await logOperationFailure(

@@ -69,6 +69,8 @@ public actor DefaultCryptoProvider: CryptoProviderProtocol {
 
     let context=BaseLogContextDTO(
       domainName: "CryptoProvider",
+      operation: "encrypt",
+      category: "Crypto",
       source: "DefaultCryptoProvider.encrypt",
       metadata: LogMetadataDTOCollection().withPublic(
         key: "algorithm",
@@ -105,6 +107,8 @@ public actor DefaultCryptoProvider: CryptoProviderProtocol {
 
     let context=BaseLogContextDTO(
       domainName: "CryptoProvider",
+      operation: "decrypt",
+      category: "Crypto",
       source: "DefaultCryptoProvider.decrypt",
       metadata: LogMetadataDTOCollection().withPublic(
         key: "algorithm",
@@ -136,6 +140,8 @@ public actor DefaultCryptoProvider: CryptoProviderProtocol {
   ) async -> Result<Data, Error> {
     let context=BaseLogContextDTO(
       domainName: "CryptoProvider",
+      operation: "hash",
+      category: "Crypto",
       source: "DefaultCryptoProvider.hash",
       metadata: LogMetadataDTOCollection().withPublic(
         key: "algorithm",
@@ -167,6 +173,8 @@ public actor DefaultCryptoProvider: CryptoProviderProtocol {
   ) async -> Result<Data, Error> {
     let context=BaseLogContextDTO(
       domainName: "CryptoProvider",
+      operation: "generateKey",
+      category: "Crypto",
       source: "DefaultCryptoProvider.generateKey",
       metadata: LogMetadataDTOCollection()
         .withPublic(key: "keyType", value: keyType.rawValue)

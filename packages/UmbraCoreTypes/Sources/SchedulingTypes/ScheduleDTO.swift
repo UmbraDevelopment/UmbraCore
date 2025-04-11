@@ -120,7 +120,7 @@ public struct ScheduleDTO: Sendable, Equatable {
 
   // MARK: - Initializers
 
-  /// Full initializer with all schedule properties
+  /// Full initialiser with all schedule properties
   /// - Parameters:
   ///   - id: Unique identifier for the schedule
   ///   - name: Human-readable name of the schedule

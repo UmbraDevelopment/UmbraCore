@@ -100,12 +100,46 @@ public struct LogMetadataDTOCollection: Sendable, Equatable, Hashable {
     return result
   }
 
+  /// Adds a metadata entry with "protected" privacy level to the collection
+  /// This is an alias for withPrivate for compatibility with existing code
+  ///
+  /// - Parameters:
+  ///   - key: The metadata key
+  ///   - value: The metadata value
+  /// - Returns: The updated collection
+  public func withProtected(key: String, value: String) -> LogMetadataDTOCollection {
+    return withPrivate(key: key, value: value)
+  }
+
   /// Combines this collection with another collection
   ///
   /// - Parameter other: The collection to combine with
   /// - Returns: A new collection containing entries from both collections
   public func merging(with other: LogMetadataDTOCollection) -> LogMetadataDTOCollection {
-    LogMetadataDTOCollection(entries: entries + other.entries)
+    var result = self
+    result.entries.append(contentsOf: other.entries)
+    return result
+  }
+
+  /// Gets all keys in the collection
+  ///
+  /// - Returns: Array of keys
+  public func getKeys() -> [String] {
+    return entries.map { $0.key }
+  }
+  
+  /// Gets a string value for a specific key
+  ///
+  /// - Parameter key: The key to lookup
+  /// - Returns: The value if found, nil otherwise
+  public func getString(key: String) -> String? {
+    return entries.first(where: { $0.key == key })?.value
+  }
+  
+  /// Static property that returns an empty collection
+  /// This is a convenience for compatibility with existing code
+  public static var empty: LogMetadataDTOCollection {
+    return LogMetadataDTOCollection()
   }
 
   /// Indicates whether the collection has no entries

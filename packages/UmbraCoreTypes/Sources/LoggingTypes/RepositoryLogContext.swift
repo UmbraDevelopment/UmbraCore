@@ -30,7 +30,10 @@ public struct RepositoryLogContext: LogContextDTO, Equatable {
   public let state: String?
 
   /// The operation being performed
-  public let operation: String?
+  public let operation: String
+  
+  /// The category for the log entry
+  public let category: String
 
   /**
    Creates a new repository log context with the specified properties.
@@ -39,7 +42,8 @@ public struct RepositoryLogContext: LogContextDTO, Equatable {
      - repositoryID: Optional identifier of the repository
      - locationPath: Optional path to the repository
      - state: Optional repository state
-     - operation: Optional operation being performed
+     - operation: The operation being performed
+     - category: The category for the log entry
      - source: Optional source of the log event
      - correlationID: Optional correlation ID for tracing
      - additionalMetadata: Optional additional metadata to include
@@ -48,7 +52,8 @@ public struct RepositoryLogContext: LogContextDTO, Equatable {
     repositoryID: String?=nil,
     locationPath: String?=nil,
     state: String?=nil,
-    operation: String?=nil,
+    operation: String="repository",
+    category: String="Repository",
     source: String?=nil,
     correlationID: String?=nil,
     additionalMetadata: [String: (String, PrivacyClassification)]=[:]
@@ -59,6 +64,7 @@ public struct RepositoryLogContext: LogContextDTO, Equatable {
     self.locationPath=locationPath
     self.state=state
     self.operation=operation
+    self.category=category
 
     // Build metadata collection with privacy annotations
     var collection=LogMetadataDTOCollection()
@@ -79,9 +85,10 @@ public struct RepositoryLogContext: LogContextDTO, Equatable {
     }
 
     // Add operation with public privacy
-    if let operation {
-      collection=collection.withPublic(key: "operation", value: operation)
-    }
+    collection=collection.withPublic(key: "operation", value: operation)
+    
+    // Add category with public privacy
+    collection=collection.withPublic(key: "category", value: category)
 
     // Add any additional metadata
     for (key, (value, privacyLevel)) in additionalMetadata {
@@ -89,6 +96,22 @@ public struct RepositoryLogContext: LogContextDTO, Equatable {
     }
 
     metadata=collection
+  }
+  
+  /// Creates a new context with additional metadata merged with the existing metadata
+  /// - Parameter additionalMetadata: Additional metadata to include
+  /// - Returns: New context with merged metadata
+  public func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> RepositoryLogContext {
+    return RepositoryLogContext(
+      repositoryID: self.repositoryID,
+      locationPath: self.locationPath, 
+      state: self.state,
+      operation: self.operation,
+      category: self.category,
+      source: self.source,
+      correlationID: self.correlationID,
+      additionalMetadata: [:]
+    )
   }
 
   /**
@@ -100,46 +123,51 @@ public struct RepositoryLogContext: LogContextDTO, Equatable {
      - correlationID: Optional correlation ID for tracing
    */
   public init(
-    metadata: PrivacyMetadata?,
-    source: String?,
+    metadata: PrivacyMetadata,
+    source: String?=nil,
     correlationID: String?=nil
   ) {
     self.source=source
     self.correlationID=correlationID
-
-    // Extract known repository fields from metadata
-    if let metadata {
-      repositoryID=metadata.storage["repository_id"]?.valueString
-      locationPath=metadata.storage["location"]?.valueString
-      state=metadata.storage["state"]?.valueString
-      operation=metadata.storage["operation"]?.valueString
-    } else {
-      repositoryID=nil
-      locationPath=nil
-      state=nil
-      operation=nil
-    }
-
-    // Convert metadata to LogMetadataDTOCollection
-    var collection=LogMetadataDTOCollection()
-
-    if let metadata {
-      for (key, value) in metadata.storage {
-        switch value.privacy {
-          case .public:
-            collection=collection.withPublic(key: key, value: value.valueString)
-          case .private:
-            collection=collection.withPrivate(key: key, value: value.valueString)
-          case .sensitive:
-            collection=collection.withSensitive(key: key, value: value.valueString)
-          case .hash:
-            collection=collection.withHashed(key: key, value: value.valueString)
-          case .auto:
-            collection=collection.withAuto(key: key, value: value.valueString)
-        }
+    
+    // Create a new metadata collection
+    var collection = LogMetadataDTOCollection()
+    
+    // Extract repository ID from metadata if available
+    let repositoryID = metadata.storage["repository_id"]?.valueString
+    self.repositoryID = repositoryID
+    
+    // Extract location path from metadata if available
+    let locationPath = metadata.storage["location"]?.valueString
+    self.locationPath = locationPath
+    
+    // Extract state from metadata if available
+    let state = metadata.storage["state"]?.valueString
+    self.state = state
+    
+    // Extract operation from metadata if available
+    let extractedOperation = metadata.storage["operation"]?.valueString
+    self.operation = extractedOperation ?? "repository"
+    
+    // Use a default category
+    self.category = "Repository"
+    
+    // Convert the privacy metadata to the DTO collection
+    for (key, value) in metadata.storage {
+      switch value.privacy {
+        case .public:
+          collection = collection.withPublic(key: key, value: value.valueString)
+        case .private:
+          collection = collection.withPrivate(key: key, value: value.valueString)
+        case .sensitive:
+          collection = collection.withSensitive(key: key, value: value.valueString)
+        case .hash:
+          collection = collection.withHashed(key: key, value: value.valueString)
+        case .auto:
+          collection = collection.withAuto(key: key, value: value.valueString)
       }
     }
-
-    self.metadata=collection
+    
+    self.metadata = collection
   }
 }

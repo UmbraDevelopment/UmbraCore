@@ -44,6 +44,8 @@ extension LoggingProtocol {
     // Create a context from the parameters
     let context=BaseLogContextDTO(
       domainName: "Legacy",
+      operation: "logMessage",
+      category: "General",
       source: source,
       metadata: metadataCollection,
       correlationID: nil

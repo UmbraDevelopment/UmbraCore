@@ -352,7 +352,12 @@ public actor XPCServiceActor: XPCServiceProtocol {
    */
   private func log(_ level: LogLevel, _ message: String) async {
     if let logger {
-      let context=BaseLogContextDTO(domainName: "XPCService", source: "XPCServiceActor")
+      let context=BaseLogContextDTO(
+        domainName: "XPCService", 
+        operation: "generic",
+        category: "System",
+        source: "XPCServiceActor"
+      )
       await logger.log(level, message, context: context)
     }
   }

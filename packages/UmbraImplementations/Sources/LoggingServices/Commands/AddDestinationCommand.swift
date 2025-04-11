@@ -1,7 +1,7 @@
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
-import CoreDTOs
+import SchedulingTypes
 
 /**
  Command for adding a new log destination.
@@ -67,9 +67,7 @@ public class AddDestinationCommand: BaseLogCommand, LogCommand {
             // Check if destination already exists
             if let existing = getDestination(id: destination.id) {
                 if !options.overwriteExisting {
-                    throw LoggingError.destinationAlreadyExists(
-                        "Destination with ID \(destination.id) already exists"
-                    )
+                    throw LoggingError.destinationAlreadyExists(identifier: "Destination with ID \(destination.id) already exists")
                 } else {
                     await logger.log(
                         .warning,
@@ -99,10 +97,11 @@ public class AddDestinationCommand: BaseLogCommand, LogCommand {
                     context: operationContext
                 )
                 
+                // Create a test log entry
                 let testEntry = LogEntryDTO(
                     level: .info,
-                    category: "LoggingSystem",
                     message: "Test log entry for destination validation",
+                    category: "LoggingSystem",
                     metadata: LogMetadataDTOCollection.empty
                 )
                 
@@ -144,7 +143,7 @@ public class AddDestinationCommand: BaseLogCommand, LogCommand {
             
         } catch {
             // Map unknown error to LoggingError
-            let loggingError = LoggingError.general(error.localizedDescription)
+            let loggingError = LoggingError.initialisationFailed(reason: error.localizedDescription)
             
             // Log failure
             await logOperationFailure(

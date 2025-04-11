@@ -69,6 +69,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
   -> (FileMetadataDTO, FileOperationResultDTO) {
     let logContext=BaseLogContextDTO(
       domainName: "FileSystem",
+      operation: "getAttributes",
+      category: "Metadata",
       source: "FileMetadataOperationsImpl",
       metadata: LogMetadataDTOCollection().withPublic(key: "path", value: path)
     )
@@ -116,6 +118,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
         // Just log the error but don't fail the whole operation
         let warningContext=BaseLogContextDTO(
           domainName: "FileSystem",
+          operation: "getAttributes",
+          category: "Metadata",
           source: "FileMetadataOperationsImpl",
           metadata: LogMetadataDTOCollection()
             .withPublic(key: "path", value: path)
@@ -162,6 +166,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
 
       let errorContext=BaseLogContextDTO(
         domainName: "FileSystem",
+        operation: "getAttributes",
+        category: "Metadata",
         source: "FileMetadataOperationsImpl",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "path", value: path)
@@ -191,6 +197,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
   ) async throws -> FileOperationResultDTO {
     let logContext=BaseLogContextDTO(
       domainName: "FileSystem",
+      operation: "setAttributes",
+      category: "Metadata",
       source: "FileMetadataOperationsImpl",
       metadata: LogMetadataDTOCollection()
         .withPublic(key: "path", value: path)
@@ -262,6 +270,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
 
       let errorContext=BaseLogContextDTO(
         domainName: "FileSystem",
+        operation: "setAttributes",
+        category: "Metadata",
         source: "FileMetadataOperationsImpl",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "path", value: path)
@@ -286,6 +296,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
   public func getFileSize(at path: String) async throws -> (UInt64, FileOperationResultDTO) {
     let logContext=BaseLogContextDTO(
       domainName: "FileSystem",
+      operation: "getFileSize",
+      category: "Metadata",
       source: "FileMetadataOperationsImpl",
       metadata: LogMetadataDTOCollection().withPublic(key: "path", value: path)
     )
@@ -342,6 +354,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
 
       let successContext=BaseLogContextDTO(
         domainName: "FileSystem",
+        operation: "getFileSize",
+        category: "Metadata",
         source: "FileMetadataOperationsImpl",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "path", value: path)
@@ -363,6 +377,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
 
       let errorContext=BaseLogContextDTO(
         domainName: "FileSystem",
+        operation: "getFileSize",
+        category: "Metadata",
         source: "FileMetadataOperationsImpl",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "path", value: path)
@@ -387,6 +403,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
   public func getCreationDate(at path: String) async throws -> (Date, FileOperationResultDTO) {
     let logContext=BaseLogContextDTO(
       domainName: "FileSystem",
+      operation: "getCreationDate",
+      category: "Metadata",
       source: "FileMetadataOperationsImpl",
       metadata: LogMetadataDTOCollection().withPublic(key: "path", value: path)
     )
@@ -443,6 +461,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
 
       let successContext=BaseLogContextDTO(
         domainName: "FileSystem",
+        operation: "getCreationDate",
+        category: "Metadata",
         source: "FileMetadataOperationsImpl",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "path", value: path)
@@ -464,6 +484,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
 
       let errorContext=BaseLogContextDTO(
         domainName: "FileSystem",
+        operation: "getCreationDate",
+        category: "Metadata",
         source: "FileMetadataOperationsImpl",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "path", value: path)
@@ -488,6 +510,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
   public func getModificationDate(at path: String) async throws -> (Date, FileOperationResultDTO) {
     let logContext=BaseLogContextDTO(
       domainName: "FileSystem",
+      operation: "getModificationDate",
+      category: "Metadata",
       source: "FileMetadataOperationsImpl",
       metadata: LogMetadataDTOCollection().withPublic(key: "path", value: path)
     )
@@ -544,6 +568,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
 
       let successContext=BaseLogContextDTO(
         domainName: "FileSystem",
+        operation: "getModificationDate",
+        category: "Metadata",
         source: "FileMetadataOperationsImpl",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "path", value: path)
@@ -565,6 +591,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
 
       let errorContext=BaseLogContextDTO(
         domainName: "FileSystem",
+        operation: "getModificationDate",
+        category: "Metadata",
         source: "FileMetadataOperationsImpl",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "path", value: path)
@@ -594,6 +622,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
   ) async throws -> (Data, FileOperationResultDTO) {
     let logContext=BaseLogContextDTO(
       domainName: "FileSystem",
+      operation: "getExtendedAttribute",
+      category: "Metadata",
       source: "FileMetadataOperationsImpl",
       metadata: LogMetadataDTOCollection()
         .withPublic(key: "path", value: path)
@@ -620,6 +650,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
 
       let successContext=BaseLogContextDTO(
         domainName: "FileSystem",
+        operation: "getExtendedAttribute",
+        category: "Metadata",
         source: "FileMetadataOperationsImpl",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "path", value: path)
@@ -639,6 +671,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
 
       let errorContext=BaseLogContextDTO(
         domainName: "FileSystem",
+        operation: "getExtendedAttribute",
+        category: "Metadata",
         source: "FileMetadataOperationsImpl",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "path", value: path)
@@ -670,6 +704,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
   ) async throws -> FileOperationResultDTO {
     let logContext=BaseLogContextDTO(
       domainName: "FileSystem",
+      operation: "setExtendedAttribute",
+      category: "Metadata",
       source: "FileMetadataOperationsImpl",
       metadata: LogMetadataDTOCollection()
         .withPublic(key: "path", value: path)
@@ -697,6 +733,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
 
       let successContext=BaseLogContextDTO(
         domainName: "FileSystem",
+        operation: "setExtendedAttribute",
+        category: "Metadata",
         source: "FileMetadataOperationsImpl",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "path", value: path)
@@ -716,6 +754,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
 
       let errorContext=BaseLogContextDTO(
         domainName: "FileSystem",
+        operation: "setExtendedAttribute",
+        category: "Metadata",
         source: "FileMetadataOperationsImpl",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "path", value: path)
@@ -739,6 +779,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
   -> ([String: Data], FileOperationResultDTO) {
     let logContext=BaseLogContextDTO(
       domainName: "FileSystem",
+      operation: "getAllExtendedAttributes",
+      category: "Metadata",
       source: "FileMetadataOperationsImpl",
       metadata: LogMetadataDTOCollection().withPublic(key: "path", value: path)
     )
@@ -771,6 +813,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
 
       let successContext=BaseLogContextDTO(
         domainName: "FileSystem",
+        operation: "getAllExtendedAttributes",
+        category: "Metadata",
         source: "FileMetadataOperationsImpl",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "path", value: path)
@@ -790,6 +834,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
 
       let errorContext=BaseLogContextDTO(
         domainName: "FileSystem",
+        operation: "getAllExtendedAttributes",
+        category: "Metadata",
         source: "FileMetadataOperationsImpl",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "path", value: path)
@@ -813,6 +859,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
   -> ([String], FileOperationResultDTO) {
     let logContext=BaseLogContextDTO(
       domainName: "FileSystem",
+      operation: "listExtendedAttributes",
+      category: "Metadata",
       source: "FileMetadataOperationsImpl",
       metadata: LogMetadataDTOCollection().withPublic(key: "path", value: path)
     )
@@ -872,6 +920,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
 
       let successContext=BaseLogContextDTO(
         domainName: "FileSystem",
+        operation: "listExtendedAttributes",
+        category: "Metadata",
         source: "FileMetadataOperationsImpl",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "path", value: path)
@@ -893,6 +943,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
 
       let errorContext=BaseLogContextDTO(
         domainName: "FileSystem",
+        operation: "listExtendedAttributes",
+        category: "Metadata",
         source: "FileMetadataOperationsImpl",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "path", value: path)
@@ -922,6 +974,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
   ) async throws -> FileOperationResultDTO {
     let logContext=BaseLogContextDTO(
       domainName: "FileSystem",
+      operation: "removeExtendedAttribute",
+      category: "Metadata",
       source: "FileMetadataOperationsImpl",
       metadata: LogMetadataDTOCollection()
         .withPublic(key: "path", value: path)
@@ -996,6 +1050,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
 
       let errorContext=BaseLogContextDTO(
         domainName: "FileSystem",
+        operation: "removeExtendedAttribute",
+        category: "Metadata",
         source: "FileMetadataOperationsImpl",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "path", value: path)
@@ -1026,6 +1082,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
   ) async throws -> FileOperationResultDTO {
     let logContext=BaseLogContextDTO(
       domainName: "FileSystem",
+      operation: "setCreationDate",
+      category: "Metadata",
       source: "FileMetadataOperationsImpl",
       metadata: LogMetadataDTOCollection()
         .withPublic(key: "path", value: path)
@@ -1056,6 +1114,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
 
       let successContext=BaseLogContextDTO(
         domainName: "FileSystem",
+        operation: "setCreationDate",
+        category: "Metadata",
         source: "FileMetadataOperationsImpl",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "path", value: path)
@@ -1075,6 +1135,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
 
       let errorContext=BaseLogContextDTO(
         domainName: "FileSystem",
+        operation: "setCreationDate",
+        category: "Metadata",
         source: "FileMetadataOperationsImpl",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "path", value: path)
@@ -1103,6 +1165,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
   ) async throws -> FileOperationResultDTO {
     let logContext=BaseLogContextDTO(
       domainName: "FileSystem",
+      operation: "setModificationDate",
+      category: "Metadata",
       source: "FileMetadataOperationsImpl",
       metadata: LogMetadataDTOCollection()
         .withPublic(key: "path", value: path)
@@ -1133,6 +1197,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
 
       let successContext=BaseLogContextDTO(
         domainName: "FileSystem",
+        operation: "setModificationDate",
+        category: "Metadata",
         source: "FileMetadataOperationsImpl",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "path", value: path)
@@ -1152,6 +1218,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
 
       let errorContext=BaseLogContextDTO(
         domainName: "FileSystem",
+        operation: "setModificationDate",
+        category: "Metadata",
         source: "FileMetadataOperationsImpl",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "path", value: path)
@@ -1180,6 +1248,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
   ) async throws -> ([URLResourceKey: Any], FileOperationResultDTO) {
     let logContext=BaseLogContextDTO(
       domainName: "FileSystem",
+      operation: "getResourceValues",
+      category: "Metadata",
       source: "FileMetadataOperationsImpl",
       metadata: LogMetadataDTOCollection()
         .withPublic(key: "path", value: path)
@@ -1215,6 +1285,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
 
       let successContext=BaseLogContextDTO(
         domainName: "FileSystem",
+        operation: "getResourceValues",
+        category: "Metadata",
         source: "FileMetadataOperationsImpl",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "path", value: path)
@@ -1234,6 +1306,8 @@ public actor FileMetadataOperationsImpl: FileMetadataOperationsProtocol {
 
       let errorContext=BaseLogContextDTO(
         domainName: "FileSystem",
+        operation: "getResourceValues",
+        category: "Metadata",
         source: "FileMetadataOperationsImpl",
         metadata: LogMetadataDTOCollection()
           .withPublic(key: "path", value: path)

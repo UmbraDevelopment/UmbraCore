@@ -439,6 +439,8 @@ public actor BasicLoggingProtocol: LoggingProtocol, CoreLoggingProtocol {
       message,
       context: context ?? BaseLogContextDTO(
         domainName: domainName,
+        operation: "trace",
+        category: "Diagnostics",
         source: domainName,
         metadata: baseMetadata
       )

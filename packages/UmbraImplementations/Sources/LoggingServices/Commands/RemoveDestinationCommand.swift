@@ -1,7 +1,7 @@
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
-import CoreDTOs
+import SchedulingTypes
 
 /**
  Command for removing a log destination.
@@ -150,7 +150,7 @@ public class RemoveDestinationCommand: BaseLogCommand, LogCommand {
             
         } catch {
             // Map unknown error to LoggingError
-            let loggingError = LoggingError.general(error.localizedDescription)
+            let loggingError = LoggingError.initialisationFailed(reason: error.localizedDescription)
             
             // Log failure
             await logOperationFailure(

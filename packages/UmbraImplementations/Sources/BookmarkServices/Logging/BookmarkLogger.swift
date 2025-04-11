@@ -83,6 +83,8 @@ public actor BookmarkLogger: DomainLoggerProtocol {
       // Create a new context for the error
       var errorContext=BaseLogContextDTO(
         domainName: domainName,
+        operation: "logError",
+        category: "Error",
         source: context.getSource()
       )
 

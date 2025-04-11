@@ -17,6 +17,9 @@ public struct CryptoLogContext: LogContextDTO, Sendable, Equatable {
 
   /// The cryptographic operation being performed
   public let operation: String
+  
+  /// The category for the log entry
+  public let category: String
 
   /// The algorithm being used
   public let algorithm: String?
@@ -25,18 +28,21 @@ public struct CryptoLogContext: LogContextDTO, Sendable, Equatable {
   ///
   /// - Parameters:
   ///   - operation: The cryptographic operation being performed
+  ///   - category: The category for the log entry
   ///   - algorithm: Optional algorithm being used
   ///   - correlationId: Optional correlation identifier for tracing related logs
   ///   - source: Optional source information (e.g., file, function, line)
   ///   - additionalContext: Optional additional context with privacy annotations
   public init(
     operation: String,
+    category: String = "Cryptography",
     algorithm: String?=nil,
     correlationID: String?=nil,
     source: String?=nil,
     additionalContext: LogMetadataDTOCollection=LogMetadataDTOCollection()
   ) {
     self.operation=operation
+    self.category=category
     self.algorithm=algorithm
     self.correlationID=correlationID
     self.source=source
@@ -54,6 +60,20 @@ public struct CryptoLogContext: LogContextDTO, Sendable, Equatable {
 
     metadata=contextMetadata
   }
+  
+  /// Creates a new context with additional metadata merged with the existing metadata
+  /// - Parameter additionalMetadata: Additional metadata to include
+  /// - Returns: New context with merged metadata
+  public func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> CryptoLogContext {
+    return CryptoLogContext(
+      operation: operation,
+      category: category,
+      algorithm: algorithm,
+      correlationID: correlationID,
+      source: source,
+      additionalContext: self.metadata.merging(with: additionalMetadata)
+    )
+  }
 
   /// Creates a new instance of this context with updated metadata
   ///
@@ -62,6 +82,7 @@ public struct CryptoLogContext: LogContextDTO, Sendable, Equatable {
   public func withUpdatedMetadata(_ metadata: LogMetadataDTOCollection) -> CryptoLogContext {
     CryptoLogContext(
       operation: operation,
+      category: category,
       algorithm: algorithm,
       correlationID: correlationID,
       source: source,
@@ -76,6 +97,7 @@ public struct CryptoLogContext: LogContextDTO, Sendable, Equatable {
   public func withCorrelationID(_ correlationID: String) -> CryptoLogContext {
     CryptoLogContext(
       operation: operation,
+      category: category,
       algorithm: algorithm,
       correlationID: correlationID,
       source: source,
@@ -90,6 +112,7 @@ public struct CryptoLogContext: LogContextDTO, Sendable, Equatable {
   public func withSource(_ source: String) -> CryptoLogContext {
     CryptoLogContext(
       operation: operation,
+      category: category,
       algorithm: algorithm,
       correlationID: correlationID,
       source: source,
@@ -105,6 +128,7 @@ public struct CryptoLogContext: LogContextDTO, Sendable, Equatable {
     let updatedMetadata=metadata.withPublic(key: "dataSize", value: String(dataSize))
     return CryptoLogContext(
       operation: operation,
+      category: category,
       algorithm: algorithm,
       correlationID: correlationID,
       source: source,
@@ -120,6 +144,7 @@ public struct CryptoLogContext: LogContextDTO, Sendable, Equatable {
     let updatedMetadata=metadata.withPublic(key: "keyStrength", value: String(keyStrength))
     return CryptoLogContext(
       operation: operation,
+      category: category,
       algorithm: algorithm,
       correlationID: correlationID,
       source: source,
@@ -135,6 +160,7 @@ public struct CryptoLogContext: LogContextDTO, Sendable, Equatable {
     let updatedMetadata=metadata.withPublic(key: "success", value: String(success))
     return CryptoLogContext(
       operation: operation,
+      category: category,
       algorithm: algorithm,
       correlationID: correlationID,
       source: source,
@@ -150,6 +176,7 @@ public struct CryptoLogContext: LogContextDTO, Sendable, Equatable {
     let updatedMetadata=metadata.withPublic(key: "passwordLength", value: String(length))
     return CryptoLogContext(
       operation: operation,
+      category: category,
       algorithm: algorithm,
       correlationID: correlationID,
       source: source,
@@ -165,6 +192,7 @@ public struct CryptoLogContext: LogContextDTO, Sendable, Equatable {
     let updatedMetadata=metadata.withPublic(key: "saltSize", value: String(size))
     return CryptoLogContext(
       operation: operation,
+      category: category,
       algorithm: algorithm,
       correlationID: correlationID,
       source: source,
@@ -180,6 +208,7 @@ public struct CryptoLogContext: LogContextDTO, Sendable, Equatable {
     let updatedMetadata=metadata.withPublic(key: "iterations", value: String(iterations))
     return CryptoLogContext(
       operation: operation,
+      category: category,
       algorithm: algorithm,
       correlationID: correlationID,
       source: source,
@@ -196,6 +225,7 @@ public struct CryptoLogContext: LogContextDTO, Sendable, Equatable {
     let updatedMetadata=metadata.withPrivate(key: "keyId", value: keyID)
     return CryptoLogContext(
       operation: operation,
+      category: category,
       algorithm: algorithm,
       correlationID: correlationID,
       source: source,
@@ -211,6 +241,7 @@ public struct CryptoLogContext: LogContextDTO, Sendable, Equatable {
     let updatedMetadata=metadata.withPublic(key: "keyType", value: keyType)
     return CryptoLogContext(
       operation: operation,
+      category: category,
       algorithm: algorithm,
       correlationID: correlationID,
       source: source,
@@ -226,6 +257,7 @@ public struct CryptoLogContext: LogContextDTO, Sendable, Equatable {
     let updatedMetadata=metadata.withPublic(key: "securityLevel", value: level)
     return CryptoLogContext(
       operation: operation,
+      category: category,
       algorithm: algorithm,
       correlationID: correlationID,
       source: source,

@@ -39,6 +39,8 @@ public actor KeychainResticCredentialManager: ResticCredentialManager {
 
     return BaseLogContextDTO(
       domainName: "ResticServices",
+      operation: "createContext",
+      category: "Credentials",
       source: "KeychainResticCredentialManager",
       metadata: collection
     )

@@ -382,13 +382,12 @@ private actor DefaultSchedulingService: SchedulingServiceProtocol {
       name: task.name,
       taskType: task.taskType,
       status: task.status,
-      configData: task.configData,
       createdAt: createdAt,
       startedAt: task.startedAt,
-      completedAt: task.completedAt,
-      duration: task.duration,
+      endedAt: task.endedAt,
+      executionTime: task.executionTime,
       errorMessage: task.errorMessage,
-      resultData: task.resultData,
+      configData: task.configData,
       metadata: task.metadata
     )
 
@@ -453,13 +452,12 @@ private actor DefaultSchedulingService: SchedulingServiceProtocol {
       name: task.name,
       taskType: task.taskType,
       status: .cancelled,
-      configData: task.configData,
       createdAt: task.createdAt,
       startedAt: task.startedAt,
-      completedAt: UInt64(Date().timeIntervalSince1970),
-      duration: task.duration,
+      endedAt: UInt64(Date().timeIntervalSince1970),
+      executionTime: task.executionTime,
       errorMessage: nil,
-      resultData: "Task deleted",
+      configData: task.configData,
       metadata: task.metadata
     )
 
@@ -535,10 +533,10 @@ private actor DefaultSchedulingService: SchedulingServiceProtocol {
     }
 
     // Calculate new duration if task was running
-    let duration: UInt64?=if let startedAt=task.startedAt {
-      UInt64(Date().timeIntervalSince1970) - startedAt
+    let executionTime: Double?=if let startedAt=task.startedAt {
+      Double(Date().timeIntervalSince1970 - Double(startedAt))
     } else {
-      task.duration
+      task.executionTime
     }
 
     let updatedTask=ScheduledTaskDTO(
@@ -547,13 +545,12 @@ private actor DefaultSchedulingService: SchedulingServiceProtocol {
       name: task.name,
       taskType: task.taskType,
       status: .cancelled,
-      configData: task.configData,
       createdAt: task.createdAt,
       startedAt: task.startedAt,
-      completedAt: UInt64(Date().timeIntervalSince1970),
-      duration: duration,
+      endedAt: UInt64(Date().timeIntervalSince1970),
+      executionTime: executionTime,
       errorMessage: nil,
-      resultData: "Task cancelled by user",
+      configData: task.configData,
       metadata: task.metadata
     )
 

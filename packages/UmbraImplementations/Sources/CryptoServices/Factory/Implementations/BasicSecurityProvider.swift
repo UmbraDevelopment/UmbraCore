@@ -137,6 +137,8 @@ actor BasicSecurityProvider: SecurityProviderProtocol {
 
     return BaseLogContextDTO(
       domainName: "security",
+      operation: "cryptoOperation",
+      category: "Security",
       source: source,
       metadata: collection
     )

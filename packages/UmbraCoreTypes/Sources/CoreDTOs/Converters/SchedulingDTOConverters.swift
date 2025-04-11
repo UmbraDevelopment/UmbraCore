@@ -1,7 +1,7 @@
 import Foundation
 
-// Properly importing the migrated Scheduling module
-@_exported import Scheduling
+// Properly importing the SchedulingTypes module instead of Scheduling
+@_exported import SchedulingTypes
 
 // MARK: - Date Extensions for ScheduleDTO
 
