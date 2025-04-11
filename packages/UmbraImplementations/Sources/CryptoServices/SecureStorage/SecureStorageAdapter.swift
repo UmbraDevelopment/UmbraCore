@@ -88,10 +88,9 @@ public actor SecureStorageAdapter: SecureStorageProtocol {
       return .success(())
     } catch {
       await logger.error(
-        "Failed to store data",
+        "Failed to store data: \(error.localizedDescription)",
         context: CryptoLogContext(
           operation: "storeData",
-          error: error,
           additionalContext: LogMetadataDTOCollection().withPrivate(
             key: "identifier",
             value: identifier
@@ -143,10 +142,9 @@ public actor SecureStorageAdapter: SecureStorageProtocol {
       return .success(Array(data))
     } catch {
       await logger.error(
-        "Failed to retrieve data",
+        "Failed to retrieve data: \(error.localizedDescription)",
         context: CryptoLogContext(
           operation: "retrieveData",
-          error: error,
           additionalContext: LogMetadataDTOCollection().withPrivate(
             key: "identifier",
             value: identifier
@@ -199,10 +197,9 @@ public actor SecureStorageAdapter: SecureStorageProtocol {
       return .success(())
     } catch {
       await logger.error(
-        "Failed to delete data",
+        "Failed to delete data: \(error.localizedDescription)",
         context: CryptoLogContext(
           operation: "deleteData",
-          error: error,
           additionalContext: LogMetadataDTOCollection().withPrivate(
             key: "identifier",
             value: identifier

@@ -274,13 +274,13 @@ public actor CryptoServiceFactory {
     // Create the appropriate provider based on type
     let provider: SecurityProviderProtocol=switch providerType {
       case .cryptoKit:
-        BasicSecurityProvider(secureStorage: actualSecureStorage, logger: actualLogger) // Temporarily using BasicSecurityProvider
+        BasicSecurityProvider(logger: actualLogger) // Temporarily using BasicSecurityProvider
       case .ring:
-        BasicSecurityProvider(secureStorage: actualSecureStorage, logger: actualLogger) // Temporarily using BasicSecurityProvider
+        BasicSecurityProvider(logger: actualLogger) // Temporarily using BasicSecurityProvider
       case .basic:
-        BasicSecurityProvider(secureStorage: actualSecureStorage, logger: actualLogger)
+        BasicSecurityProvider(logger: actualLogger)
       case .system, .hsm:
-        BasicSecurityProvider(secureStorage: actualSecureStorage, logger: actualLogger) // Fallback for unsupported types
+        BasicSecurityProvider(logger: actualLogger) // Fallback for unsupported types
     }
 
     return DefaultCryptoServiceWithProviderImpl(

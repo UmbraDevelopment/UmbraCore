@@ -79,6 +79,7 @@ extension SecurityCoreInterfaces.KeyGenerationOptions {
   ) -> SecurityConfigDTO {
     var configOptions=SecurityConfigOptions()
 
+    // Use the CoreSecurityTypes.KeyType directly
     let metadataDict=addMetadata(keySize: keySize, keyType: keyType)
 
     if !metadataDict.isEmpty {
@@ -95,14 +96,14 @@ extension SecurityCoreInterfaces.KeyGenerationOptions {
   }
 
   /**
-   Add standard metadata about keys
-
+   Add metadata for the key generation operation.
+   
    - Parameters:
      - keySize: The size of the key in bits
      - keyType: The type of key
    - Returns: Metadata for logging
    */
-  private func addMetadata(keySize: Int, keyType: KeyType) -> [String: String] {
+  private func addMetadata(keySize: Int, keyType: CoreSecurityTypes.KeyType) -> [String: String] {
     var metadataDict=[String: String]()
     metadataDict["keySize"]="\(keySize)"
     metadataDict["keyType"]="\(keyType)"

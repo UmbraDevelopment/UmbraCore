@@ -102,9 +102,9 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
 
   /// Helper method to safely check if an operation is rate limited
   private func isOperationRateLimited(_ operation: String) async -> Bool {
-    // Create a local copy to prevent direct access to self.rateLimiter
-    let localRateLimiter=rateLimiter
-    return await localRateLimiter.isRateLimited(operation)
+    // Access rateLimiter directly within the actor context
+    // This is safe since we're already in an actor context
+    return await rateLimiter.isRateLimited(operation)
   }
 
   // MARK: - Encryption Operations

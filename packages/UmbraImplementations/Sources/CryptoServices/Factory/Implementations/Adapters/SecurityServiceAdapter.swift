@@ -148,29 +148,34 @@ struct SecurityServiceLogger {
      - Returns: A LogContextDTO object for logging
      */
     func createLogContext(
-        _ metadata: [String: (value: String, privacy: LogPrivacy)] = [:],
-        domain: String = "security",
-        source: String
+        _ metadata: [String: (value: String, privacy: LogPrivacyLevel)] = [:],
+        domain: String = "SecurityServices",
+        source: String = "SecurityService"
     ) -> BaseLogContextDTO {
-        var collection = LogMetadataDTOCollection()
+        // Create a dictionary for metadata
+        var metadataCollection = LogMetadataDTOCollection()
         
-        for (key, data) in metadata {
-            switch data.privacy {
+        // Add each metadata item with its privacy level
+        for (key, (value, privacy)) in metadata {
+            switch privacy {
             case .public:
-                collection = collection.withPublic(key: key, value: data.value)
+                metadataCollection = metadataCollection.withPublic(key: key, value: value)
             case .private:
-                collection = collection.withPrivate(key: key, value: data.value)
+                metadataCollection = metadataCollection.withPrivate(key: key, value: value)
             case .sensitive:
-                collection = collection.withSensitive(key: key, value: data.value)
+                metadataCollection = metadataCollection.withSensitive(key: key, value: value)
             case .auto:
-                collection = collection.withPublic(key: key, value: data.value)
+                metadataCollection = metadataCollection.withPublic(key: key, value: value)
+            case .hash:
+                metadataCollection = metadataCollection.withPrivate(key: key, value: value)
             }
         }
         
+        // Create and return the log context
         return BaseLogContextDTO(
             domainName: domain,
             source: source,
-            metadata: collection
+            metadata: metadataCollection
         )
     }
 }
@@ -201,11 +206,11 @@ internal actor BaseSecurityServiceAdapter {
    */
   func createLogContext(
     _ metadata: [String: (value: String, privacy: LogPrivacyLevel)] = [:],
-    domain: String = "security",
-    source: String
+    domain: String = "SecurityServices",
+    source: String = "SecurityService"
   ) -> BaseLogContextDTO {
     return logger.createLogContext(
-      metadata.mapValues { ($0.value, .auto) },
+      metadata,
       domain: domain,
       source: source
     )

@@ -33,6 +33,23 @@ internal actor BasicEncryptionServiceAdapter: EncryptionServiceAdapter {
     }
     
     /**
+     Creates a log context with properly classified metadata.
+     
+     - Parameters:
+        - metadata: Metadata to include in the log context
+        - domain: Domain identifier for the log context
+        - source: Source identifier for the log context
+     - Returns: A log context with properly classified metadata
+     */
+    public nonisolated func createLogContext(
+        _ metadata: [String: (value: String, privacy: LogPrivacyLevel)],
+        domain: String = "SecurityServices",
+        source: String = "EncryptionService"
+    ) -> BaseLogContextDTO {
+        return logger.createLogContext(metadata, domain: domain, source: source)
+    }
+    
+    /**
      Encrypts data using the specified configuration.
      
      - Parameter config: Security configuration with encryption parameters
@@ -44,7 +61,7 @@ internal actor BasicEncryptionServiceAdapter: EncryptionServiceAdapter {
         let startTime = Date()
         
         await logger.logger.debug("Starting encryption operation",
-                     context: logger.createLogContext(
+                     context: createLogContext(
                        [
                          "operationID": (value: operationID, privacy: .public),
                          "algorithm": (value: config.encryptionAlgorithm.rawValue, privacy: .public)
@@ -56,20 +73,26 @@ internal actor BasicEncryptionServiceAdapter: EncryptionServiceAdapter {
         guard let metadata = config.options?.metadata,
               let inputDataBase64 = metadata["inputData"],
               let keyId = metadata["keyIdentifier"] else {
-            throw SecurityError.encryptionFailed(reason: "Missing required metadata")
+            throw SecurityStorageError.encryptionFailed
         }
         
         // Decode the input data
         guard let inputData = Data(base64Encoded: inputDataBase64) else {
-            throw SecurityError.encryptionFailed(reason: "Invalid input data encoding")
+            throw SecurityStorageError.operationFailed("Invalid input data encoding")
         }
         
         // Retrieve key from secure storage
         var keyData: Data
         do {
-            keyData = try await secureStorage.retrieveData(forKey: keyId)
+            let retrieveResult = await secureStorage.retrieveData(withIdentifier: keyId)
+            switch retrieveResult {
+            case .success(let bytes):
+                keyData = Data(bytes)
+            case .failure:
+                throw SecurityStorageError.keyNotFound
+            }
         } catch {
-            throw SecurityError.keyNotFound(identifier: keyId)
+            throw SecurityStorageError.keyNotFound
         }
         
         // Create initialization vector (IV)
@@ -79,7 +102,7 @@ internal actor BasicEncryptionServiceAdapter: EncryptionServiceAdapter {
         }
         
         if result != errSecSuccess {
-            throw SecurityError.encryptionFailed(reason: "Failed to generate IV")
+            throw SecurityStorageError.encryptionFailed
         }
         
         // Perform encryption
@@ -97,14 +120,15 @@ internal actor BasicEncryptionServiceAdapter: EncryptionServiceAdapter {
             options = CCOptions(kCCOptionPKCS7Padding)
             blockSize = kCCBlockSizeAES128
         case .chacha20Poly1305:
-            throw SecurityError.unsupportedAlgorithm(name: config.encryptionAlgorithm.rawValue)
-        default:
-            throw SecurityError.encryptionFailed(reason: "Unsupported algorithm: \(config.encryptionAlgorithm.rawValue)")
+            throw SecurityStorageError.operationFailed("Unsupported algorithm: \(config.encryptionAlgorithm.rawValue)")
         }
         
         let dataLength = inputData.count
         var encryptedData = Data(count: dataLength + blockSize)
         var encryptedLength = 0
+        
+        // Create local copies to avoid overlapping accesses
+        let encryptedBufferCount = encryptedData.count
         
         let cryptStatus = encryptedData.withUnsafeMutableBytes { encryptedPtr in
             inputData.withUnsafeBytes { dataPtr in
@@ -117,7 +141,7 @@ internal actor BasicEncryptionServiceAdapter: EncryptionServiceAdapter {
                             keyPtr.baseAddress, keyData.count,
                             ivPtr.baseAddress,
                             dataPtr.baseAddress, dataLength,
-                            encryptedPtr.baseAddress, encryptedData.count,
+                            encryptedPtr.baseAddress, encryptedBufferCount,
                             &encryptedLength
                         )
                     }
@@ -126,7 +150,7 @@ internal actor BasicEncryptionServiceAdapter: EncryptionServiceAdapter {
         }
         
         if cryptStatus != kCCSuccess {
-            throw SecurityError.encryptionFailed(reason: "Encryption failed with status \(cryptStatus)")
+            throw SecurityStorageError.encryptionFailed
         }
         
         // Trim the encrypted data to the actual length
@@ -139,7 +163,7 @@ internal actor BasicEncryptionServiceAdapter: EncryptionServiceAdapter {
         let duration = endTime.timeIntervalSince(startTime) * 1000
         
         await logger.logger.debug("Completed encryption operation",
-                     context: logger.createLogContext(
+                     context: createLogContext(
                        [
                          "operationID": (value: operationID, privacy: .public),
                          "algorithm": (value: config.encryptionAlgorithm.rawValue, privacy: .public),
@@ -169,7 +193,7 @@ internal actor BasicEncryptionServiceAdapter: EncryptionServiceAdapter {
         let startTime = Date()
         
         await logger.logger.debug("Starting decryption operation",
-                     context: logger.createLogContext(
+                     context: createLogContext(
                        [
                          "operationID": (value: operationID, privacy: .public),
                          "algorithm": (value: config.encryptionAlgorithm.rawValue, privacy: .public)
@@ -181,17 +205,17 @@ internal actor BasicEncryptionServiceAdapter: EncryptionServiceAdapter {
         guard let metadata = config.options?.metadata,
               let encryptedDataBase64 = metadata["inputData"],
               let keyId = metadata["keyIdentifier"] else {
-            throw SecurityError.decryptionFailed(reason: "Missing required metadata")
+            throw SecurityStorageError.decryptionFailed
         }
         
         // Decode the encrypted data
         guard let encryptedDataWithIV = Data(base64Encoded: encryptedDataBase64) else {
-            throw SecurityError.decryptionFailed(reason: "Invalid encrypted data encoding")
+            throw SecurityStorageError.operationFailed("Invalid encrypted data encoding")
         }
         
         // Extract IV and actual encrypted data
         guard encryptedDataWithIV.count > kCCBlockSizeAES128 else {
-            throw SecurityError.decryptionFailed(reason: "Encrypted data too short")
+            throw SecurityStorageError.decryptionFailed
         }
         
         let iv = encryptedDataWithIV.prefix(kCCBlockSizeAES128)
@@ -200,9 +224,15 @@ internal actor BasicEncryptionServiceAdapter: EncryptionServiceAdapter {
         // Retrieve key from secure storage
         var keyData: Data
         do {
-            keyData = try await secureStorage.retrieveData(forKey: keyId)
+            let retrieveResult = await secureStorage.retrieveData(withIdentifier: keyId)
+            switch retrieveResult {
+            case .success(let bytes):
+                keyData = Data(bytes)
+            case .failure:
+                throw SecurityStorageError.keyNotFound
+            }
         } catch {
-            throw SecurityError.keyNotFound(identifier: keyId)
+            throw SecurityStorageError.keyNotFound
         }
         
         // Perform decryption
@@ -220,14 +250,15 @@ internal actor BasicEncryptionServiceAdapter: EncryptionServiceAdapter {
             options = CCOptions(kCCOptionPKCS7Padding)
             blockSize = kCCBlockSizeAES128
         case .chacha20Poly1305:
-            throw SecurityError.unsupportedAlgorithm(name: config.encryptionAlgorithm.rawValue)
-        default:
-            throw SecurityError.decryptionFailed(reason: "Unsupported algorithm: \(config.encryptionAlgorithm.rawValue)")
+            throw SecurityStorageError.operationFailed("Unsupported algorithm: \(config.encryptionAlgorithm.rawValue)")
         }
         
         let dataLength = encryptedData.count
         var decryptedData = Data(count: dataLength + blockSize)
         var decryptedLength = 0
+        
+        // Create a local copy to avoid overlapping accesses
+        let decryptedBufferCount = decryptedData.count
         
         let cryptStatus = decryptedData.withUnsafeMutableBytes { decryptedPtr in
             encryptedData.withUnsafeBytes { dataPtr in
@@ -240,7 +271,7 @@ internal actor BasicEncryptionServiceAdapter: EncryptionServiceAdapter {
                             keyPtr.baseAddress, keyData.count,
                             ivPtr.baseAddress,
                             dataPtr.baseAddress, dataLength,
-                            decryptedPtr.baseAddress, decryptedData.count,
+                            decryptedPtr.baseAddress, decryptedBufferCount,
                             &decryptedLength
                         )
                     }
@@ -249,7 +280,7 @@ internal actor BasicEncryptionServiceAdapter: EncryptionServiceAdapter {
         }
         
         if cryptStatus != kCCSuccess {
-            throw SecurityError.decryptionFailed(reason: "Decryption failed with status \(cryptStatus)")
+            throw SecurityStorageError.decryptionFailed
         }
         
         // Trim the decrypted data to the actual length
@@ -259,7 +290,7 @@ internal actor BasicEncryptionServiceAdapter: EncryptionServiceAdapter {
         let duration = endTime.timeIntervalSince(startTime) * 1000
         
         await logger.logger.debug("Completed decryption operation",
-                     context: logger.createLogContext(
+                     context: createLogContext(
                        [
                          "operationID": (value: operationID, privacy: .public),
                          "algorithm": (value: config.encryptionAlgorithm.rawValue, privacy: .public),
@@ -305,6 +336,23 @@ internal actor BasicHashingServiceAdapter: HashingServiceAdapter {
     }
     
     /**
+     Creates a log context with properly classified metadata.
+     
+     - Parameters:
+        - metadata: Metadata to include in the log context
+        - domain: Domain identifier for the log context
+        - source: Source identifier for the log context
+     - Returns: A log context with properly classified metadata
+     */
+    public nonisolated func createLogContext(
+        _ metadata: [String: (value: String, privacy: LogPrivacyLevel)],
+        domain: String = "SecurityServices",
+        source: String = "HashingService"
+    ) -> BaseLogContextDTO {
+        return logger.createLogContext(metadata, domain: domain, source: source)
+    }
+    
+    /**
      Hashes data using the specified configuration.
      
      - Parameter config: Security configuration with hashing parameters
@@ -316,7 +364,7 @@ internal actor BasicHashingServiceAdapter: HashingServiceAdapter {
         let startTime = Date()
         
         await logger.logger.debug("Starting hash operation",
-                     context: logger.createLogContext(
+                     context: createLogContext(
                        [
                          "operationID": (value: operationID, privacy: .public),
                          "algorithm": (value: config.hashAlgorithm.rawValue, privacy: .public)
@@ -327,12 +375,12 @@ internal actor BasicHashingServiceAdapter: HashingServiceAdapter {
         // Extract data from metadata
         guard let metadata = config.options?.metadata,
               let inputDataBase64 = metadata["inputData"] else {
-            throw SecurityError.hashingFailed(reason: "Missing required metadata")
+            throw SecurityStorageError.hashingFailed
         }
         
         // Decode the input data
         guard let inputData = Data(base64Encoded: inputDataBase64) else {
-            throw SecurityError.hashingFailed(reason: "Invalid input data encoding")
+            throw SecurityStorageError.operationFailed("Invalid input data encoding")
         }
         
         // Perform hashing based on algorithm
@@ -341,27 +389,27 @@ internal actor BasicHashingServiceAdapter: HashingServiceAdapter {
         switch config.hashAlgorithm {
         case .sha256:
             var hash = [UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
-            inputData.withUnsafeBytes { dataBytes in
+            let _ = inputData.withUnsafeBytes { dataBytes in
                 CC_SHA256(dataBytes.baseAddress, CC_LONG(inputData.count), &hash)
             }
             hashData = Data(hash)
             
         case .sha512:
             var hash = [UInt8](repeating: 0, count: Int(CC_SHA512_DIGEST_LENGTH))
-            inputData.withUnsafeBytes { dataBytes in
+            let _ = inputData.withUnsafeBytes { dataBytes in
                 CC_SHA512(dataBytes.baseAddress, CC_LONG(inputData.count), &hash)
             }
             hashData = Data(hash)
             
         case .blake2b:
-            throw SecurityError.hashingFailed(reason: "BLAKE2b algorithm not supported in this implementation")
+            throw SecurityStorageError.operationFailed("BLAKE2b algorithm not supported in this implementation")
         }
         
         let endTime = Date()
         let duration = endTime.timeIntervalSince(startTime) * 1000
         
         await logger.logger.debug("Completed hash operation",
-                     context: logger.createLogContext(
+                     context: createLogContext(
                        [
                          "operationID": (value: operationID, privacy: .public),
                          "algorithm": (value: config.hashAlgorithm.rawValue, privacy: .public),
@@ -391,7 +439,7 @@ internal actor BasicHashingServiceAdapter: HashingServiceAdapter {
         let startTime = Date()
         
         await logger.logger.debug("Starting hash verification operation",
-                     context: logger.createLogContext(
+                     context: createLogContext(
                        [
                          "operationID": (value: operationID, privacy: .public),
                          "algorithm": (value: config.hashAlgorithm.rawValue, privacy: .public)
@@ -400,16 +448,13 @@ internal actor BasicHashingServiceAdapter: HashingServiceAdapter {
                      ))
         
         // Extract data from metadata
-        guard let metadata = config.options?.metadata,
-              let inputDataBase64 = metadata["inputData"],
-              let expectedHashBase64 = metadata["expectedHash"] else {
-            throw SecurityError.hashingFailed(reason: "Missing required metadata")
-        }
+        let inputDataBase64 = config.options?.metadata?["inputData"] ?? ""
+        let expectedHashBase64 = config.options?.metadata?["expectedHash"] ?? ""
         
         // Decode the input data and expected hash
-        guard let inputData = Data(base64Encoded: inputDataBase64),
+        guard let _ = Data(base64Encoded: inputDataBase64),
               let expectedHash = Data(base64Encoded: expectedHashBase64) else {
-            throw SecurityError.hashingFailed(reason: "Invalid data encoding")
+            throw SecurityStorageError.operationFailed("Invalid data encoding")
         }
         
         // Compute the hash of the input data
@@ -432,7 +477,7 @@ internal actor BasicHashingServiceAdapter: HashingServiceAdapter {
         let hashResult = try await hash(config: hashConfig)
         
         guard let computedHash = hashResult.resultData else {
-            throw SecurityError.hashingFailed(reason: "Failed to compute hash")
+            throw SecurityStorageError.operationFailed("Failed to compute hash")
         }
         
         // Compare the computed hash with the expected hash
@@ -442,7 +487,7 @@ internal actor BasicHashingServiceAdapter: HashingServiceAdapter {
         let duration = endTime.timeIntervalSince(startTime) * 1000
         
         await logger.logger.debug("Completed hash verification operation",
-                     context: logger.createLogContext(
+                     context: createLogContext(
                        [
                          "operationID": (value: operationID, privacy: .public),
                          "algorithm": (value: config.hashAlgorithm.rawValue, privacy: .public),
@@ -491,6 +536,23 @@ internal actor BasicKeyGenerationServiceAdapter: KeyGenerationServiceAdapter {
     }
     
     /**
+     Creates a log context with properly classified metadata.
+     
+     - Parameters:
+        - metadata: Metadata to include in the log context
+        - domain: Domain identifier for the log context
+        - source: Source identifier for the log context
+     - Returns: A log context with properly classified metadata
+     */
+    public nonisolated func createLogContext(
+        _ metadata: [String: (value: String, privacy: LogPrivacyLevel)],
+        domain: String = "SecurityServices",
+        source: String = "KeyGenerationService"
+    ) -> BaseLogContextDTO {
+        return logger.createLogContext(metadata, domain: domain, source: source)
+    }
+    
+    /**
      Generates a cryptographic key based on the provided configuration.
      
      - Parameter config: Security configuration with key generation parameters
@@ -502,7 +564,7 @@ internal actor BasicKeyGenerationServiceAdapter: KeyGenerationServiceAdapter {
         let startTime = Date()
         
         await logger.logger.debug("Starting key generation operation",
-                     context: logger.createLogContext(
+                     context: createLogContext(
                        [
                          "operationID": (value: operationID, privacy: .public),
                          "algorithm": (value: config.encryptionAlgorithm.rawValue, privacy: .public)
@@ -512,13 +574,13 @@ internal actor BasicKeyGenerationServiceAdapter: KeyGenerationServiceAdapter {
         
         // Extract key parameters from metadata
         guard let metadata = config.options?.metadata else {
-            throw SecurityError.keyGenerationFailed(reason: "Missing metadata")
+            throw SecurityStorageError.operationFailed("Missing metadata")
         }
         
         // Determine key size (default to 256 bits for AES-256)
         let keySizeStr = metadata["keySize"] ?? "256"
         guard let keySize = Int(keySizeStr), keySize > 0 else {
-            throw SecurityError.keyGenerationFailed(reason: "Invalid key size")
+            throw SecurityStorageError.operationFailed("Invalid key size")
         }
         
         // Convert bits to bytes
@@ -531,14 +593,14 @@ internal actor BasicKeyGenerationServiceAdapter: KeyGenerationServiceAdapter {
         }
         
         if result != errSecSuccess {
-            throw SecurityError.keyGenerationFailed(reason: "Failed to generate random bytes")
+            throw SecurityStorageError.keyGenerationFailed
         }
         
         let endTime = Date()
         let duration = endTime.timeIntervalSince(startTime) * 1000
         
         await logger.logger.debug("Completed key generation operation",
-                     context: logger.createLogContext(
+                     context: createLogContext(
                        [
                          "operationID": (value: operationID, privacy: .public),
                          "algorithm": (value: config.encryptionAlgorithm.rawValue, privacy: .public),
@@ -588,12 +650,29 @@ internal actor BasicConfigurationServiceAdapter: ConfigurationServiceAdapter {
     }
     
     /**
+     Creates a log context with properly classified metadata.
+     
+     - Parameters:
+        - metadata: Metadata to include in the log context
+        - domain: Domain identifier for the log context
+        - source: Source identifier for the log context
+     - Returns: A log context with properly classified metadata
+     */
+    public nonisolated func createLogContext(
+        _ metadata: [String: (value: String, privacy: LogPrivacyLevel)],
+        domain: String = "SecurityServices",
+        source: String = "ConfigurationService"
+    ) -> BaseLogContextDTO {
+        return logger.createLogContext(metadata, domain: domain, source: source)
+    }
+    
+    /**
      Creates a security configuration with the specified options.
      
      - Parameter options: The configuration options to use
      - Returns: A security configuration DTO
      */
-    public func createSecureConfig(options: SecurityConfigOptions) -> SecurityConfigDTO {
+    public nonisolated func createSecureConfig(options: SecurityConfigOptions) -> SecurityConfigDTO {
         // Create a basic security configuration with sensible defaults
         return SecurityConfigDTO(
             encryptionAlgorithm: .aes256CBC,
@@ -604,14 +683,5 @@ internal actor BasicConfigurationServiceAdapter: ConfigurationServiceAdapter {
     }
 }
 
-/**
- Error types for security operations.
- */
-enum SecurityError: Error {
-    case encryptionFailed(reason: String)
-    case decryptionFailed(reason: String)
-    case hashingFailed(reason: String)
-    case keyGenerationFailed(reason: String)
-    case keyNotFound(identifier: String)
-    case unsupportedAlgorithm(name: String)
-}
+// NOTE: SecurityError enum is already defined in BasicSecurityProvider.swift
+// Moving the file-specific error types to a private enum within each adapter class as needed

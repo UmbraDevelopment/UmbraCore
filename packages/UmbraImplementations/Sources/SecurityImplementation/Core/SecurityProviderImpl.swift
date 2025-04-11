@@ -806,7 +806,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceInitial
           result=try await generateRandom(config: config)
         default:
           throw CoreSecurityError.unsupportedOperation(
-            "Operation \(operation.rawValue) is not supported by this provider"
+            reason: "Operation \(operation.rawValue) is not supported by this provider"
           )
       }
 
@@ -1167,40 +1167,28 @@ public actor SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceInitial
       switch operation {
         case .encrypt:
           result=try await encrypt(config: config)
-
         case .decrypt:
           result=try await decrypt(config: config)
-
         case .sign:
           result=try await sign(config: config)
-
         case .verify:
           result=try await verify(config: config)
-
         case .hash:
           result=try await hash(config: config)
-
         case .verifyHash:
           result=try await verifyHash(config: config)
-
         case .generateKey:
           result=try await generateKey(config: config)
-
         case .generateRandom:
           result=try await generateRandom(config: config)
-
         case .secureStore:
           result=try await secureStore(config: config)
-
         case .secureRetrieve:
           result=try await secureRetrieve(config: config)
-
         case .secureDelete:
           result=try await secureDelete(config: config)
-
         case .importKey:
           result=try await importKey(config: config)
-
         default:
           // For any unsupported operations
           throw CoreSecurityTypes.SecurityError.unsupportedOperation(
@@ -1662,16 +1650,16 @@ public actor SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceInitial
           result=try await sign(config: config)
         case .verify:
           result=try await verify(config: config)
-        case .secureStore, .storeKey:
+        case .secureStore:
           result=try await secureStore(config: config)
-        case .secureRetrieve, .retrieveKey:
+        case .secureRetrieve:
           result=try await secureRetrieve(config: config)
-        case .secureDelete, .deleteKey:
+        case .secureDelete:
           result=try await secureDelete(config: config)
         default:
           // Handle unsupported operations
           throw CoreSecurityTypes.SecurityError.unsupportedOperation(
-            operation: operation.rawValue
+            reason: operation.rawValue
           )
       }
 
@@ -1684,7 +1672,7 @@ public actor SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceInitial
         context: logContext.adding(
           key: "durationMs",
           value: String(format: "%.2f", duration),
-          privacy: .public
+          privacyLevel: .public
         )
       )
 
@@ -1697,15 +1685,15 @@ public actor SecurityProviderImpl: SecurityProviderProtocol, AsyncServiceInitial
       let errorContext=logContext.adding(
         key: "errorType",
         value: "\(type(of: error))",
-        privacy: .public
+        privacyLevel: .public
       ).adding(
         key: "errorMessage",
         value: error.localizedDescription,
-        privacy: .private
+        privacyLevel: .private
       ).adding(
         key: "durationMs",
         value: String(format: "%.2f", duration),
-        privacy: .public
+        privacyLevel: .public
       )
 
       await logger.error(
@@ -2015,7 +2003,8 @@ extension SecurityProviderImpl {
           var logMetadata=logContext.metadata
           logMetadata=logMetadata.withPublic(
             key: "durationMs",
-            value: String(format: "%.2f", duration)
+            value: String(format: "%.2f", duration),
+            privacyLevel: .public
           )
           logMetadata=logMetadata.withPublic(key: "keyType", value: keyType)
           logMetadata=logMetadata.withPublic(key: "algorithm", value: keyAlgorithm)
