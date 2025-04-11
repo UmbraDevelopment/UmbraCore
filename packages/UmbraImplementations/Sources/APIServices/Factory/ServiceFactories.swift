@@ -349,7 +349,7 @@ public actor DefaultCryptoServiceWithProviderImpl: SecurityServiceProtocol {
   private let provider: SecurityProviderProtocol
   private let logger: (any LoggingProtocol)?
   private let rateLimiter: RateLimiter
-  
+
   /// Initialises a default crypto service with the specified security provider.
   ///
   /// - Parameters:
@@ -361,9 +361,9 @@ public actor DefaultCryptoServiceWithProviderImpl: SecurityServiceProtocol {
     logger: (any LoggingProtocol)?,
     rateLimiter: RateLimiter
   ) {
-    self.provider = provider
-    self.logger = logger
-    self.rateLimiter = rateLimiter
+    self.provider=provider
+    self.logger=logger
+    self.rateLimiter=rateLimiter
   }
 }
 
@@ -399,53 +399,53 @@ public actor DefaultBackupServiceImpl: BackupServiceProtocol {
   private let storageProvider: BackupStorageProviderProtocol
   private let securityService: SecurityServiceProtocol
   private let logger: (any LoggingProtocol)?
-  
+
   public init(
     storageProvider: BackupStorageProviderProtocol,
     securityService: SecurityServiceProtocol,
     logger: (any LoggingProtocol)?
   ) {
-    self.storageProvider = storageProvider
-    self.securityService = securityService
-    self.logger = logger
+    self.storageProvider=storageProvider
+    self.securityService=securityService
+    self.logger=logger
   }
 }
 
 // Repository Providers
 public actor StandardRepositoryProvider: RepositoryProviderProtocol {
   private let logger: (any LoggingProtocol)?
-  
+
   public init(logger: (any LoggingProtocol)?) throws {
-    self.logger = logger
+    self.logger=logger
   }
 }
 
 public actor DistributedRepositoryProvider: RepositoryProviderProtocol {
   private let logger: (any LoggingProtocol)?
-  
+
   public init(logger: (any LoggingProtocol)?) throws {
-    self.logger = logger
+    self.logger=logger
   }
 }
 
 public actor LegacyRepositoryProvider: RepositoryProviderProtocol {
   private let logger: (any LoggingProtocol)?
-  
+
   public init(logger: (any LoggingProtocol)?) throws {
-    self.logger = logger
+    self.logger=logger
   }
 }
 
 public actor DefaultRepositoryServiceImpl: RepositoryServiceProtocol {
   private let provider: RepositoryProviderProtocol
   private let logger: (any LoggingProtocol)?
-  
+
   public init(
     provider: RepositoryProviderProtocol,
     logger: (any LoggingProtocol)?
   ) {
-    self.provider = provider
-    self.logger = logger
+    self.provider=provider
+    self.logger=logger
   }
 }
 

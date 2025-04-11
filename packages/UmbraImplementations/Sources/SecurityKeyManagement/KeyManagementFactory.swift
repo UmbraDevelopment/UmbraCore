@@ -319,12 +319,12 @@ private struct BaseLogContextDTO: LogContextDTO {
  */
 public actor SimpleInMemoryKeyStore: KeyStorage {
   // Dictionary to store keys by their identifier
-  private var keys: [String: [UInt8]] = [:]
+  private var keys: [String: [UInt8]]=[:]
 
   public init() {}
 
   public func storeKey(_ key: [UInt8], identifier: String) async throws {
-    keys[identifier] = key
+    keys[identifier]=key
   }
 
   public func getKey(identifier: String) async throws -> [UInt8]? {

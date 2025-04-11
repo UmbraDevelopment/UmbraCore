@@ -11,6 +11,7 @@ import NetworkInterfaces
 /// 2. Implementing privacy-aware logging with appropriate data classification
 /// 3. Using proper British spelling in documentation
 /// 4. Providing comprehensive error handling with privacy controls
+/// 5. Using command pattern for improved maintainability and testability
 public actor NetworkServiceImpl: NetworkServiceProtocol {
   // MARK: - Private Properties
 
@@ -31,6 +32,9 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
 
   /// Statistics provider for collecting network metrics
   private let statisticsProvider: NetworkStatisticsProvider?
+
+  /// Factory for creating network commands
+  private let commandFactory: NetworkCommandFactory
 
   // MARK: - Initialisation
 
@@ -53,6 +57,15 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
     self.defaultCachePolicy=defaultCachePolicy
     self.logger=logger
     self.statisticsProvider=statisticsProvider
+
+    // Create the command factory
+    commandFactory=NetworkCommandFactory(
+      session: session,
+      defaultTimeoutInterval: defaultTimeoutInterval,
+      defaultCachePolicy: defaultCachePolicy,
+      logger: logger,
+      statisticsProvider: statisticsProvider
+    )
   }
 
   /// Initialise a NetworkServiceImpl with default configuration
@@ -82,215 +95,104 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
     defaultCachePolicy=cachePolicy
     self.logger=logger
     statisticsProvider=statsProvider
+
+    // Create the command factory
+    commandFactory=NetworkCommandFactory(
+      session: session,
+      defaultTimeoutInterval: timeoutInterval,
+      defaultCachePolicy: cachePolicy,
+      logger: logger,
+      statisticsProvider: statsProvider
+    )
   }
 
   // MARK: - NetworkServiceProtocol Implementation
 
   public func performRequest(_ request: NetworkRequestProtocol) async throws -> NetworkResponseDTO {
-    let startTime=Date().timeIntervalSince1970 * 1000
-    var requestSizeBytes: Int64=0
-    var responseSizeBytes: Int64=0
-
-    guard let url=await constructURL(from: request) else {
-      let errorContext=NetworkLogContext(
-        operation: "constructURL",
-        source: "NetworkService",
-        metadata: LogMetadataDTOCollection()
-          .withPublic(key: "urlString", value: request.urlString)
-      )
-
-      await logger.error(
-        "Failed to create URLComponents from \(request.urlString)",
-        context: errorContext
-      )
-      return NetworkResponseDTO.failure(
-        error: .invalidURL(request.urlString)
-      )
-    }
-
-    let urlRequest=try await constructURLRequest(from: request, url: url)
-    requestSizeBytes=Int64(estimateRequestSize(urlRequest))
-
-    let requestContext=NetworkLogContext(
+    // Create a log context for this operation
+    let context=NetworkLogContext(
       operation: "performRequest",
       source: "NetworkService",
       metadata: LogMetadataDTOCollection()
-        .withPrivate(key: "url", value: url.absoluteString)
         .withPublic(key: "method", value: request.method.rawValue)
-        .withPublic(key: "requestId", value: UUID().uuidString)
-        .withPublic(key: "requestSizeBytes", value: "\(requestSizeBytes)")
+        .withPublic(key: "url", value: request.urlString)
     )
 
-    await logger.debug("Starting network request to \(url.absoluteString)", context: requestContext)
+    // Create the command using the factory
+    let command=commandFactory.createPerformRequestCommand(request: request)
 
-    do {
-      let (data, response)=try await session.data(for: urlRequest)
-      responseSizeBytes=Int64(data.count)
-
-      let httpResponse=response as? HTTPURLResponse
-      let statusCode=httpResponse?.statusCode ?? 0
-      let headers=httpResponse?.allHeaderFields as? [String: String] ?? [:]
-
-      let endTime=Date().timeIntervalSince1970 * 1000
-      let durationMs=endTime - startTime
-
-      // Process the response based on status code
-      if 200...299 ~= statusCode {
-        let successContext=NetworkLogContext(
-          operation: "performRequest",
-          source: "NetworkService",
-          metadata: LogMetadataDTOCollection()
-            .withPublic(key: "statusCode", value: "\(statusCode)")
-            .withPublic(key: "durationMs", value: String(format: "%.2f", durationMs))
-            .withPublic(key: "responseSizeBytes", value: "\(responseSizeBytes)")
-            .withPublic(key: "requestSizeBytes", value: "\(requestSizeBytes)")
-            .withPrivate(key: "url", value: url.absoluteString)
-            .withPublic(key: "method", value: request.method.rawValue)
-        )
-
-        await logger.debug(
-          "Request succeeded with status code \(statusCode)",
-          context: successContext
-        )
-
-        let responseDTO=NetworkResponseDTO.success(
-          statusCode: statusCode,
-          headers: headers,
-          data: [UInt8](data)
-        )
-
-        await recordStatistics(
-          response: responseDTO,
-          requestSizeBytes: requestSizeBytes,
-          responseSizeBytes: responseSizeBytes,
-          durationMs: durationMs
-        )
-
-        return responseDTO
-      } else {
-        let errorContext=NetworkLogContext(
-          operation: "performRequest",
-          source: "NetworkService",
-          metadata: LogMetadataDTOCollection()
-            .withPublic(key: "method", value: request.method.rawValue)
-            .withPublic(key: "statusCode", value: "\(statusCode)")
-            .withPublic(key: "durationMs", value: String(format: "%.2f", durationMs))
-            .withPrivate(key: "url", value: url.absoluteString)
-            .withPublic(key: "responseSizeBytes", value: "\(responseSizeBytes)")
-            .withPublic(key: "requestSizeBytes", value: "\(requestSizeBytes)")
-        )
-
-        await logger.warning("Request failed with status code \(statusCode)", context: errorContext)
-
-        let errorMessage=String(data: data, encoding: .utf8) ?? "No error details available"
-        let error=NetworkError.serverError(
-          statusCode: statusCode,
-          message: errorMessage
-        )
-
-        let responseDTO=NetworkResponseDTO.failure(
-          statusCode: statusCode,
-          headers: headers,
-          data: [UInt8](data),
-          error: error
-        )
-
-        await recordStatistics(
-          response: responseDTO,
-          requestSizeBytes: requestSizeBytes,
-          responseSizeBytes: responseSizeBytes,
-          durationMs: durationMs
-        )
-
-        return responseDTO
-      }
-    } catch let error as URLError {
-      let endTime=Date().timeIntervalSince1970 * 1000
-      let durationMs=endTime - startTime
-
-      let errorContext=NetworkLogContext(
-        operation: "performRequest",
-        source: "NetworkService",
-        metadata: LogMetadataDTOCollection()
-          .withPrivate(key: "url", value: url.absoluteString)
-          .withPublic(key: "method", value: request.method.rawValue)
-          .withPublic(key: "durationMs", value: String(format: "%.2f", durationMs))
-          .withPublic(key: "errorType", value: "\(type(of: error))")
-          .withPrivate(key: "errorMessage", value: error.localizedDescription)
-          .withPublic(key: "requestSizeBytes", value: "\(requestSizeBytes)")
-      )
-
-      await logger.error("URLError occurred: \(error.localizedDescription)", context: errorContext)
-
-      let networkError=mapURLErrorToNetworkError(error)
-      let responseDTO=NetworkResponseDTO.failure(error: networkError)
-
-      await recordStatistics(
-        response: responseDTO,
-        requestSizeBytes: requestSizeBytes,
-        responseSizeBytes: 0,
-        durationMs: durationMs
-      )
-
-      return responseDTO
-    } catch {
-      let endTime=Date().timeIntervalSince1970 * 1000
-      let durationMs=endTime - startTime
-
-      let errorContext=NetworkLogContext(
-        operation: "performRequest",
-        source: "NetworkService",
-        metadata: LogMetadataDTOCollection()
-          .withPrivate(key: "url", value: url.absoluteString)
-          .withPublic(key: "method", value: request.method.rawValue)
-          .withPublic(key: "durationMs", value: String(format: "%.2f", durationMs))
-          .withPublic(key: "errorType", value: "\(type(of: error))")
-          .withPrivate(key: "errorMessage", value: error.localizedDescription)
-          .withPublic(key: "requestSizeBytes", value: "\(requestSizeBytes)")
-      )
-
-      await logger.error("Unexpected error: \(error.localizedDescription)", context: errorContext)
-
-      let networkError=NetworkError.unknown(message: error.localizedDescription)
-      let responseDTO=NetworkResponseDTO.failure(error: networkError)
-
-      await recordStatistics(
-        response: responseDTO,
-        requestSizeBytes: requestSizeBytes,
-        responseSizeBytes: 0,
-        durationMs: durationMs
-      )
-
-      return responseDTO
-    }
+    // Execute the command
+    return try await command.execute(context: context)
   }
 
   public func performRequestAndDecode<T: Decodable & Sendable>(
     _ request: NetworkRequestProtocol,
     as type: T.Type
   ) async throws -> T {
-    let response=try await performRequest(request)
-    return try response.decode(type)
+    // Create a log context for this operation
+    let context=NetworkLogContext(
+      operation: "performRequestAndDecode",
+      source: "NetworkService",
+      metadata: LogMetadataDTOCollection()
+        .withPublic(key: "method", value: request.method.rawValue)
+        .withPublic(key: "url", value: request.urlString)
+        .withPublic(key: "decodingType", value: String(describing: T.self))
+    )
+
+    // Create the command using the factory
+    let command=commandFactory.createPerformRequestAndDecodeCommand(
+      request: request,
+      as: type
+    )
+
+    // Execute the command
+    return try await command.execute(context: context)
   }
 
   public func uploadData(
     _ request: NetworkRequestProtocol,
     progressHandler _: (@Sendable (Double) -> Void)? // Ensure @Sendable is inside the parenthesis
   ) async throws -> NetworkResponseDTO {
-    // For simplicity, use the same implementation for now
-    // In a real implementation, this would use URLSession's upload methods
-    // and handle progress reporting with a delegate
-    try await performRequest(request)
+    // Create a log context for this operation
+    let context=NetworkLogContext(
+      operation: "uploadData",
+      source: "NetworkService",
+      metadata: LogMetadataDTOCollection()
+        .withPublic(key: "method", value: request.method.rawValue)
+        .withPublic(key: "url", value: request.urlString)
+    )
+
+    // Create the command using the factory
+    let command=commandFactory.createUploadDataCommand(
+      request: request,
+      progressHandler: nil
+    )
+
+    // Execute the command
+    return try await command.execute(context: context)
   }
 
   public func downloadData(
     _ request: NetworkRequestProtocol,
     progressHandler _: (@Sendable (Double) -> Void)? // Ensure @Sendable is inside the parenthesis
   ) async throws -> NetworkResponseDTO {
-    // For simplicity, use the same implementation for now
-    // In a real implementation, this would use URLSession's download methods
-    // and handle progress reporting with a delegate
-    try await performRequest(request)
+    // Create a log context for this operation
+    let context=NetworkLogContext(
+      operation: "downloadData",
+      source: "NetworkService",
+      metadata: LogMetadataDTOCollection()
+        .withPublic(key: "method", value: request.method.rawValue)
+        .withPublic(key: "url", value: request.urlString)
+    )
+
+    // Create the command using the factory
+    let command=commandFactory.createDownloadDataCommand(
+      request: request,
+      progressHandler: nil
+    )
+
+    // Execute the command
+    return try await command.execute(context: context)
   }
 
   public func isNetworkAvailable() async -> Bool {
@@ -301,23 +203,37 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
   }
 
   public func cancelAllRequests() async {
-    let context=NetworkLogContext(
+    let logContext=NetworkLogContext(
       operation: "cancelAllRequests",
-      source: "NetworkService",
-      metadata: LogMetadataDTOCollection()
-        .withPublic(key: "action", value: "cancelAll")
-        .withPublic(key: "requestCount", value: String(activeTasks.count))
+      source: "NetworkService"
     )
 
-    await logger.info("Cancelling all network requests", context: context)
-    for (id, task) in activeTasks {
+    await logger.log(.info, "Cancelling all active network requests", context: logContext)
+
+    // Iterate through active tasks and cancel them
+    for (taskID, task) in activeTasks {
       task.cancel()
-      activeTasks.removeValue(forKey: id)
+
+      // Log cancellation
+      await logger.log(
+        .debug,
+        "Cancelled request",
+        context: logContext.withPublic(key: "taskID", value: taskID.uuidString)
+      )
     }
+
+    // Clear the active tasks dictionary
+    activeTasks.removeAll()
+
+    await logger.log(
+      .info,
+      "Cancelled all active network requests",
+      context: logContext
+    )
   }
 
   public func cancelRequest(_ request: NetworkRequestProtocol) async {
-    let context=NetworkLogContext(
+    let logContext=NetworkLogContext(
       operation: "cancelRequest",
       source: "NetworkService",
       metadata: LogMetadataDTOCollection()
@@ -325,13 +241,13 @@ public actor NetworkServiceImpl: NetworkServiceProtocol {
         .withPublic(key: "action", value: "cancelRequest")
     )
 
-    await logger.debug("Attempting to cancel request to \(request.urlString)", context: context)
+    await logger.debug("Attempting to cancel request to \(request.urlString)", context: logContext)
     // Find the task associated with this request and cancel it
     for (id, task) in activeTasks {
       // Cancel just the first matching request we find
       // A more sophisticated implementation would track exact request matches
       if task.originalRequest?.url?.absoluteString == request.urlString {
-        await logger.info("Cancelling request to \(request.urlString)", context: context)
+        await logger.info("Cancelling request to \(request.urlString)", context: logContext)
         task.cancel()
         activeTasks.removeValue(forKey: id)
         break

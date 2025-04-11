@@ -97,7 +97,7 @@ extension SecurityCoreInterfaces.KeyGenerationOptions {
 
   /**
    Add metadata for the key generation operation.
-   
+
    - Parameters:
      - keySize: The size of the key in bits
      - keyType: The type of key

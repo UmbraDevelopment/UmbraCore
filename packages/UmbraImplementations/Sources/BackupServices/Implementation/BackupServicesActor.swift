@@ -35,6 +35,7 @@ import UmbraErrors
  ## Features
 
  - Thread-safe operations with proper actor isolation
+ - Command pattern architecture for improved maintainability and testability
  - Privacy-aware logging with appropriate data classification
  - Structured error handling with specific error types
  - Progress reporting through AsyncStream
@@ -42,14 +43,26 @@ import UmbraErrors
 public actor BackupServicesActor: BackupServiceProtocol {
   // MARK: - Properties
 
-  /// The operations service
-  private let operationsService: BackupOperationsService
+  /// Factory for creating backup commands
+  private let commandFactory: BackupCommandFactory
 
-  /// The operation executor
-  private let operationExecutor: BackupOperationExecutor
+  /// The Restic command factory
+  private let resticCommandFactory: BackupCommandFactory
+
+  /// Result parser for processing command output
+  private let resultParser: BackupResultParser
 
   /// The backup logger
   private let backupLogger: BackupLogger
+
+  /// The Restic service for backend operations
+  private let resticService: ResticServiceProtocol
+
+  /// Repository connection information
+  private let repositoryInfo: RepositoryInfo
+
+  /// Error mapper for translating errors
+  private let errorMapper: BackupErrorMapper
 
   /// Dictionary of active operations
   private var activeOperations: [UUID: BackupOperationToken]=[:]
@@ -72,511 +85,369 @@ public actor BackupServicesActor: BackupServiceProtocol {
     logger: any LoggingProtocol,
     repositoryInfo: RepositoryInfo
   ) {
-    // Create components
-    let commandFactory=BackupCommandFactory()
-    let resultParser=BackupResultParser()
+    // Store key dependencies
+    self.resticService=resticService
+    self.repositoryInfo=repositoryInfo
 
-    // Initialize component services
-    operationsService=BackupOperationsService(
+    // Create components for command infrastructure
+    resticCommandFactory=BackupCommandFactory()
+    resultParser=BackupResultParser()
+    errorMapper=BackupErrorMapper()
+
+    // Create the backup command factory
+    commandFactory=BackupCommandFactory(
       resticService: resticService,
       repositoryInfo: repositoryInfo,
-      commandFactory: commandFactory,
+      resticCommandFactory: resticCommandFactory,
       resultParser: resultParser,
-      snapshotService: SnapshotServiceImpl(resticService: resticService),
-      errorMapper: BackupErrorMapper()
+      errorMapper: errorMapper,
+      logger: logger
     )
 
     // Create the backup logger
     backupLogger=BackupLogger(loggingService: logger, domainName: "BackupServices")
-
-    // Create needed components
-    let cancellationHandler=BackupCancellationHandler()
-    let metricsCollector=BackupMetricsCollector()
-    let errorLogContextMapper=ErrorLogContextMapper()
-    let errorMapper=BackupErrorMapper()
-
-    // Initialize operation executor
-    operationExecutor=BackupOperationExecutor(
-      logger: logger,
-      cancellationHandler: cancellationHandler,
-      metricsCollector: metricsCollector,
-      errorLogContextMapper: errorLogContextMapper,
-      errorMapper: errorMapper
-    )
   }
 
-  // MARK: - BackupServiceProtocol Implementation
+  // MARK: - Operation Tracking
 
   /**
-   * Creates a new backup.
+   * Registers an operation for tracking.
    *
    * - Parameters:
-   *   - sources: Source paths to back up
-   *   - excludePaths: Optional paths to exclude
-   *   - tags: Optional tags to associate with the backup
-   *   - backupOptions: Optional backup configuration options
-   * - Returns: A Result containing either the operation response or an error
+   *   - operationID: Unique ID for the operation
+   *   - type: Type of operation being performed
+   *   - cancellationToken: Token for cancellation
+   */
+  private func registerOperation(
+    operationID: String,
+    type: BackupOperationType,
+    cancellationToken: BackupOperationCancellationTokenImpl?=nil
+  ) {
+    let uuid=UUID()
+    activeOperations[uuid]=BackupOperationToken(
+      id: uuid,
+      operationID: operationID,
+      type: type
+    )
+
+    if let token=cancellationToken {
+      activeOperationsCancellationTokens[operationID]=token
+    }
+  }
+
+  /**
+   * Unregisters an operation from tracking.
+   *
+   * - Parameter operationID: ID of the operation to unregister
+   */
+  private func unregisterOperation(operationID: String) {
+    if let key=activeOperations.first(where: { $0.value.operationID == operationID })?.key {
+      activeOperations.removeValue(forKey: key)
+    }
+
+    activeOperationsCancellationTokens.removeValue(forKey: operationID)
+  }
+
+  // MARK: - Public API
+
+  /**
+   * Creates a new backup with the specified sources, exclusions, and tags.
+   *
+   * - Parameters:
+   *   - sources: Array of URLs to include in the backup
+   *   - excludePaths: Optional array of paths to exclude
+   *   - tags: Optional array of tags to apply to the backup
+   *   - options: Optional backup configuration options
+   * - Returns: Result containing the backup operation response or an error
    */
   public func createBackup(
     sources: [URL],
-    excludePaths: [URL]?,
-    tags: [String]?,
-    backupOptions: BackupOptions?
+    excludePaths: [URL]?=nil,
+    tags: [String]?=nil,
+    options: BackupOptions?=nil
   ) async -> Result<BackupOperationResponse<BackupResult>, BackupOperationError> {
     // Create a log context
-    let logContext=BackupLogContext(
-      source: "BackupServicesActor.createBackup"
+    let logContext=LogContextDTO(
+      metadata: LogMetadataDTOCollection()
+        .withPublic(key: "source", value: "BackupServicesActor.createBackup")
     )
-    .withPublic(key: "operation", value: "createBackup")
-    .withPublic(key: "sourceCount", value: String(sources.count))
 
-    if let tags, !tags.isEmpty {
-      logContext.withPublic(key: "tags", value: tags.joined(separator: ","))
-    }
+    // Generate an operation ID
+    let operationID=UUID().uuidString
 
-    // Log operation start
-    await backupLogger.logOperationStart(context: logContext)
+    // Create a cancellation token
+    let cancellationToken=BackupOperationCancellationTokenImpl(operationID: operationID)
 
-    // Input validation
-    guard !sources.isEmpty else {
-      let error=BackupOperationError.invalidInput("Sources cannot be empty")
-      await backupLogger.logOperationError(context: logContext, error: error)
-      return .failure(error)
-    }
+    // Register the operation
+    registerOperation(
+      operationID: operationID,
+      type: .createBackup,
+      cancellationToken: cancellationToken
+    )
 
-    // Record the start time
-    let startTime=Date()
+    // Create the progress reporter
+    let progressReporter=BackupProgressReporterImpl()
 
-    // Create parameters
+    // Create the parameters
     let parameters=BackupCreateParameters(
+      operationID: operationID,
       sources: sources,
       excludePaths: excludePaths,
       tags: tags,
-      options: backupOptions
+      options: options
     )
 
-    // Create a cancellation token for this operation
-    let token=BackupOperationCancellationTokenImpl(id: UUID().uuidString)
-    let operationID=token.id
-    activeOperationsCancellationTokens[operationID]=token
+    // Create the command
+    let createBackupCommand=commandFactory.createBackupCommand(
+      parameters: parameters,
+      progressReporter: progressReporter,
+      cancellationToken: cancellationToken
+    )
 
-    do {
-      // Create progress reporter
-      let progressReporter=AsyncProgressReporter<BackupProgressInfo>()
+    // Execute the command
+    let result=await createBackupCommand.execute(
+      context: logContext,
+      operationID: operationID
+    )
 
-      // Execute the operation
-      let result=try await operationExecutor.execute(
-        parameters: parameters,
-        operation: { params, progress, token in
-          try await operationsService.createBackup(
-            parameters: params as! BackupCreateParameters,
-            progressReporter: progress,
-            cancellationToken: token
-          )
-        },
-        progressReporter: progressReporter,
-        cancellationToken: token
-      )
+    // Map the result to the expected response format
+    let mappedResult: Result<BackupOperationResponse<BackupResult>, BackupOperationError>
 
-      // Record the end time
-      let endTime=Date()
+    switch result {
+      case .success(let (value, progressStream)):
+        let response=BackupOperationResponse(
+          value: value,
+          progressStream: progressStream
+        )
+        mappedResult = .success(response)
 
-      // Create metadata
-      let metadata=BackupOperationMetadata(
-        startTime: startTime,
-        endTime: endTime,
-        operationType: "createBackup",
-        additionalInfo: [
-          "sourceCount": "\(sources.count)",
-          "hasExcludes": "\(excludePaths != nil && !excludePaths!.isEmpty)"
-        ]
-      )
-
-      // Create operation result
-      let operationResult=BackupOperationResponse(
-        value: result,
-        progressStream: progressReporter.stream,
-        metadata: metadata
-      )
-
-      // Enhanced log context with result information
-      let enhancedContext=logContext.withPublic(
-        key: "backupId",
-        value: result.backupID
-      ).withPublic(
-        key: "fileCount",
-        value: "\(result.fileCount)"
-      ).withPublic(
-        key: "duration",
-        value: "\(metadata.duration)"
-      )
-
-      // Log success
-      await backupLogger.logOperationSuccess(
-        context: enhancedContext,
-        result: result
-      )
-
-      // Remove token and return result
-      activeOperationsCancellationTokens[operationID]=nil
-      return .success(operationResult)
-    } catch {
-      // Map error to BackupOperationError
-      let backupError=mapError(error)
-
-      // Log error
-      await backupLogger.logOperationFailure(
-        context: logContext,
-        error: backupError
-      )
-
-      // Remove token and return error
-      activeOperationsCancellationTokens[operationID]=nil
-      return .failure(backupError)
+      case let .failure(error):
+        mappedResult = .failure(error)
     }
+
+    // Unregister the operation
+    unregisterOperation(operationID: operationID)
+
+    return mappedResult
   }
 
   /**
-   * Restores a backup.
+   * Restores a backup from a snapshot ID to the specified target location.
    *
    * - Parameters:
    *   - snapshotID: ID of the snapshot to restore
-   *   - targetPath: Path to restore to
-   *   - includePaths: Optional paths to include
-   *   - excludePaths: Optional paths to exclude
-   *   - restoreOptions: Optional restore configuration options
-   * - Returns: A Result containing either the operation response or an error
+   *   - targetPath: Location to restore the files to
+   *   - includePaths: Optional specific paths within the snapshot to restore
+   *   - excludePaths: Optional paths to exclude from restoration
+   *   - options: Optional restore configuration options
+   * - Returns: Result containing the restore operation response or an error
    */
   public func restoreBackup(
     snapshotID: String,
     targetPath: URL,
-    includePaths: [URL]?,
-    excludePaths: [URL]?,
-    restoreOptions: RestoreOptions?
+    includePaths: [URL]?=nil,
+    excludePaths: [URL]?=nil,
+    options: RestoreOptions?=nil
   ) async -> Result<BackupOperationResponse<RestoreResult>, BackupOperationError> {
     // Create a log context
-    let logContext=BackupLogContext(
-      source: "BackupServicesActor.restoreBackup"
+    let logContext=LogContextDTO(
+      metadata: LogMetadataDTOCollection()
+        .withPublic(key: "source", value: "BackupServicesActor.restoreBackup")
     )
-    .withPublic(key: "operation", value: "restoreBackup")
-    .withPublic(key: "snapshotID", value: snapshotID)
-    .withPrivate(key: "targetPath", value: targetPath.path)
 
-    if let includePaths, !includePaths.isEmpty {
-      logContext.withPrivate(key: "includePathCount", value: String(includePaths.count))
-    }
+    // Generate an operation ID
+    let operationID=UUID().uuidString
 
-    if let excludePaths, !excludePaths.isEmpty {
-      logContext.withPrivate(key: "excludePathCount", value: String(excludePaths.count))
-    }
+    // Create a cancellation token
+    let cancellationToken=BackupOperationCancellationTokenImpl(operationID: operationID)
 
-    // Log operation start
-    await backupLogger.logOperationStart(context: logContext)
+    // Register the operation
+    registerOperation(
+      operationID: operationID,
+      type: .restoreBackup,
+      cancellationToken: cancellationToken
+    )
 
-    // Input validation
-    guard !snapshotID.isEmpty else {
-      let error=BackupOperationError.invalidInput("Snapshot ID cannot be empty")
-      await backupLogger.logOperationError(context: logContext, error: error)
-      return .failure(error)
-    }
+    // Create the progress reporter
+    let progressReporter=BackupProgressReporterImpl()
 
-    // Record the start time
-    let startTime=Date()
-
-    // Create parameters
+    // Create the parameters
     let parameters=BackupRestoreParameters(
+      operationID: operationID,
       snapshotID: snapshotID,
       targetPath: targetPath,
       includePaths: includePaths,
       excludePaths: excludePaths,
-      options: restoreOptions
+      options: options
     )
 
-    // Create a cancellation token for this operation
-    let token=BackupOperationCancellationTokenImpl(id: UUID().uuidString)
-    let operationID=token.id
-    activeOperationsCancellationTokens[operationID]=token
+    // Create the command
+    let restoreBackupCommand=commandFactory.createRestoreCommand(
+      parameters: parameters,
+      progressReporter: progressReporter,
+      cancellationToken: cancellationToken
+    )
 
-    do {
-      // Create progress reporter
-      let progressReporter=AsyncProgressReporter<BackupProgressInfo>()
+    // Execute the command
+    let result=await restoreBackupCommand.execute(
+      context: logContext,
+      operationID: operationID
+    )
 
-      // Execute the operation
-      let result=try await operationExecutor.execute(
-        parameters: parameters,
-        operation: { params, progress, token in
-          try await operationsService.restoreBackup(
-            parameters: params as! BackupRestoreParameters,
-            progressReporter: progress,
-            cancellationToken: token
-          )
-        },
-        progressReporter: progressReporter,
-        cancellationToken: token
-      )
+    // Map the result to the expected response format
+    let mappedResult: Result<BackupOperationResponse<RestoreResult>, BackupOperationError>
 
-      // Record the end time
-      let endTime=Date()
+    switch result {
+      case .success(let (value, progressStream)):
+        let response=BackupOperationResponse(
+          value: value,
+          progressStream: progressStream
+        )
+        mappedResult = .success(response)
 
-      // Create metadata
-      let metadata=BackupOperationMetadata(
-        startTime: startTime,
-        endTime: endTime,
-        operationType: "restoreBackup",
-        additionalInfo: [
-          "snapshotID": snapshotID,
-          "fileCount": "\(result.fileCount)"
-        ]
-      )
-
-      // Create operation result
-      let operationResult=BackupOperationResponse(
-        value: result,
-        progressStream: progressReporter.stream,
-        metadata: metadata
-      )
-
-      // Enhanced log context with result information
-      let enhancedContext=logContext.withPublic(
-        key: "fileCount",
-        value: "\(result.fileCount)"
-      ).withPublic(
-        key: "duration",
-        value: "\(metadata.duration)"
-      )
-
-      // Log success
-      await backupLogger.logOperationSuccess(
-        context: enhancedContext,
-        result: result
-      )
-
-      // Remove token and return result
-      activeOperationsCancellationTokens[operationID]=nil
-      return .success(operationResult)
-    } catch {
-      // Map error to BackupOperationError
-      let backupError=mapError(error)
-
-      // Log error
-      await backupLogger.logOperationFailure(
-        context: logContext,
-        error: backupError
-      )
-
-      // Remove token and return error
-      activeOperationsCancellationTokens[operationID]=nil
-      return .failure(backupError)
+      case let .failure(error):
+        mappedResult = .failure(error)
     }
+
+    // Unregister the operation
+    unregisterOperation(operationID: operationID)
+
+    return mappedResult
   }
 
   /**
-   * Lists available snapshots with optional filtering.
+   * Lists available backup snapshots.
    *
    * - Parameters:
-   *   - tags: Optional tags to filter by
-   *   - before: Optional date to filter snapshots before
-   *   - after: Optional date to filter snapshots after
-   *   - listOptions: Optional listing configuration options
-   * - Returns: A Result containing either the list of snapshots or an error
+   *   - path: Optional path to filter snapshots by
+   *   - tags: Optional tags to filter snapshots by
+   *   - host: Optional host to filter snapshots by
+   * - Returns: Result containing array of snapshots or an error
    */
   public func listSnapshots(
-    tags: [String]?,
-    before: Date?,
-    after: Date?,
-    listOptions: ListOptions?
+    path: String?=nil,
+    tags: [String]?=nil,
+    host: String?=nil
   ) async -> Result<[BackupSnapshot], BackupOperationError> {
     // Create a log context
-    let logContext=BackupLogContext(
-      source: "BackupServicesActor.listSnapshots"
+    let logContext=LogContextDTO(
+      metadata: LogMetadataDTOCollection()
+        .withPublic(key: "source", value: "BackupServicesActor.listSnapshots")
     )
-    .withPublic(key: "operation", value: "listSnapshots")
-    .withPublic(key: "includeStats", value: String(listOptions?.includeStats ?? false))
 
-    if let tags, !tags.isEmpty {
-      logContext.withPublic(key: "tags", value: tags.joined(separator: ","))
-    }
+    // Generate an operation ID
+    let operationID=UUID().uuidString
 
-    if let before {
-      logContext.withPublic(key: "before", value: ISO8601DateFormatter().string(from: before))
-    }
+    // Register the operation
+    registerOperation(
+      operationID: operationID,
+      type: .listSnapshots
+    )
 
-    if let after {
-      logContext.withPublic(key: "after", value: ISO8601DateFormatter().string(from: after))
-    }
-
-    if let path=listOptions?.path {
-      logContext.withPrivate(key: "path", value: path.path)
-    }
-
-    if let limit=listOptions?.limit {
-      logContext.withPublic(key: "limit", value: String(limit))
-    }
-
-    // Log operation start
-    await backupLogger.logOperationStart(context: logContext)
-
-    // Record the start time
-    let startTime=Date()
-
-    // Create parameters
-    let parameters=BackupListParameters(
+    // Create the parameters
+    let parameters=BackupListSnapshotsParameters(
+      operationID: operationID,
+      path: path,
       tags: tags,
-      before: before,
-      after: after,
-      listOptions: listOptions
+      host: host
     )
 
-    do {
-      // Execute the operation
-      let snapshots=try await operationsService.listSnapshots(parameters: parameters)
+    // Create the command
+    let listSnapshotsCommand=commandFactory.createListSnapshotsCommand(
+      parameters: parameters
+    )
 
-      // Record the end time
-      let endTime=Date()
+    // Execute the command
+    let result=await listSnapshotsCommand.execute(
+      context: logContext,
+      operationID: operationID
+    )
 
-      // Enhanced log context with result information
-      let enhancedContext=logContext.withPublic(
-        key: "snapshotCount",
-        value: "\(snapshots.count)"
-      ).withPublic(
-        key: "duration",
-        value: "\(endTime.timeIntervalSince(startTime))"
-      )
+    // Unregister the operation
+    unregisterOperation(operationID: operationID)
 
-      // Log success
-      await backupLogger.logOperationSuccess(
-        context: enhancedContext,
-        result: snapshots
-      )
-
-      return .success(snapshots)
-    } catch {
-      // Map error to BackupOperationError
-      let backupError=mapError(error)
-
-      // Log error
-      await backupLogger.logOperationFailure(
-        context: logContext,
-        error: backupError
-      )
-
-      return .failure(backupError)
-    }
+    return result
   }
 
   /**
-   * Deletes a backup snapshot.
+   * Deletes a backup snapshot or snapshots matching criteria.
    *
    * - Parameters:
-   *   - snapshotID: ID of the snapshot to delete
-   *   - deleteOptions: Optional delete configuration options
-   * - Returns: A Result containing either the operation response or an error
+   *   - snapshotID: Optional specific snapshot ID to delete
+   *   - tags: Optional tags to match snapshots for deletion
+   *   - host: Optional host to match snapshots for deletion
+   *   - options: Optional delete configuration options
+   * - Returns: Result containing the delete operation response or an error
    */
   public func deleteBackup(
-    snapshotID: String,
-    deleteOptions: DeleteOptions?
+    snapshotID: String?=nil,
+    tags: [String]?=nil,
+    host: String?=nil,
+    options: DeleteOptions?=nil
   ) async -> Result<BackupOperationResponse<BackupDeleteResult>, BackupOperationError> {
     // Create a log context
-    let logContext=BackupLogContext(
-      source: "BackupServicesActor.deleteBackup"
+    let logContext=LogContextDTO(
+      metadata: LogMetadataDTOCollection()
+        .withPublic(key: "source", value: "BackupServicesActor.deleteBackup")
     )
-    .withPublic(key: "operation", value: "deleteBackup")
-    .withPublic(key: "operationID", value: snapshotID)
-    .withPublic(key: "snapshotID", value: snapshotID)
-    .withPublic(key: "pruneAfterDelete", value: String(deleteOptions?.pruneAfterDelete ?? false))
 
-    // Log operation start
-    await backupLogger.logOperationStart(context: logContext)
+    // Generate an operation ID
+    let operationID=UUID().uuidString
 
-    // Input validation
-    guard !snapshotID.isEmpty else {
-      let error=BackupOperationError.invalidInput("Snapshot ID cannot be empty")
-      await backupLogger.logOperationError(context: logContext, error: error)
-      return .failure(error)
-    }
+    // Create a cancellation token
+    let cancellationToken=BackupOperationCancellationTokenImpl(operationID: operationID)
 
-    // Record the start time
-    let startTime=Date()
+    // Register the operation
+    registerOperation(
+      operationID: operationID,
+      type: .deleteBackup,
+      cancellationToken: cancellationToken
+    )
 
-    // Create parameters
+    // Create the progress reporter
+    let progressReporter=BackupProgressReporterImpl()
+
+    // Create the parameters
     let parameters=BackupDeleteParameters(
+      operationID: operationID,
       snapshotID: snapshotID,
-      pruneAfterDelete: deleteOptions?.pruneAfterDelete ?? false
+      tags: tags,
+      host: host,
+      options: options
     )
 
-    // Create a cancellation token for this operation
-    let token=BackupOperationCancellationTokenImpl(id: UUID().uuidString)
-    let operationID=token.id
-    activeOperationsCancellationTokens[operationID]=token
+    // Create the command
+    let deleteBackupCommand=commandFactory.createDeleteCommand(
+      parameters: parameters,
+      progressReporter: progressReporter,
+      cancellationToken: cancellationToken
+    )
 
-    do {
-      // Create progress reporter
-      let progressReporter=AsyncProgressReporter<BackupProgressInfo>()
+    // Execute the command
+    let result=await deleteBackupCommand.execute(
+      context: logContext,
+      operationID: operationID
+    )
 
-      // Execute the operation
-      let result=try await operationExecutor.execute(
-        parameters: parameters,
-        operation: { params, progress, token in
-          try await operationsService.deleteBackup(
-            parameters: params as! BackupDeleteParameters,
-            progressReporter: progress,
-            cancellationToken: token
-          )
-        },
-        progressReporter: progressReporter,
-        cancellationToken: token
-      )
+    // Map the result to the expected response format
+    let mappedResult: Result<BackupOperationResponse<BackupDeleteResult>, BackupOperationError>
 
-      // Record the end time
-      let endTime=Date()
+    switch result {
+      case .success(let (value, progressStream)):
+        let response=BackupOperationResponse(
+          value: value,
+          progressStream: progressStream
+        )
+        mappedResult = .success(response)
 
-      // Create metadata
-      let metadata=BackupOperationMetadata(
-        startTime: startTime,
-        endTime: endTime,
-        operationType: "deleteBackup",
-        additionalInfo: [
-          "snapshotID": snapshotID,
-          "pruneAfterDelete": "\(parameters.pruneAfterDelete)"
-        ]
-      )
-
-      // Create operation result
-      let operationResult=BackupOperationResponse(
-        value: result,
-        progressStream: progressReporter.stream,
-        metadata: metadata
-      )
-
-      // Enhanced log context with result information
-      let enhancedContext=logContext.withPublic(
-        key: "duration",
-        value: "\(metadata.duration)"
-      )
-
-      // Log success
-      await backupLogger.logOperationSuccess(
-        context: enhancedContext,
-        result: result
-      )
-
-      // Remove token and return result
-      activeOperationsCancellationTokens[operationID]=nil
-      return .success(operationResult)
-    } catch {
-      // Map error to BackupOperationError
-      let backupError=mapError(error)
-
-      // Log error
-      await backupLogger.logOperationFailure(
-        context: logContext,
-        error: backupError
-      )
-
-      // Remove token and return error
-      activeOperationsCancellationTokens[operationID]=nil
-      return .failure(backupError)
+      case let .failure(error):
+        mappedResult = .failure(error)
     }
+
+    // Unregister the operation
+    unregisterOperation(operationID: operationID)
+
+    return mappedResult
   }
 
   /**
@@ -584,275 +455,149 @@ public actor BackupServicesActor: BackupServiceProtocol {
    *
    * - Parameters:
    *   - type: Type of maintenance to perform
-   *   - maintenanceOptions: Optional maintenance configuration options
-   * - Returns: A Result containing either the operation response or an error
+   *   - options: Optional maintenance configuration options
+   * - Returns: Result containing the maintenance operation response or an error
    */
   public func performMaintenance(
     type: MaintenanceType,
-    maintenanceOptions: MaintenanceOptions?
+    options: MaintenanceOptions?=nil
   ) async -> Result<BackupOperationResponse<MaintenanceResult>, BackupOperationError> {
     // Create a log context
-    let logContext=BackupLogContext(
-      source: "BackupServicesActor.performMaintenance"
-    )
-    .withPublic(key: "operation", value: "performMaintenance")
-    .withPublic(key: "operationID", value: operationID)
-    .withPublic(key: "maintenanceType", value: maintenanceType.rawValue)
-
-    if let options=maintenanceOptions {
-      logContext.withPublic(key: "dryRun", value: String(options.dryRun))
-    }
-
-    // Log operation start
-    await backupLogger.logOperationStart(context: logContext)
-
-    // Record the start time
-    let startTime=Date()
-
-    // Create parameters
-    let parameters=BackupMaintenanceParameters(
-      maintenanceType: type,
-      options: maintenanceOptions
+    let logContext=LogContextDTO(
+      metadata: LogMetadataDTOCollection()
+        .withPublic(key: "source", value: "BackupServicesActor.performMaintenance")
     )
 
-    // Create a cancellation token for this operation
-    let token=BackupOperationCancellationTokenImpl(id: UUID().uuidString)
-    let operationID=token.id
-    activeOperationsCancellationTokens[operationID]=token
-
-    do {
-      // Create progress reporter
-      let progressReporter=AsyncProgressReporter<BackupProgressInfo>()
-
-      // Execute the operation
-      let result=try await operationExecutor.execute(
-        parameters: parameters,
-        operation: { params, progress, token in
-          try await operationsService.performMaintenance(
-            parameters: params as! BackupMaintenanceParameters,
-            progressReporter: progress,
-            cancellationToken: token
-          )
-        },
-        progressReporter: progressReporter,
-        cancellationToken: token
-      )
-
-      // Record the end time
-      let endTime=Date()
-
-      // Create metadata
-      let metadata=BackupOperationMetadata(
-        startTime: startTime,
-        endTime: endTime,
-        operationType: "performMaintenance",
-        additionalInfo: [
-          "maintenanceType": String(describing: type)
-        ]
-      )
-
-      // Create operation result
-      let operationResult=BackupOperationResponse(
-        value: result,
-        progressStream: progressReporter.stream,
-        metadata: metadata
-      )
-
-      // Enhanced log context with result information
-      let enhancedContext=logContext.withPublic(
-        key: "duration",
-        value: "\(metadata.duration)"
-      )
-
-      // Log success
-      await backupLogger.logOperationSuccess(
-        context: enhancedContext,
-        result: result
-      )
-
-      // Remove token and return result
-      activeOperationsCancellationTokens[operationID]=nil
-      return .success(operationResult)
-    } catch {
-      // Map error to BackupOperationError
-      let backupError=mapError(error)
-
-      // Log error
-      await backupLogger.logOperationFailure(
-        context: logContext,
-        error: backupError
-      )
-
-      // Remove token and return error
-      activeOperationsCancellationTokens[operationID]=nil
-      return .failure(backupError)
-    }
-  }
-
-  /**
-   * Verifies the integrity of a backup.
-   *
-   * This operation checks that all data referenced by a snapshot is present
-   * and uncorrupted in the repository.
-   *
-   * - Parameters:
-   *   - snapshotID: ID of the snapshot to verify, or nil to verify the latest
-   *   - verifyData: Whether to verify all data blocks (true) or only metadata (false)
-   *   - repairMode: Optional mode for repairing any issues found
-   *   - options: Optional verification configuration options
-   * - Returns: A Result containing either the operation response or an error
-   */
-  public func verifyBackup(
-    snapshotID: String?,
-    verifyData: Bool=true,
-    repairMode: BackupInterfaces.RepairMode?=nil,
-    options: BackupInterfaces.VerifyOptions?=nil
-  ) async -> Result<BackupOperationResponse<VerificationResult>, BackupOperationError> {
-    // Create a log context
-    let logContext=BackupLogContext(
-      source: "BackupServicesActor.verifyBackup"
-    )
-    .withPublic(key: "operation", value: "verifyBackup")
-    .withPublic(key: "operationID", value: operationID)
-
-    if let snapshotID {
-      logContext.withPublic(key: "snapshotID", value: snapshotID)
-    } else {
-      logContext.withPublic(key: "snapshotID", value: "latest")
-    }
-
-    if let options {
-      logContext.withPublic(key: "fullVerification", value: String(options.fullVerification))
-    }
-
-    // Log operation start
-    await backupLogger.logOperationStart(context: logContext)
-
-    // Record the start time
-    let startTime=Date()
-
-    // Create a progress reporter for this operation
-    let progressReporter=AsyncProgressReporter<BackupProgressInfo>()
-
-    // Create an operation token and register it
-    let token=BackupOperationToken(
-      id: UUID(),
-      operation: .verifyBackup,
-      cancellable: true
-    )
-
-    // Register the token
-    activeOperations[token.id]=token
-
-    // Create a cancellation token for the operation
-    let cancellationToken=BackupOperationCancellationTokenImpl(id: token.id.uuidString)
-    activeOperationsCancellationTokens[token.id]=cancellationToken
-
-    // Create DTO parameters for the operation using adapter pattern
-    let localRepairMode=repairMode.map {
-      BackupVerifyParameters.RepairMode(rawValue: $0.rawValue) ?? .reportOnly
-    }
-
-    let localOptions=options.map { VerifyOptions.from(options: $0) }
-
-    let parameters=BackupVerifyParameters(
-      snapshotID: snapshotID,
-      verifyData: verifyData,
-      repairMode: localRepairMode,
-      options: localOptions
-    )
-
-    do {
-      // Execute the operation
-      let verificationResultDTO=try await operationExecutor.executeVerifyOperation(
-        parameters: parameters,
-        progressReporter: progressReporter,
-        cancellationToken: cancellationToken,
-        logContext: logContext
-      )
-
-      // Calculate operation duration
-      let duration=Date().timeIntervalSince(startTime)
-
-      // Log operation success
-      await backupLogger.logOperationSuccess(
-        context: logContext,
-        duration: duration
-      )
-
-      // Remove token
-      activeOperationsCancellationTokens[token.id]=nil
-
-      // Convert DTO to interface type using adapter
-      let result=verificationResultDTO.toVerificationResult()
-
-      // Return successful result with operation response
-      return .success(
-        BackupOperationResponse(
-          value: result,
-          progressStream: progressReporter.stream
-        )
-      )
-    } catch {
-      // Map error
-      let backupError=mapError(error)
-
-      // Log error
-      await backupLogger.logOperationFailure(
-        context: logContext,
-        error: backupError
-      )
-
-      // Remove token and return error
-      activeOperationsCancellationTokens[token.id]=nil
-      return .failure(backupError)
-    }
-  }
-
-  /**
-   * Compares two snapshots to identify differences.
-   *
-   * This method compares two snapshots and returns information about files that
-   * were added, removed, or modified between them.
-   *
-   * - Parameters:
-   *   - parameters: Parameters for the comparison operation
-   *   - progressHandler: Handler for tracking operation progress
-   * - Returns: Result of the comparison
-   * - Throws: BackupError if the operation fails
-   */
-  public func compareSnapshots(
-    parameters: BackupSnapshotComparisonParameters,
-    progressHandler: BackupProgressHandler?
-  ) async throws -> BackupSnapshotComparisonResult {
-    // Create a progress reporter if a handler was provided
-    let progressReporter: BackupProgressReporter?=progressHandler.map { handler in
-      BackupProgressReporterImpl(handler: handler)
-    }
+    // Generate an operation ID
+    let operationID=UUID().uuidString
 
     // Create a cancellation token
-    let cancellationToken=BackupCancellationTokenImplementation(id: parameters.operationID)
+    let cancellationToken=BackupOperationCancellationTokenImpl(operationID: operationID)
 
-    // Register the token with the cancellation handler
-    await cancellationHandler.registerToken(cancellationToken, for: parameters.operationID)
+    // Register the operation
+    registerOperation(
+      operationID: operationID,
+      type: .maintenance,
+      cancellationToken: cancellationToken
+    )
 
-    do {
-      // Perform the comparison
-      let result=try await operationsService.compareSnapshots(
-        parameters: parameters,
-        progressReporter: progressReporter,
-        cancellationToken: cancellationToken
-      )
+    // Create the progress reporter
+    let progressReporter=BackupProgressReporterImpl()
 
-      // Return the result
-      return result
-    } catch {
-      // Map the error and rethrow
-      throw errorMapper.mapError(error)
-    } finally {
-      // Unregister the token
-      await cancellationHandler.unregisterToken(for: parameters.operationID)
+    // Create the parameters
+    let parameters=BackupMaintenanceParameters(
+      operationID: operationID,
+      type: type,
+      options: options
+    )
+
+    // Create the command
+    let maintenanceCommand=commandFactory.createMaintenanceCommand(
+      parameters: parameters,
+      progressReporter: progressReporter,
+      cancellationToken: cancellationToken
+    )
+
+    // Execute the command
+    let result=await maintenanceCommand.execute(
+      context: logContext,
+      operationID: operationID
+    )
+
+    // Map the result to the expected response format
+    let mappedResult: Result<BackupOperationResponse<MaintenanceResult>, BackupOperationError>
+
+    switch result {
+      case .success(let (value, progressStream)):
+        let response=BackupOperationResponse(
+          value: value,
+          progressStream: progressStream
+        )
+        mappedResult = .success(response)
+
+      case let .failure(error):
+        mappedResult = .failure(error)
     }
+
+    // Unregister the operation
+    unregisterOperation(operationID: operationID)
+
+    return mappedResult
+  }
+
+  /**
+   * Verifies the integrity of a backup snapshot.
+   *
+   * - Parameters:
+   *   - snapshotID: ID of the snapshot to verify
+   *   - verifyOptions: Optional verification configuration options
+   * - Returns: Result containing the verification operation response or an error
+   */
+  public func verifyBackup(
+    snapshotID: String,
+    verifyOptions: VerifyOptions?=nil
+  ) async -> Result<BackupOperationResponse<VerificationResult>, BackupOperationError> {
+    // Create a log context
+    let logContext=LogContextDTO(
+      metadata: LogMetadataDTOCollection()
+        .withPublic(key: "source", value: "BackupServicesActor.verifyBackup")
+    )
+
+    // Generate an operation ID
+    let operationID=UUID().uuidString
+
+    // Create a cancellation token
+    let cancellationToken=BackupOperationCancellationTokenImpl(operationID: operationID)
+
+    // Register the operation
+    registerOperation(
+      operationID: operationID,
+      type: .verifyBackup,
+      cancellationToken: cancellationToken
+    )
+
+    // Create the progress reporter
+    let progressReporter=BackupProgressReporterImpl()
+
+    // Create the parameters
+    let parameters=BackupVerificationParameters(
+      operationID: operationID,
+      snapshotID: snapshotID,
+      verifyOptions: verifyOptions
+    )
+
+    // Create the command
+    let verifyCommand=commandFactory.createVerifyCommand(
+      parameters: parameters,
+      progressReporter: progressReporter,
+      cancellationToken: cancellationToken
+    )
+
+    // Execute the command
+    let result=await verifyCommand.execute(
+      context: logContext,
+      operationID: operationID
+    )
+
+    // Map the result to the expected response format
+    let mappedResult: Result<BackupOperationResponse<VerificationResult>, BackupOperationError>
+
+    switch result {
+      case .success(let (value, progressStream)):
+        let response=BackupOperationResponse(
+          value: value,
+          progressStream: progressStream
+        )
+        mappedResult = .success(response)
+
+      case let .failure(error):
+        mappedResult = .failure(error)
+    }
+
+    // Unregister the operation
+    unregisterOperation(operationID: operationID)
+
+    return mappedResult
   }
 
   /**
@@ -860,159 +605,39 @@ public actor BackupServicesActor: BackupServiceProtocol {
    *
    * This method attempts to gracefully cancel an in-progress operation.
    * Cancellation may not be immediate, and some operations might not be
-   * cancellable once they've reached a certain stage.
+   * cancellable after reaching certain stages.
    *
    * - Parameter operationID: ID of the operation to cancel
-   * - Returns: True if cancellation was initiated, false if the operation
-   *            doesn't exist or cannot be cancelled
+   * - Returns: True if cancellation was successful, false otherwise
    */
-  public func cancelOperation(operationID: UUID) async -> Bool {
-    // Create a log context
-    let logContext=BackupLogContext(
-      source: "BackupServicesActor.cancelOperation"
+  public func cancelOperation(operationID: String) async -> Bool {
+    // Get the cancellation token
+    guard let token=activeOperationsCancellationTokens[operationID] else {
+      return false
+    }
+
+    // Set the cancellation flag
+    token.isCancelled=true
+
+    // Log the cancellation
+    await backupLogger.info(
+      message: "Operation \(operationID) cancellation requested",
+      context: LogContextDTO(
+        metadata: LogMetadataDTOCollection()
+          .withPublic(key: "source", value: "BackupServicesActor.cancelOperation")
+          .withPublic(key: "operationID", value: operationID)
+      )
     )
-    .withPublic(key: "operation", value: "cancelOperation")
-    .withPublic(key: "operationID", value: operationID.uuidString)
-
-    // Log operation start
-    await backupLogger.info("Attempting to cancel operation", context: logContext)
-
-    // Check if the operation exists
-    guard let token=activeOperations[operationID] else {
-      // Log that operation wasn't found
-      await backupLogger.info(
-        "Operation not found for cancellation",
-        context: logContext.withPublic(key: "result", value: "not_found")
-      )
-      return false
-    }
-
-    // Check if the operation can be cancelled
-    guard token.cancellable else {
-      // Log that operation can't be cancelled
-      await backupLogger.info(
-        "Operation cannot be cancelled",
-        context: logContext
-          .withPublic(key: "result", value: "not_cancellable")
-          .withPublic(key: "operationType", value: token.operationType.rawValue)
-      )
-      return false
-    }
-
-    // Attempt to cancel the operation
-    do {
-      try await cancelOperationImpl(token: token)
-
-      // Log success
-      await backupLogger.info(
-        "Operation cancelled successfully",
-        context: logContext
-          .withPublic(key: "result", value: "success")
-          .withPublic(key: "operationType", value: token.operationType.rawValue)
-      )
-
-      return true
-    } catch {
-      // Log failure
-      await backupLogger.error(
-        "Failed to cancel operation: \(error.localizedDescription)",
-        context: logContext
-          .withPublic(key: "result", value: "error")
-          .withPublic(key: "operationType", value: token.operationType.rawValue)
-      )
-
-      return false
-    }
-  }
-
-  /**
-   * Cancels all active operations.
-   *
-   * - Returns: The number of operations cancelled
-   */
-  public func cancelAllOperations() async -> Int {
-    let count=activeOperationsCancellationTokens.count
-
-    for (id, _) in activeOperationsCancellationTokens {
-      await cancelOperation(id: id)
-    }
-
-    return count
-  }
-
-  /**
-   * Cancels a specific operation.
-   *
-   * - Parameter id: The operation ID to cancel
-   * - Returns: Whether the operation was found and cancelled
-   */
-  public func cancelOperation(id: String) async -> Bool {
-    guard let token=activeOperationsCancellationTokens[id] else {
-      return false
-    }
-
-    // Create a log context
-    let logContext=BackupLogContext(
-      source: "BackupServicesActor"
-    )
-    .withOperation("cancelOperation")
-    .withPublic(key: "operationID", value: id.uuidString)
-
-    // Log cancellation
-    await backupLogger.logOperationCancelled(context: logContext)
-
-    // Cancel the operation
-    await token.setCancelled(true)
-
-    // Remove the token
-    activeOperationsCancellationTokens[id]=nil
 
     return true
   }
 
   /**
-   * Implementation of cancellation logic.
-   * This handles the actual cancellation work.
+   * Lists all currently active backup operations.
    *
-   * - Parameter token: The operation token to cancel
+   * - Returns: Array of active operation tokens
    */
-  private func cancelOperationImpl(token: BackupOperationToken) async throws {
-    // Signal cancellation to the operation
-    await token.setCancelled(true)
-
-    // Remove from active operations
-    activeOperations[token.id]=nil
-
-    // Log the cancellation
-    let logContext=BackupLogContext(
-      source: "BackupServicesActor.cancelOperationImpl"
-    )
-    .withPublic(key: "operation", value: "cancelOperationImpl")
-    .withPublic(key: "operationID", value: token.id.uuidString)
-    .withPublic(key: "operationType", value: token.operationType.rawValue)
-
-    await backupLogger.info("Operation cancellation complete", context: logContext)
-  }
-
-  // MARK: - Helper Methods
-
-  /**
-   * Maps any error to a BackupOperationError.
-   *
-   * - Parameter error: The error to map
-   * - Returns: A BackupOperationError
-   */
-  private func mapError(_ error: Error) -> BackupOperationError {
-    if let backupError=error as? BackupOperationError {
-      backupError
-    } else if error is CancellationError {
-      .operationCancelled("Operation was cancelled")
-    } else if let repositoryError=error as? BackupOperationError {
-      repositoryError
-    } else if let timeout=error as? TimeoutError {
-      .timeout("Operation timed out after \(timeout.duration) seconds")
-    } else {
-      .unexpected("Unexpected error: \(error.localizedDescription)")
-    }
+  public func listActiveOperations() async -> [BackupOperationToken] {
+    Array(activeOperations.values)
   }
 }

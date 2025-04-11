@@ -33,13 +33,13 @@ public actor RateLimiterAdapter: BaseRateLimiter {
   public init(
     rateLimiter: RateLimiterProtocol,
     domain: String,
-    maxOperationsPerMinute: Int = 30,
-    cooldownPeriod: TimeInterval = 30
+    maxOperationsPerMinute: Int=30,
+    cooldownPeriod: TimeInterval=30
   ) {
-    actorRateLimiter = rateLimiter
-    self.domain = domain
-    self.maxOperationsPerMinute = maxOperationsPerMinute
-    self.cooldownPeriod = cooldownPeriod
+    actorRateLimiter=rateLimiter
+    self.domain=domain
+    self.maxOperationsPerMinute=maxOperationsPerMinute
+    self.cooldownPeriod=cooldownPeriod
   }
 
   /**

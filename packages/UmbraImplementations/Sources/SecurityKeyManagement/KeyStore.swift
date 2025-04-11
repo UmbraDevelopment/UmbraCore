@@ -94,8 +94,8 @@ public actor KeyStore: KeyStorage {
 
   /// Initialise with a specific key storage implementation
   /// - Parameter keyStorage: The key storage to use
-  public init(keyStorage: KeyStorage = KeyStorageFactory.createKeyStorage()) {
-    self.keyStorage = keyStorage
+  public init(keyStorage: KeyStorage=KeyStorageFactory.createKeyStorage()) {
+    self.keyStorage=keyStorage
   }
 
   // MARK: - KeyStorage Protocol Implementation

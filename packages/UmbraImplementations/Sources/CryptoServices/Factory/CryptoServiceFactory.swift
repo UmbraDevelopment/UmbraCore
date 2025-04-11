@@ -61,7 +61,7 @@ public actor CryptoServiceFactory {
   // MARK: - Properties
 
   /// Shared instance for singleton access pattern
-  public static let shared = CryptoServiceFactory()
+  public static let shared=CryptoServiceFactory()
 
   /**
    Creates a default CryptoServiceProtocol implementation.
@@ -72,15 +72,14 @@ public actor CryptoServiceFactory {
    - Returns: A default CryptoServiceProtocol implementation
    */
   public func createDefault(
-    secureStorage: SecureStorageProtocol? = nil,
-    logger: LoggingProtocol? = nil
+    secureStorage: SecureStorageProtocol?=nil,
+    logger: LoggingProtocol?=nil
   ) async -> CryptoServiceProtocol {
     // Create the appropriate secure storage if not provided
-    let actualSecureStorage: SecureStorageProtocol
-    if let secureStorage {
-      actualSecureStorage = secureStorage
+    let actualSecureStorage: SecureStorageProtocol=if let secureStorage {
+      secureStorage
     } else {
-      actualSecureStorage = await createLocalSecureStorage(logger: logger)
+      await createLocalSecureStorage(logger: logger)
     }
 
     // Create a default implementation using the new command-based architecture
@@ -101,25 +100,23 @@ public actor CryptoServiceFactory {
    */
   public func createWithProviderType(
     providerType: SecurityProviderType = .basic,
-    secureStorage: SecureStorageProtocol? = nil,
-    logger: LoggingProtocol? = nil
+    secureStorage: SecureStorageProtocol?=nil,
+    logger: LoggingProtocol?=nil
   ) async -> CryptoServiceProtocol {
     // For basic provider type, use our command-based DefaultCryptoService
     if providerType == .basic {
       return await createDefault(secureStorage: secureStorage, logger: logger)
     }
-    
+
     // Create the appropriate secure storage if not provided
-    let actualSecureStorage: SecureStorageProtocol
-    if let secureStorage {
-      actualSecureStorage = secureStorage
+    let actualSecureStorage: SecureStorageProtocol=if let secureStorage {
+      secureStorage
     } else {
-      actualSecureStorage = await createLocalSecureStorage(logger: logger)
+      await createLocalSecureStorage(logger: logger)
     }
 
-    // Create the implementation with the requested provider
-    // Note: In future, we should refactor this to also use a command-based implementation
-    return DefaultCryptoServiceWithProviderImpl(
+    // Create the implementation using our new command-based provider architecture
+    return CryptoServiceWithProvider(
       secureStorage: actualSecureStorage,
       providerType: providerType,
       logger: logger
@@ -135,15 +132,15 @@ public actor CryptoServiceFactory {
    - Returns: A secure storage implementation
    */
   private func createLocalSecureStorage(
-    logger: LoggingProtocol? = nil
+    logger: LoggingProtocol?=nil
   ) async -> SecureStorageProtocol {
     // Use the provided logger or create a suitable default
     let actualLogger: LoggingProtocol?
     if let logger {
-      actualLogger = logger
+      actualLogger=logger
     } else {
-      let factory = LoggingServiceFactory.shared
-      actualLogger = await factory.createDevelopmentLogger(
+      let factory=LoggingServiceFactory.shared
+      actualLogger=await factory.createDevelopmentLogger(
         minimumLevel: .info
       )
     }
@@ -170,21 +167,21 @@ public actor CryptoServiceFactory {
    - Returns: A CryptoServiceProtocol implementation with high security features
    */
   public static func createHighSecurityCryptoService(
-    secureStorage: SecureStorageProtocol? = nil,
-    logger: LoggingProtocol? = nil
+    secureStorage: SecureStorageProtocol?=nil,
+    logger: LoggingProtocol?=nil
   ) async -> CryptoServiceProtocol {
-    let factory = CryptoServiceFactory.shared
-    let loggingFactory = LoggingServiceFactory.shared
+    let factory=CryptoServiceFactory.shared
+    let loggingFactory=LoggingServiceFactory.shared
 
     // Use privacy-aware logger with appropriate privacy controls
-    let actualLogger: LoggingProtocol = if let logger {
+    let actualLogger: LoggingProtocol=if let logger {
       logger
     } else {
       await loggingFactory.createPrivacyAwareLogger()
     }
 
     // Get or create secure storage
-    let actualSecureStorage: SecureStorageProtocol = if let secureStorage {
+    let actualSecureStorage: SecureStorageProtocol=if let secureStorage {
       secureStorage
     } else {
       await factory.createLocalSecureStorage(logger: actualLogger)
@@ -216,16 +213,16 @@ public actor CryptoServiceFactory {
    - Returns: A CryptoServiceProtocol implementation with maximum security features
    */
   public static func createMaxSecurityCryptoService(
-    secureStorage: SecureStorageProtocol? = nil,
-    logger: LoggingProtocol? = nil
+    secureStorage: SecureStorageProtocol?=nil,
+    logger: LoggingProtocol?=nil
   ) async -> CryptoServiceProtocol {
     // For now, we'll use the high-security implementation with stricter parameters
     // This should be enhanced in the future with a dedicated MaxSecurityCryptoService
-    let service = await createHighSecurityCryptoService(
+    let service=await createHighSecurityCryptoService(
       secureStorage: secureStorage,
       logger: logger
     )
-    
+
     // In future, this should instantiate a dedicated MaxSecurityCryptoService
     return service
   }

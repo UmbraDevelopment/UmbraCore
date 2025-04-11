@@ -54,7 +54,7 @@ public actor FilePathService: FilePathServiceProtocol {
   public init() {}
 
   public nonisolated func join(_ components: String...) -> String {
-    let path = NSString.path(withComponents: components) as String
+    let path=NSString.path(withComponents: components) as String
     return (path as NSString).standardizingPath
   }
 
@@ -63,11 +63,16 @@ public actor FilePathService: FilePathServiceProtocol {
   }
 
   public nonisolated func isPathWithinRoot(_ path: String, rootDirectory: String) -> Bool {
-    let normalizedPath = normalise(path)
-    let normalizedRoot = normalise(rootDirectory)
+    let normalizedPath=normalise(path)
+    let normalizedRoot=normalise(rootDirectory)
 
     return normalizedPath.hasPrefix(normalizedRoot) &&
-      (normalizedPath.count == normalizedRoot.count ||
-       normalizedPath[normalizedPath.index(normalizedPath.startIndex, offsetBy: normalizedRoot.count)] == "/")
+      (
+        normalizedPath.count == normalizedRoot.count ||
+          normalizedPath[normalizedPath.index(
+            normalizedPath.startIndex,
+            offsetBy: normalizedRoot.count
+          )] == "/"
+      )
   }
 }

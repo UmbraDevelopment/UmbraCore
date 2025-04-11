@@ -37,25 +37,25 @@ public enum SecurityProviderFactory {
    - Returns: A configured SecurityProviderProtocol instance
    */
   public static func createStandardSecurityProvider(
-    logger: LoggingInterfaces.LoggingProtocol? = nil
+    logger: LoggingInterfaces.LoggingProtocol?=nil
   ) async -> SecurityProviderProtocol {
     // Create standard crypto service
-    let cryptoService = await CryptoServiceFactory.shared
+    let cryptoService=await CryptoServiceFactory.shared
       .createDefault(logger: logger)
 
     // Use the provided logger or create a default one with debug level logging
     let actualLogger: LoggingInterfaces.LoggingProtocol
     if let logger {
-      actualLogger = logger
+      actualLogger=logger
     } else {
       // Create a development logger with appropriate settings
-      let factory = LoggingServiceFactory.shared
-      let developmentLogger = await factory.createDevelopmentLogger(
+      let factory=LoggingServiceFactory.shared
+      let developmentLogger=await factory.createDevelopmentLogger(
         minimumLevel: .debug,
         formatter: nil
       )
       // Convert the LoggingServiceActor to LoggingProtocol using a wrapper
-      actualLogger = await SecurityLoggingUtilities.createLoggingWrapper(logger: developmentLogger)
+      actualLogger=await SecurityLoggingUtilities.createLoggingWrapper(logger: developmentLogger)
     }
 
     // Create security provider with standard configuration
@@ -80,25 +80,25 @@ public enum SecurityProviderFactory {
    - Returns: A configured SecurityProviderProtocol instance
    */
   public static func createHighSecurityProvider(
-    logger: LoggingInterfaces.LoggingProtocol? = nil
+    logger: LoggingInterfaces.LoggingProtocol?=nil
   ) async -> SecurityProviderProtocol {
     // Create high-security crypto service
-    let cryptoService = await CryptoServiceFactory.shared
+    let cryptoService=await CryptoServiceFactory.shared
       .createHighSecurityCryptoService(logger: logger)
 
     // Use the provided logger or create a default one with debug level logging
     let actualLogger: LoggingInterfaces.LoggingProtocol
     if let logger {
-      actualLogger = logger
+      actualLogger=logger
     } else {
       // Create an advanced logger with appropriate settings
-      let factory = LoggingServiceFactory.shared
-      let securityLogger = await factory.createSecureLogger(
+      let factory=LoggingServiceFactory.shared
+      let securityLogger=await factory.createSecureLogger(
         minimumLevel: .info,
         subsystem: "com.umbra.security",
         category: "HighSecurity"
       )
-      actualLogger = await SecurityLoggingUtilities.createLoggingWrapper(logger: securityLogger)
+      actualLogger=await SecurityLoggingUtilities.createLoggingWrapper(logger: securityLogger)
     }
 
     // Create security provider with high security configuration
@@ -124,25 +124,25 @@ public enum SecurityProviderFactory {
    - Returns: A configured SecurityProviderProtocol instance
    */
   public static func createMaximumSecurityProvider(
-    logger: LoggingInterfaces.LoggingProtocol? = nil
+    logger: LoggingInterfaces.LoggingProtocol?=nil
   ) async -> SecurityProviderProtocol {
     // Create maximum-security crypto service
-    let cryptoService = await CryptoServiceFactory.shared
+    let cryptoService=await CryptoServiceFactory.shared
       .createMaximumSecurityCryptoService(logger: logger)
 
     // Use the provided logger or create a default one with comprehensive logging
     let actualLogger: LoggingInterfaces.LoggingProtocol
     if let logger {
-      actualLogger = logger
+      actualLogger=logger
     } else {
       // Create a comprehensive logger with appropriate settings
-      let factory = LoggingServiceFactory.shared
-      let maxSecurityLogger = await factory.createSecureLogger(
+      let factory=LoggingServiceFactory.shared
+      let maxSecurityLogger=await factory.createSecureLogger(
         minimumLevel: .debug,
         subsystem: "com.umbra.security",
         category: "MaxSecurity"
       )
-      actualLogger = await SecurityLoggingUtilities.createLoggingWrapper(logger: maxSecurityLogger)
+      actualLogger=await SecurityLoggingUtilities.createLoggingWrapper(logger: maxSecurityLogger)
     }
 
     // Create security provider with maximum security configuration

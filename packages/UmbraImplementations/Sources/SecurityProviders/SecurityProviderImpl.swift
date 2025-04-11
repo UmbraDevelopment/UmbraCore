@@ -1737,28 +1737,28 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
 
   /**
    Performs an HMAC-SHA256 operation on the provided data with the given key.
-   
+
    - Parameters:
      - data: The data to generate a MAC for
      - key: The key to use for the HMAC
    - Returns: An array of bytes representing the HMAC
    */
   private func hmacSHA256(data: [UInt8], key: [UInt8]) -> [UInt8] {
-    var digest = [UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
-    
+    var digest=[UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
+
     CCHmac(
       CCHmacAlgorithm(kCCHmacAlgSHA256),
       key, key.count,
       data, data.count,
       &digest
     )
-    
+
     return digest
   }
-  
+
   /**
    Performs a constant-time comparison of two byte arrays.
-   
+
    - Parameters:
      - lhs: First byte array
      - rhs: Second byte array
@@ -1769,13 +1769,13 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
     guard lhs.count == rhs.count else {
       return false
     }
-    
+
     // Perform constant-time comparison
-    var result: UInt8 = 0
+    var result: UInt8=0
     for i in 0..<lhs.count {
       result |= lhs[i] ^ rhs[i]
     }
-    
+
     return result == 0
   }
 }

@@ -314,9 +314,10 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
     let securityConfig=await provider.createSecureConfig(options: configOptions)
 
     // Create a new security config with the desired hash algorithm
-    let securityConfigWithAlgorithm = SecurityConfigDTO(
+    let securityConfigWithAlgorithm=SecurityConfigDTO(
       encryptionAlgorithm: securityConfig.encryptionAlgorithm,
-      hashAlgorithm: .sha256, // Default to SHA-256 rather than using options?.algorithm which is an EncryptionAlgorithm
+      hashAlgorithm: .sha256,
+      // Default to SHA-256 rather than using options?.algorithm which is an EncryptionAlgorithm
       providerType: securityConfig.providerType,
       options: SecurityConfigOptions(
         enableDetailedLogging: securityConfig.options?.enableDetailedLogging ?? false,
@@ -498,9 +499,10 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
     let securityConfig=await provider.createSecureConfig(options: configOptions)
 
     // Create a new security config with the desired hash algorithm
-    let securityConfigWithAlgorithm = SecurityConfigDTO(
+    let securityConfigWithAlgorithm=SecurityConfigDTO(
       encryptionAlgorithm: securityConfig.encryptionAlgorithm,
-      hashAlgorithm: .sha256, // Default to SHA-256 rather than using options?.algorithm which is an EncryptionAlgorithm
+      hashAlgorithm: .sha256,
+      // Default to SHA-256 rather than using options?.algorithm which is an EncryptionAlgorithm
       providerType: securityConfig.providerType,
       options: SecurityConfigOptions(
         enableDetailedLogging: securityConfig.options?.enableDetailedLogging ?? false,
@@ -722,9 +724,10 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
     let securityConfig=await provider.createSecureConfig(options: configOptions)
 
     // Create a new security config with the desired hash algorithm
-    let securityConfigWithAlgorithm = SecurityConfigDTO(
+    let securityConfigWithAlgorithm=SecurityConfigDTO(
       encryptionAlgorithm: securityConfig.encryptionAlgorithm,
-      hashAlgorithm: .sha256, // Default to SHA-256 rather than using options?.algorithm which is an EncryptionAlgorithm
+      hashAlgorithm: .sha256,
+      // Default to SHA-256 rather than using options?.algorithm which is an EncryptionAlgorithm
       providerType: securityConfig.providerType,
       options: SecurityConfigOptions(
         enableDetailedLogging: securityConfig.options?.enableDetailedLogging ?? false,
@@ -845,10 +848,10 @@ public actor DefaultCryptoServiceWithProviderImpl: CryptoServiceProtocol {
 
     // Add additional options if provided
     if let options {
-      metadata["useSecureEnclave"] = String(options.useSecureEnclave)
-      metadata["isExtractable"] = String(options.isExtractable)
+      metadata["useSecureEnclave"]=String(options.useSecureEnclave)
+      metadata["isExtractable"]=String(options.isExtractable)
       // Add key type metadata
-      metadata["keyTypeName"] = options.keyType.rawValue
+      metadata["keyTypeName"]=options.keyType.rawValue
     }
     configOptions.metadata=metadata
 

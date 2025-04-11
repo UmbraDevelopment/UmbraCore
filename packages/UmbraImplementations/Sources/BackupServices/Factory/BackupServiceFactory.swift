@@ -50,124 +50,114 @@ public actor BackupServiceFactory {
 
     // Create repository info
     let repositoryInfo=RepositoryInfo(
-      location: repositoryPath,
+      path: repositoryPath,
       password: repositoryPassword
     )
 
-    // Create the backup service
-    return await createService(
-      resticService: resticService,
-      logger: logger,
-      repositoryInfo: repositoryInfo,
-      useCache: useCache
-    )
-  }
-
-  /**
-   * Creates a new backup service with the specified dependencies
-   * following the Alpha Dot Five architecture.
-   *
-   * - Parameters:
-   *   - resticService: The Restic service to use for backend operations
-   *   - logger: Logger for operation tracking
-   *   - repositoryInfo: Repository information
-   *   - useCache: Whether to cache and reuse the created service
-   * - Returns: A configured backup service
-   */
-  public func createService(
-    resticService: ResticServiceProtocol,
-    logger: any LoggingProtocol,
-    repositoryInfo: RepositoryInfo,
-    useCache: Bool=true
-  ) async -> BackupServiceProtocol {
-    // Check cache first if enabled
-    if useCache, let cachedService=serviceCache[repositoryInfo.location] {
+    // Check if we have a cached service
+    if useCache, let cachedService=serviceCache[repositoryPath] {
       return cachedService
     }
 
-    // Create dependencies
-    let errorMapper=BackupErrorMapper()
-    let cancellationHandler=CancellationHandler()
-    let metricsCollector=BackupMetricsCollector()
-
-    // Create operations service
-    let operationsService=BackupOperationsService(
-      resticService: resticService,
-      repositoryInfo: repositoryInfo,
-      commandFactory: BackupCommandFactory(),
-      resultParser: BackupResultParser()
-    )
-
-    // Create operation executor
-    let operationExecutor=BackupOperationExecutor(
-      logger: logger,
-      cancellationHandler: cancellationHandler,
-      metricsCollector: metricsCollector,
-      errorLogContextMapper: ErrorLogContextMapper(),
-      errorMapper: errorMapper
-    )
-
-    // Create the actor-based implementation
-    let service=BackupServicesActor(
+    // Create a new backup services actor
+    let backupService=BackupServicesActor(
       resticService: resticService,
       logger: logger,
       repositoryInfo: repositoryInfo
     )
 
-    // Cache the service if enabled
+    // Cache the service if requested
     if useCache {
-      serviceCache[repositoryInfo.location]=service
+      serviceCache[repositoryPath]=backupService
     }
 
-    return service
+    return backupService
   }
 
   /**
-   * Creates a new backup service using the Restic service factory
+   * Creates a backup service with a custom Restic service.
    *
    * - Parameters:
-   *   - resticServiceFactory: Factory for creating Restic services
+   *   - resticService: The Restic service to use
    *   - logger: Logger for operation tracking
    *   - repositoryPath: Path to the repository
    *   - repositoryPassword: Optional repository password
    *   - useCache: Whether to cache and reuse the created service
    * - Returns: A configured backup service
-   * - Throws: Error if Restic service creation fails
    */
-  public func createService(
-    resticServiceFactory: ResticServiceFactory,
+  public func create(
+    resticService: ResticServiceProtocol,
     logger: any LoggingProtocol,
     repositoryPath: String,
     repositoryPassword: String?=nil,
     useCache: Bool=true
-  ) async throws -> BackupServiceProtocol {
-    // Check cache first if enabled
+  ) async -> BackupServiceProtocol {
+    // Create repository info
+    let repositoryInfo=RepositoryInfo(
+      path: repositoryPath,
+      password: repositoryPassword
+    )
+
+    // Check if we have a cached service
     if useCache, let cachedService=serviceCache[repositoryPath] {
       return cachedService
     }
 
-    // Create the Restic service
-    let resticService=try resticServiceFactory.createService(
-      executablePath: "/usr/local/bin/restic",
-      defaultRepository: repositoryPath,
-      defaultPassword: repositoryPassword,
-      progressDelegate: nil
-    )
-
-    // Create repository info
-    let repositoryInfo=RepositoryInfo(
-      location: repositoryPath,
-      id: UUID().uuidString, // This would be obtained from the repository
-      password: repositoryPassword
-    )
-
-    // Create backup service using Alpha Dot Five architecture
-    return await createService(
+    // Create a new backup services actor
+    let backupService=BackupServicesActor(
       resticService: resticService,
       logger: logger,
-      repositoryInfo: repositoryInfo,
-      useCache: useCache
+      repositoryInfo: repositoryInfo
     )
+
+    // Cache the service if requested
+    if useCache {
+      serviceCache[repositoryPath]=backupService
+    }
+
+    return backupService
+  }
+
+  /**
+   * Creates a backup service with a specific repository configuration.
+   *
+   * - Parameters:
+   *   - logger: Logger for operation tracking
+   *   - repositoryInfo: Repository connection details
+   *   - useCache: Whether to cache and reuse the created service
+   * - Returns: A configured backup service
+   * - Throws: Error if Restic service creation fails
+   */
+  public func create(
+    logger: any LoggingProtocol,
+    repositoryInfo: RepositoryInfo,
+    useCache: Bool=true
+  ) async throws -> BackupServiceProtocol {
+    // Create a default Restic service
+    let resticService=try await ResticServiceFactory.shared.createDefault(
+      logger: logger,
+      repositoryPath: repositoryInfo.path,
+      repositoryPassword: repositoryInfo.password
+    )
+
+    // Check if we have a cached service
+    if useCache, let cachedService=serviceCache[repositoryInfo.path] {
+      return cachedService
+    }
+
+    // Create a new backup services actor
+    let backupService=BackupServicesActor(
+      resticService: resticService,
+      logger: logger,
+      repositoryInfo: repositoryInfo
+    )
+
+    // Cache the service if requested
+    if useCache {
+      serviceCache[repositoryInfo.path]=backupService
+    }
+
+    return backupService
   }
 
   /**
@@ -178,19 +168,5 @@ public actor BackupServiceFactory {
    */
   public func clearCache() {
     serviceCache.removeAll()
-  }
-
-  /**
-   * Removes a specific service from the cache
-   *
-   * - Parameter repositoryPath: The repository path associated with the service to remove
-   * - Returns: True if a service was removed, false if no service was found
-   */
-  public func removeFromCache(repositoryPath: String) -> Bool {
-    if serviceCache[repositoryPath] != nil {
-      serviceCache[repositoryPath]=nil
-      return true
-    }
-    return false
   }
 }

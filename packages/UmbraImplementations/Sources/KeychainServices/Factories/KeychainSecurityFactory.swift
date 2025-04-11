@@ -39,19 +39,19 @@ public enum KeychainSecurityFactory {
  */
 actor KeychainSecureStorage: SecureStorageProtocol {
   // Dictionary for storing data, simulating keychain storage
-  private var storage: [String: [UInt8]] = [:]
+  private var storage: [String: [UInt8]]=[:]
 
   public func storeData(
     _ data: [UInt8],
     withIdentifier identifier: String
   ) async -> Result<Void, SecurityStorageError> {
-    storage[identifier] = data
+    storage[identifier]=data
     return .success(())
   }
 
   public func retrieveData(withIdentifier identifier: String) async
   -> Result<[UInt8], SecurityStorageError> {
-    if let data = storage[identifier] {
+    if let data=storage[identifier] {
       .success(data)
     } else {
       .failure(.dataNotFound)
@@ -83,8 +83,8 @@ actor BasicCryptoService: CryptoServiceProtocol {
   private let logger: LoggingProtocol
 
   init(logger: LoggingProtocol) {
-    secureStorage = KeychainSecureStorage()
-    self.logger = logger
+    secureStorage=KeychainSecureStorage()
+    self.logger=logger
   }
 
   public func encrypt(

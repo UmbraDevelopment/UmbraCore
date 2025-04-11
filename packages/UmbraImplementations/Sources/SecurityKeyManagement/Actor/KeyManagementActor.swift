@@ -170,28 +170,28 @@ public actor KeyManagementActor: KeyManagementProtocol {
 
   /**
    Implements the protocol-compliant version of storeKey.
-   
+
    - Parameters:
      - key: The security key as a byte array.
      - identifier: A string identifier for the key.
    - Returns: A Result indicating success or an error.
    */
   public func storeKey(_ key: [UInt8], withIdentifier identifier: String) async
-    -> Result<Void, SecurityProtocolError> {
+  -> Result<Void, SecurityProtocolError> {
     // Call the more comprehensive implementation with empty additionalInfo
-    return await storeKeyInternal(key, withIdentifier: identifier, additionalInfo: [:])
+    await storeKeyInternal(key, withIdentifier: identifier, additionalInfo: [:])
   }
 
   /**
    Enhanced version of storeKey that supports additional metadata.
-   
+
    - Parameters:
      - key: The security key as a byte array.
      - identifier: A string identifier for the key.
      - additionalInfo: Optional dictionary of additional metadata about the key.
    - Returns: A Result indicating success or an error.
    */
-  internal func storeKeyInternal(
+  func storeKeyInternal(
     _ key: [UInt8],
     withIdentifier identifier: String,
     additionalInfo: [String: String]=[:]

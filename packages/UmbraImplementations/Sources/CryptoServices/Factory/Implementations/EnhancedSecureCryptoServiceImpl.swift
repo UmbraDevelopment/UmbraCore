@@ -104,7 +104,7 @@ public actor EnhancedSecureCryptoServiceImpl: @preconcurrency CryptoServiceProto
   private func isOperationRateLimited(_ operation: String) async -> Bool {
     // Access rateLimiter directly within the actor context
     // This is safe since we're already in an actor context
-    return await rateLimiter.isRateLimited(operation)
+    await rateLimiter.isRateLimited(operation)
   }
 
   // MARK: - Encryption Operations

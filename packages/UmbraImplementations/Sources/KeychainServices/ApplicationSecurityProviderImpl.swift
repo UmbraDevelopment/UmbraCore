@@ -175,7 +175,7 @@ private final class MockCryptoService: CryptoServiceProtocol {
  */
 private actor ApplicationSecureStorage: SecureStorageProtocol {
   // Dictionary for storing secure data
-  private var dataStore: [String: [UInt8]] = [:]
+  private var dataStore: [String: [UInt8]]=[:]
 
   init() {}
 
@@ -183,13 +183,13 @@ private actor ApplicationSecureStorage: SecureStorageProtocol {
     _ data: [UInt8],
     withIdentifier identifier: String
   ) async -> Result<Void, SecurityStorageError> {
-    dataStore[identifier] = data
+    dataStore[identifier]=data
     return .success(())
   }
 
   public func retrieveData(withIdentifier identifier: String) async
   -> Result<[UInt8], SecurityStorageError> {
-    if let data = dataStore[identifier] {
+    if let data=dataStore[identifier] {
       .success(data)
     } else {
       .failure(.dataNotFound)
@@ -354,17 +354,17 @@ public actor ApplicationSecurityProviderImpl: SecurityProviderProtocol {
 
   /**
    Verifies a cryptographic hash against the expected value.
-   
+
    - Parameter config: Configuration for the operation
    - Returns: A result object with verification status or error details
    - Throws: If the verification operation fails due to configuration issues
    */
-  public func verifyHash(config: SecurityConfigDTO) async throws -> SecurityResultDTO {
+  public func verifyHash(config _: SecurityConfigDTO) async throws -> SecurityResultDTO {
     // This is a placeholder implementation
     // In production, this would compare the data hash against an expected value
-    
-    let isValid = true // Placeholder result
-    
+
+    let isValid=true // Placeholder result
+
     return SecurityResultDTO.success(
       resultData: Data([isValid ? 1 : 0]), // 1 for valid, 0 for invalid
       executionTimeMs: 0.4,

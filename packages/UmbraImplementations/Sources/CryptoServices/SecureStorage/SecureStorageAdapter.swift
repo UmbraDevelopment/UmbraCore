@@ -41,8 +41,8 @@ public actor SecureStorageAdapter: SecureStorageProtocol {
       - logger: Logger for recording operations
    */
   public init(storage: SecureCryptoStorage, logger: any LoggingProtocol) {
-    self.storage = storage
-    self.logger = logger
+    self.storage=storage
+    self.logger=logger
   }
 
   /**
@@ -73,7 +73,7 @@ public actor SecureStorageAdapter: SecureStorageProtocol {
 
     do {
       try await storage.storeData(Data(data), identifier: identifier)
-      
+
       await logger.debug(
         "Data stored successfully",
         context: CryptoLogContext(
@@ -84,7 +84,7 @@ public actor SecureStorageAdapter: SecureStorageProtocol {
           )
         )
       )
-      
+
       return .success(())
     } catch {
       await logger.error(
@@ -97,7 +97,7 @@ public actor SecureStorageAdapter: SecureStorageProtocol {
           )
         )
       )
-      
+
       return .failure(.generalError(reason: error.localizedDescription))
     }
   }
@@ -123,7 +123,7 @@ public actor SecureStorageAdapter: SecureStorageProtocol {
     )
 
     do {
-      let data = try await storage.retrieveData(identifier: identifier)
+      let data=try await storage.retrieveData(identifier: identifier)
 
       await logger.debug(
         "Data retrieved successfully",
@@ -138,7 +138,7 @@ public actor SecureStorageAdapter: SecureStorageProtocol {
           )
         )
       )
-      
+
       return .success(Array(data))
     } catch {
       await logger.error(
@@ -151,8 +151,8 @@ public actor SecureStorageAdapter: SecureStorageProtocol {
           )
         )
       )
-      
-      if let storageError = error as? StorageError, case .dataNotFound = storageError {
+
+      if let storageError=error as? StorageError, case .dataNotFound=storageError {
         return .failure(.dataNotFound)
       } else {
         return .failure(.generalError(reason: error.localizedDescription))
@@ -193,7 +193,7 @@ public actor SecureStorageAdapter: SecureStorageProtocol {
           )
         )
       )
-      
+
       return .success(())
     } catch {
       await logger.error(
@@ -206,7 +206,7 @@ public actor SecureStorageAdapter: SecureStorageProtocol {
           )
         )
       )
-      
+
       return .failure(.generalError(reason: error.localizedDescription))
     }
   }

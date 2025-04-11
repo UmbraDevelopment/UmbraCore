@@ -35,7 +35,7 @@ import UmbraErrors
  */
 public actor InMemoryKeyStore: KeyStorage {
   /// Dictionary to store keys by their identifier
-  private var keys: [String: [UInt8]] = [:]
+  private var keys: [String: [UInt8]]=[:]
 
   /// Initialises an empty storage
   public init() {}
@@ -46,7 +46,7 @@ public actor InMemoryKeyStore: KeyStorage {
   ///   - identifier: The identifier for the key
   /// - Throws: An error if storing the key fails
   public func storeKey(_ key: [UInt8], identifier: String) async throws {
-    keys[identifier] = key
+    keys[identifier]=key
   }
 
   /// Get a key by identifier
@@ -78,7 +78,7 @@ public actor InMemoryKeyStore: KeyStorage {
   public func listKeyIdentifiers() async throws -> [String] {
     Array(keys.keys)
   }
-  
+
   /// Get all key identifiers
   /// - Returns: An array of all key identifiers
   /// - Throws: An error if retrieving the identifiers fails

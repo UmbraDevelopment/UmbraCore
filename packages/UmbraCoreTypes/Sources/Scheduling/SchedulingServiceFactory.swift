@@ -136,15 +136,15 @@ private actor DefaultSchedulingService: SchedulingServiceProtocol {
 
   /// Initialise with the default calendar
   init() {
-    var calendar = Calendar.current
-    calendar.timeZone = TimeZone.current
-    actor = SchedulingActor(calendar: calendar)
+    var calendar=Calendar.current
+    calendar.timeZone=TimeZone.current
+    actor=SchedulingActor(calendar: calendar)
   }
 
   /// Initialise with a custom calendar
   /// - Parameter calendar: The calendar to use
   init(calendar: Calendar) {
-    actor = SchedulingActor(calendar: calendar)
+    actor=SchedulingActor(calendar: calendar)
   }
 
   // MARK: - Schedule Management
@@ -699,16 +699,16 @@ private actor DefaultSchedulingService: SchedulingServiceProtocol {
     taskID: String,
     callback: @Sendable @escaping (ScheduledTaskDTO) -> Void
   ) -> String {
-    let registrationID = UUID().uuidString
-    
+    let registrationID=UUID().uuidString
+
     // Use a Task to bridge between nonisolated and isolated contexts
-    Task { 
+    Task {
       await actor.registerCallback(
         for: taskID,
         callback: callback
       )
     }
-    
+
     return registrationID
   }
 

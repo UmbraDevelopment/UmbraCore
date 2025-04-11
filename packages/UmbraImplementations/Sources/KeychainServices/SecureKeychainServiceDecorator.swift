@@ -50,8 +50,8 @@ public actor SecureKeychainServiceDecorator: KeychainServiceProtocol {
       - logger: Logger for security auditing
    */
   public init(wrapping service: KeychainServiceProtocol, logger: LoggingProtocol) {
-    wrappedService = service
-    self.logger = logger
+    wrappedService=service
+    self.logger=logger
   }
 
   /**
