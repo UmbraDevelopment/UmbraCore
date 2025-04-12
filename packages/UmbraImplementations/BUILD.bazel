@@ -1,0 +1,34 @@
+load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
+
+# Define a build flag for crypto implementation selection
+string_flag(
+    name = "crypto_implementation",
+    build_setting_default = "standard",
+    values = [
+        "standard",
+        "xfn",
+        "apple",
+    ],
+)
+
+# Configuration settings to control which implementation is used
+config_setting(
+    name = "crypto_standard_impl",
+    flag_values = {
+        ":crypto_implementation": "standard",
+    },
+)
+
+config_setting(
+    name = "crypto_xfn_impl",
+    flag_values = {
+        ":crypto_implementation": "xfn",
+    },
+)
+
+config_setting(
+    name = "crypto_apple_impl",
+    flag_values = {
+        ":crypto_implementation": "apple",
+    },
+)

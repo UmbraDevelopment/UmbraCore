@@ -8,6 +8,9 @@ umbra_swift_library(
         "**/*Tests.swift",
     ]),
     visibility = ["//visibility:public"],
+    copts = [
+        "-DCRYPTO_IMPLEMENTATION_APPLE",
+    ],
     deps = [
         "//packages/UmbraImplementations/Sources/CryptoServicesCore",
         "//packages/UmbraCoreTypes/Sources/CoreSecurityTypes",

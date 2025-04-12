@@ -1,12 +1,29 @@
 load("//bazel:swift_rules.bzl", "umbra_swift_library")
 
+# Configuration settings for conditional compilation
+config_setting(
+    name = "crypto_standard",
+    values = {"define": "crypto_implementation=standard"},
+)
+
+config_setting(
+    name = "crypto_xfn",
+    values = {"define": "crypto_implementation=xfn"},
+)
+
+config_setting(
+    name = "crypto_apple",
+    values = {"define": "crypto_implementation=apple"},
+)
+
+# Main CryptoServices module that uses conditional compilation
 umbra_swift_library(
     name = "CryptoServices",
     srcs = glob([
-        "**/*.swift",
+        "*.swift",  # Only include root Swift files for delegation
     ], exclude = [
         "**/*Tests.swift",
-        "Logging/**/*.swift",  # Exclude Logging files as they're in a separate target
+        "**/*.bak",
     ]),
     visibility = ["//visibility:public"],
     deps = [
@@ -21,8 +38,13 @@ umbra_swift_library(
         "//packages/UmbraInterfaces/Sources/CryptoInterfaces",
         "//packages/UmbraInterfaces/Sources/CoreInterfaces",
         "//packages/UmbraImplementations/Sources/LoggingServices",
-        "//packages/UmbraImplementations/Sources/SecurityProviders",
         "//packages/UmbraImplementations/Sources/CryptoServices/Logging:CryptoLogger",
         "//packages/UmbraCoreTypes/Sources/BuildConfig",
-    ],
+        "//packages/UmbraImplementations/Sources/CryptoServicesCore",
+    ] + select({
+        ":crypto_standard": ["//packages/UmbraImplementations/Sources/CryptoServicesStandard"],
+        ":crypto_xfn": ["//packages/UmbraImplementations/Sources/CryptoServicesXfn"],
+        ":crypto_apple": ["//packages/UmbraImplementations/Sources/CryptoServicesApple"],
+        "//conditions:default": ["//packages/UmbraImplementations/Sources/CryptoServicesStandard"],
+    }),
 )
