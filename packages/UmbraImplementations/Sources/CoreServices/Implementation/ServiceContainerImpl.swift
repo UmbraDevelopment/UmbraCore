@@ -1,6 +1,7 @@
 import CoreInterfaces
 import CryptoInterfaces
-import CryptoServices
+import CryptoServicesCore
+import CryptoServicesStandard
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
@@ -181,7 +182,9 @@ public final class ServiceContainerImpl: ServiceContainerProtocol {
 
       await self.logger.debug("Creating crypto service adapter", context: context)
 
-      let cryptoService=await CryptoServiceFactory.createDefault()
+      let cryptoService = await CryptoServiceRegistry.createService(
+          type: .standard
+      )
       return CryptoServiceAdapter(cryptoService: cryptoService)
     }
 

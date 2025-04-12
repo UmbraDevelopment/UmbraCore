@@ -1,52 +1,62 @@
 # CryptoServices
 
-CryptoServices provides concrete implementations of the cryptographic operations defined in the CryptoInterfaces module. This module contains the actual implementation code that performs cryptographic functions.
+CryptoServices provides a modular approach to cryptographic operations with explicitly selectable implementations. This module serves as the entry point for the modular cryptographic services architecture.
 
-## Contents
+## Modular Architecture
 
-This module contains:
+This module is part of a modular structure that includes:
 
-- The canonical `CryptoServiceFactory` for creating cryptographic service implementations
-- Default implementations of `CryptoServiceProtocol`
-- Implementations of `CredentialManagerProtocol`
-- Integration with platform-specific cryptographic libraries
+- **CryptoServicesCore** - Common utilities, factory, and registry
+- **CryptoServicesStandard** - Default AES-based implementation
+- **CryptoServicesXfn** - Cross-platform implementation with RingFFI and Argon2id
+- **CryptoServicesApple** - Apple-native implementation using CryptoKit
 
-## Usage Guidelines
+## Explicit Implementation Selection
 
-- Import this module when you need to perform cryptographic operations
-- Use `CryptoServiceFactory` to create cryptographic service implementations
-- Use dependency injection patterns to provide these implementations to other modules
-- Consider platform-specific optimisations where appropriate
-- Default implementations should be suitable for most use cases
-
-## Factory Usage
+Following the Alpha Dot Five architecture principles, this module requires developers to explicitly select which cryptographic implementation to use, rather than relying on automatic selection.
 
 ```swift
-// Create a crypto service with default configuration
-let cryptoService = await CryptoServiceFactory.shared.createDefault()
-
-// Create a crypto service with custom configuration
-let customService = await CryptoServiceFactory.shared.createDefault(
-    logger: customLogger,
-    secureStorage: mySecureStorage
+// Create a service with explicit type selection
+let cryptoService = await CryptoServiceRegistry.createService(
+    type: .applePlatform,
+    logger: myLogger
 )
+```
+
+## Documentation
+
+For comprehensive documentation on the cryptographic services architecture, implementation options, and migration guidance, please refer to:
+
+- [CRYPTOGRAPHIC_SERVICES_GUIDE.md](/packages/UmbraImplementations/Sources/CryptoServicesCore/CRYPTOGRAPHIC_SERVICES_GUIDE.md) - Complete guide to the modular cryptographic services
+
+## Build Configuration
+
+To build with a specific implementation:
+
+```bash
+# For standard implementation (default)
+bazelisk build //your/target --//packages/UmbraImplementations:crypto_implementation=standard
+
+# For cross-platform implementation
+bazelisk build //your/target --//packages/UmbraImplementations:crypto_implementation=xfn
+
+# For Apple platform implementation
+bazelisk build //your/target --//packages/UmbraImplementations:crypto_implementation=apple
 ```
 
 ## Relationship with Other Modules
 
 - Implements protocols defined in `CryptoInterfaces`
 - Uses types defined in `CryptoTypes`
-- Leverages `UmbraErrors` for proper error handling
+- Leverages proper error handling with appropriate error types
 - Works with `SecurityTypes` for secure data handling
 
 ## Migration Notes
 
-This module was created as part of splitting the original CryptoTypes module according to the Alpha Dot Five architecture:
+If you are migrating from the previous non-modular implementation:
 
-- Type definitions → UmbraCoreTypes/CryptoTypes
-- Interface definitions → UmbraInterfaces/CryptoInterfaces
-- Implementations → UmbraImplementations/CryptoServices (this module)
+1. Replace `CryptoServiceFactory.createDefault()` with explicit implementation selection
+2. Update imports to reference the specific implementation modules
+3. Consider the security characteristics of each implementation when making your selection
 
-The implementations have been updated to use `SecurityTypes.SecureBytes` instead of direct Foundation Data dependencies where possible, improving portability and conforming to the Alpha Dot Five principles.
-
-For detailed information about the consolidation of cryptographic service factories, see [FACTORY_CONSOLIDATION.md](FACTORY_CONSOLIDATION.md).
+For detailed migration guidance, see the comprehensive documentation referenced above.

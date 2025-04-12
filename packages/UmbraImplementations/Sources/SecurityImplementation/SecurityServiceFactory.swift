@@ -1,6 +1,7 @@
 import CoreSecurityTypes
 import CryptoInterfaces
-import CryptoServices
+import CryptoServicesCore
+import CryptoServicesStandard
 import Foundation
 import LoggingInterfaces
 import LoggingServices
@@ -70,7 +71,10 @@ public enum SecurityServiceFactory {
     configuration: CoreSecurityTypes.SecurityConfigDTO?=nil
   ) async -> SecurityProviderProtocol {
     // Create dependencies
-    let cryptoService=await CryptoServiceFactory.shared.createDefault(logger: logger)
+    let cryptoService = await CryptoServiceRegistry.createService(
+        type: .standard,
+        logger: logger
+    )
 
     // Create a secure logger if one wasn't provided
     let actualSecureLogger: LoggingInterfaces.LoggingProtocol=if let secureLogger {

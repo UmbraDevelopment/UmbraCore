@@ -1,6 +1,8 @@
 import CoreSecurityTypes
 import CryptoInterfaces
-import CryptoServices
+import CryptoServicesCore
+import CryptoServicesStandard
+import CryptoServicesXfn
 import Foundation
 import LoggingInterfaces
 import LoggingServices
@@ -113,17 +115,20 @@ public struct SecurityProviderFactory {
     // Select security level based on environment and backend
     if effectiveEnvironment == .production || effectiveEnvironment == .beta {
       // High security for production and beta environments
-      cryptoService = await CryptoServiceFactory.shared.createHighSecurityCryptoService(
+      cryptoService = await CryptoServiceRegistry.createService(
+        type: .crossPlatform,
         logger: actualLogger
       )
     } else if effectiveBackend == .ringFFI {
       // Maximum security for Ring FFI backend
-      cryptoService = await CryptoServiceFactory.shared.createMaximumSecurityCryptoService(
+      cryptoService = await CryptoServiceRegistry.createService(
+        type: .crossPlatform,
         logger: actualLogger
       )
     } else {
       // Standard security for development environments
-      cryptoService = await CryptoServiceFactory.shared.createDefault(
+      cryptoService = await CryptoServiceRegistry.createService(
+        type: .standard,
         logger: actualLogger
       )
     }
