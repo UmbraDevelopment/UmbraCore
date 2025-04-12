@@ -62,53 +62,40 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
     ])
     await logger.debug("Creating security bookmark", context: context)
 
-    do {
-      // Check if the file exists
-      guard fileManager.fileExists(atPath: path.path) else {
-        let error=FileSystemError.pathNotFound(path: path.path)
-        let errorContext=createSecureFileLogContext(["path": path.path])
-        await logger.error("File not found", context: errorContext)
-        throw error
-      }
-
-      let url=URL(fileURLWithPath: path.path)
-      let bookmarkOptions: URL
-        .BookmarkCreationOptions=readOnly ? [.securityScopeAllowOnlyReadAccess] : []
-
-      let bookmarkData=try url.bookmarkData(
-        options: bookmarkOptions,
-        includingResourceValuesForKeys: nil,
-        relativeTo: nil
-      )
-
-      // Get the file attributes for the result metadata
-      let attributes=try fileManager.attributesOfItem(atPath: path.path)
-      let metadata=FileMetadataDTO.from(attributes: attributes, path: path.path)
-
-      let result=FileOperationResultDTO.success(
-        path: path.path,
-        metadata: metadata
-      )
-
-      let successContext=createSecureFileLogContext([
-        "path": path.path,
-        "readOnly": "\(readOnly)",
-        "bookmarkSize": "\(bookmarkData.count)"
-      ])
-      await logger.debug("Successfully created security bookmark", context: successContext)
-      return (bookmarkData, result)
-    } catch {
-      let securityError=FileSystemError.securityError(
-        path: path.path,
-        reason: "Failed to create security bookmark: \(error.localizedDescription)"
-      )
-      let errorContext=createSecureFileLogContext([
-        "path": path.path,
-        "error": "\(error.localizedDescription)"
-      ])
-      await logger.error("Failed to create security bookmark", context: errorContext)
-      throw securityError
+    // Check if the file exists
+    guard fileManager.fileExists(atPath: path.path) else {
+      let error=FileSystemError.pathNotFound(path: path.path)
+      let errorContext=createSecureFileLogContext(["path": path.path])
+      await logger.error("File not found", context: errorContext)
+      throw error
     }
+
+    let url=URL(fileURLWithPath: path.path)
+    let bookmarkOptions: URL
+      .BookmarkCreationOptions=readOnly ? [.securityScopeAllowOnlyReadAccess] : []
+
+    let bookmarkData=try url.bookmarkData(
+      options: bookmarkOptions,
+      includingResourceValuesForKeys: nil,
+      relativeTo: nil
+    )
+
+    // Get the file attributes for the result metadata
+    let attributes=try fileManager.attributesOfItem(atPath: path.path)
+    let metadata=FileMetadataDTO.from(attributes: attributes, path: path.path)
+
+    let result=FileOperationResultDTO.success(
+      path: path.path,
+      metadata: metadata
+    )
+
+    let successContext=createSecureFileLogContext([
+      "path": path.path,
+      "readOnly": "\(readOnly)",
+      "bookmarkSize": "\(bookmarkData.count)"
+    ])
+    await logger.debug("Successfully created security bookmark", context: successContext)
+    return (bookmarkData, result)
   }
 
   /**
@@ -126,53 +113,38 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
     var isStale=false
     var path: String
 
-    do {
-      // Resolve bookmark to URL
-      var bookmarkDataIsStale=false
-      let url=try URL(
-        resolvingBookmarkData: bookmark,
-        options: .withSecurityScope,
-        relativeTo: nil,
-        bookmarkDataIsStale: &bookmarkDataIsStale
-      )
+    // Resolve bookmark to URL
+    var bookmarkDataIsStale=false
+    let url=try URL(
+      resolvingBookmarkData: bookmark,
+      options: .withSecurityScope,
+      relativeTo: nil,
+      bookmarkDataIsStale: &bookmarkDataIsStale
+    )
 
-      path=url.path
-      isStale=bookmarkDataIsStale
+    path=url.path
+    isStale=bookmarkDataIsStale
 
-      // Get the file attributes for metadata
-      var metadata: FileMetadataDTO?
-      if fileManager.fileExists(atPath: url.path) {
-        if let attributes=try? fileManager.attributesOfItem(atPath: url.path) {
-          metadata=FileMetadataDTO.from(attributes: attributes, path: url.path)
-        }
+    // Get the file attributes for metadata
+    var metadata: FileMetadataDTO?
+    if fileManager.fileExists(atPath: url.path) {
+      if let attributes=try? fileManager.attributesOfItem(atPath: url.path) {
+        metadata=FileMetadataDTO.from(attributes: attributes, path: url.path)
       }
-
-      let result=FileOperationResultDTO.success(
-        path: path,
-        metadata: metadata
-      )
-
-      let successContext=createSecureFileLogContext([
-        "path": path,
-        "isStale": String(isStale)
-      ])
-      await logger.debug("Successfully resolved security bookmark", context: successContext)
-
-      return (path, isStale, result)
-    } catch {
-      let resolveError=FileSystemError.securityError(
-        path: "<bookmark>",
-        reason: "Failed to resolve security bookmark: \(error.localizedDescription)"
-      )
-
-      let errorContext=createSecureFileLogContext([
-        "error": "\(error)",
-        "bookmarkSize": "\(bookmark.count)"
-      ])
-      await logger.error("Failed to resolve security bookmark", context: errorContext)
-
-      throw resolveError
     }
+
+    let result=FileOperationResultDTO.success(
+      path: path,
+      metadata: metadata
+    )
+
+    let successContext=createSecureFileLogContext([
+      "path": path,
+      "isStale": String(isStale)
+    ])
+    await logger.debug("Successfully resolved security bookmark", context: successContext)
+
+    return (path, isStale, result)
   }
 
   /**
@@ -187,44 +159,28 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
     let context=createSecureFileLogContext(["path": path.path])
     await logger.debug("Starting access to security-scoped resource", context: context)
 
-    do {
-      let url=URL(fileURLWithPath: path.path)
-      let accessGranted=url.startAccessingSecurityScopedResource()
+    let url=URL(fileURLWithPath: path.path)
+    let accessGranted=url.startAccessingSecurityScopedResource()
 
-      // Get the file attributes for the result metadata if file exists
-      var metadata: FileMetadataDTO?
-      if fileManager.fileExists(atPath: path.path) {
-        if let attributes=try? fileManager.attributesOfItem(atPath: path.path) {
-          metadata=FileMetadataDTO.from(attributes: attributes, path: path.path)
-        }
+    // Get the file attributes for the result metadata if file exists
+    var metadata: FileMetadataDTO?
+    if fileManager.fileExists(atPath: path.path) {
+      if let attributes=try? fileManager.attributesOfItem(atPath: path.path) {
+        metadata=FileMetadataDTO.from(attributes: attributes, path: path.path)
       }
-
-      let result=FileOperationResultDTO.success(
-        path: path.path,
-        metadata: metadata
-      )
-
-      let successContext=createSecureFileLogContext([
-        "path": path.path,
-        "accessGranted": "\(accessGranted)"
-      ])
-      await logger.debug("Access to security-scoped resource status", context: successContext)
-      return (accessGranted, result)
-    } catch {
-      let securityError=FileSystemError.securityError(
-        path: path.path,
-        reason: "Failed to start accessing security-scoped resource: \(error.localizedDescription)"
-      )
-      let errorContext=createSecureFileLogContext([
-        "path": path.path,
-        "error": "\(error.localizedDescription)"
-      ])
-      await logger.error(
-        "Failed to start accessing security-scoped resource",
-        context: errorContext
-      )
-      throw securityError
     }
+
+    let result=FileOperationResultDTO.success(
+      path: path.path,
+      metadata: metadata
+    )
+
+    let successContext=createSecureFileLogContext([
+      "path": path.path,
+      "accessGranted": "\(accessGranted)"
+    ])
+    await logger.debug("Access to security-scoped resource status", context: successContext)
+    return (accessGranted, result)
   }
 
   /**
@@ -316,7 +272,7 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
     fileManager.createFile(
       atPath: tempPath.path,
       contents: Data(),
-      attributes: fileCreationOptions.attributes
+      attributes: fileCreationOptions.attributes?.toDictionary()
     )
 
     let successContext=createSecureFileLogContext([
@@ -367,7 +323,7 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
     try fileManager.createDirectory(
       at: tempPath,
       withIntermediateDirectories: true,
-      attributes: dirOptions.attributes
+      attributes: dirOptions.attributes?.toDictionary()
     )
 
     let successContext=createSecureFileLogContext([
@@ -410,7 +366,7 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
     let writeOptions=options ?? SecureFileWriteOptions()
 
     // Implement encryption logic based on specific write options
-    var dataToWrite=data
+    let dataToWrite=data
 
     // Apply encryption based on the algorithm in the options
     switch writeOptions.secureOptions.encryptionAlgorithm {
@@ -434,7 +390,7 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
 
     // Set additional file attributes if needed
     if let attributes=writeOptions.writeOptions.attributes {
-      try fileManager.setAttributes(attributes, ofItemAtPath: path.path)
+      try fileManager.setAttributes(attributes.toDictionary(), ofItemAtPath: path.path)
     }
 
     let successContext=createSecureFileLogContext([
@@ -530,10 +486,11 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
 
     // Get file attributes
     let fileURL=URL(fileURLWithPath: path.path)
-    let resourceValues=try fileURL.resourceValues(forKeys: [.isDirectoryKey])
+    let resourceValues=try fileManager.attributesOfItem(atPath: path.path)
 
     // Handle different deletion approaches for files vs directories
-    if resourceValues.isDirectory == true {
+    let isDirectory = (resourceValues[FileAttributeKey.type] as? String) == "NSFileTypeDirectory"
+    if isDirectory {
       // For directories, recursively delete contents securely
       if let contents=try? fileManager.contentsOfDirectory(atPath: path.path) {
         for item in contents {

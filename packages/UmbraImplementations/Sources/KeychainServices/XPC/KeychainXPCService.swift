@@ -489,6 +489,8 @@ public actor KeychainXPCService: KeychainServiceProtocol {
       // Create a basic context for XPC service logging
       let context=BaseLogContextDTO(
         domainName: "KeychainXPC",
+        operation: "xpcService",
+        category: "XPC",
         source: "KeychainXPCService"
       )
       await logger.log(level, message, context: context)

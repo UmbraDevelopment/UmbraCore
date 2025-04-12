@@ -7,7 +7,7 @@ import UmbraErrors
 ///
 /// This class centralises all command creation logic for backup-related
 /// operations, ensuring consistent command structure and arguments.
-public struct BackupCommandFactory {
+public struct BackupResticCommandFactory {
 
   /// Creates a backup command from the provided sources, exclusions, and tags
   /// - Parameters:

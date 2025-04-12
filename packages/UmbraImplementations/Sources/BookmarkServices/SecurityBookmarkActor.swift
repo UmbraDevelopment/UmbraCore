@@ -115,10 +115,11 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
     options: BookmarkCreationOptions?=nil
   ) async -> Result<Bool, UmbraErrors.Security.Bookmark> {
     let context=BookmarkLogContext(
+      domainName: "BookmarkServices",
+      metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path),
       operation: "createBookmark",
       identifier: storageIdentifier,
-      status: "started",
-      metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path)
+      status: "started"
     )
 
     await bookmarkLogger.info("Creating security bookmark", context: context)
@@ -140,10 +141,11 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
         switch storeResult {
           case .success:
             let successContext=BookmarkLogContext(
+              domainName: "BookmarkServices",
+              metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path),
               operation: "createBookmark",
               identifier: storageIdentifier,
-              status: "success",
-              metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path)
+              status: "success"
             )
 
             await bookmarkLogger.info(
@@ -154,10 +156,11 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
 
           case let .failure(error):
             let errorContext=BookmarkLogContext(
+              domainName: "BookmarkServices",
+              metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path),
               operation: "createBookmark",
               identifier: storageIdentifier,
-              status: "error",
-              metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path)
+              status: "error"
             )
 
             await bookmarkLogger.logError(error, context: errorContext)
@@ -168,10 +171,11 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
 
       case let .failure(error):
         let errorContext=BookmarkLogContext(
+          domainName: "BookmarkServices",
+          metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path),
           operation: "createBookmark",
           identifier: storageIdentifier,
-          status: "error",
-          metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path)
+          status: "error"
         )
 
         await bookmarkLogger.logError(error, context: errorContext)
@@ -224,10 +228,11 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
     let identifier=storageIdentifier ?? UUID().uuidString
 
     let context=BookmarkLogContext(
+      domainName: "BookmarkServices",
+      metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path),
       operation: "createBookmark",
       identifier: identifier,
-      status: "started",
-      metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path)
+      status: "started"
     )
 
     await bookmarkLogger.info("Creating security bookmark", context: context)
@@ -252,10 +257,11 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
         switch storeResult {
           case .success:
             let successContext=BookmarkLogContext(
+              domainName: "BookmarkServices",
+              metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path),
               operation: "createBookmark",
               identifier: identifier,
-              status: "success",
-              metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path)
+              status: "success"
             )
 
             await bookmarkLogger.info(
@@ -266,10 +272,11 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
 
           case let .failure(error):
             let errorContext=BookmarkLogContext(
+              domainName: "BookmarkServices",
+              metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path),
               operation: "createBookmark",
               identifier: identifier,
-              status: "error",
-              metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path)
+              status: "error"
             )
 
             await bookmarkLogger.logError(error, context: errorContext)
@@ -280,10 +287,11 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
 
       case let .failure(error):
         let errorContext=BookmarkLogContext(
+          domainName: "BookmarkServices",
+          metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path),
           operation: "createBookmark",
           identifier: identifier,
-          status: "error",
-          metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path)
+          status: "error"
         )
 
         await bookmarkLogger.logError(error, context: errorContext)
@@ -336,6 +344,8 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
     withIdentifier storageIdentifier: String
   ) async -> Result<(URL, Bool), UmbraErrors.Security.Bookmark> {
     let context=BookmarkLogContext(
+      domainName: "BookmarkServices",
+      metadata: LogMetadataDTOCollection(),
       operation: "resolveBookmark",
       identifier: storageIdentifier,
       status: "started"
@@ -361,13 +371,14 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
 
           if isStale {
             let warningContext=BookmarkLogContext(
-              operation: "resolveBookmark",
-              identifier: storageIdentifier,
-              status: "warning",
+              domainName: "BookmarkServices",
               metadata: LogMetadataDTOCollection().withSensitive(
                 key: "path",
                 value: filePathDTO.path
-              )
+              ),
+              operation: "resolveBookmark",
+              identifier: storageIdentifier,
+              status: "warning"
             )
 
             await bookmarkLogger.warning(
@@ -377,12 +388,13 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
           }
 
           let successContext=BookmarkLogContext(
-            operation: "resolveBookmark",
-            identifier: storageIdentifier,
-            status: "success",
+            domainName: "BookmarkServices",
             metadata: LogMetadataDTOCollection()
               .withSensitive(key: "path", value: filePathDTO.path)
-              .withPublic(key: "isStale", value: String(isStale))
+              .withPublic(key: "isStale", value: String(isStale)),
+            operation: "resolveBookmark",
+            identifier: storageIdentifier,
+            status: "success"
           )
 
           await bookmarkLogger.info(
@@ -393,6 +405,8 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
 
         } catch {
           let errorContext=BookmarkLogContext(
+            domainName: "BookmarkServices",
+            metadata: LogMetadataDTOCollection(),
             operation: "resolveBookmark",
             identifier: storageIdentifier,
             status: "error"
@@ -406,6 +420,8 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
 
       case let .failure(error):
         let errorContext=BookmarkLogContext(
+          domainName: "BookmarkServices",
+          metadata: LogMetadataDTOCollection(),
           operation: "resolveBookmark",
           identifier: storageIdentifier,
           status: "error"
@@ -430,6 +446,8 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
     withIdentifier storageIdentifier: String
   ) async -> Result<(FilePathDTO, Bool), UmbraErrors.Security.Bookmark> {
     let context=BookmarkLogContext(
+      domainName: "BookmarkServices",
+      metadata: LogMetadataDTOCollection(),
       operation: "resolveBookmarkToFilePath",
       identifier: storageIdentifier,
       status: "started"
@@ -452,13 +470,14 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
 
           if isStale {
             let warningContext=BookmarkLogContext(
-              operation: "resolveBookmarkToFilePath",
-              identifier: storageIdentifier,
-              status: "warning",
+              domainName: "BookmarkServices",
               metadata: LogMetadataDTOCollection().withSensitive(
                 key: "path",
                 value: filePathDTO.path
-              )
+              ),
+              operation: "resolveBookmarkToFilePath",
+              identifier: storageIdentifier,
+              status: "warning"
             )
 
             await bookmarkLogger.warning(
@@ -468,12 +487,13 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
           }
 
           let successContext=BookmarkLogContext(
-            operation: "resolveBookmarkToFilePath",
-            identifier: storageIdentifier,
-            status: "success",
+            domainName: "BookmarkServices",
             metadata: LogMetadataDTOCollection()
               .withSensitive(key: "path", value: filePathDTO.path)
-              .withPublic(key: "isStale", value: String(isStale))
+              .withPublic(key: "isStale", value: String(isStale)),
+            operation: "resolveBookmarkToFilePath",
+            identifier: storageIdentifier,
+            status: "success"
           )
 
           await bookmarkLogger.info(
@@ -484,6 +504,8 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
 
         } catch {
           let errorContext=BookmarkLogContext(
+            domainName: "BookmarkServices",
+            metadata: LogMetadataDTOCollection(),
             operation: "resolveBookmarkToFilePath",
             identifier: storageIdentifier,
             status: "error"
@@ -497,6 +519,8 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
 
       case let .failure(error):
         let errorContext=BookmarkLogContext(
+          domainName: "BookmarkServices",
+          metadata: LogMetadataDTOCollection(),
           operation: "resolveBookmarkToFilePath",
           identifier: storageIdentifier,
           status: "error"
@@ -526,6 +550,8 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
     recreateIfStale: Bool
   ) async -> Result<BookmarkValidationResultDTO, UmbraErrors.Security.Bookmark> {
     let context=BookmarkLogContext(
+      domainName: "BookmarkServices",
+      metadata: LogMetadataDTOCollection(),
       operation: "validateBookmark",
       identifier: storageIdentifier,
       status: "started"
@@ -569,6 +595,8 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
                 updatedBookmarkData=bookmarkBytes
 
                 let successContext=BookmarkLogContext(
+                  domainName: "BookmarkServices",
+                  metadata: LogMetadataDTOCollection(),
                   operation: "validateBookmark",
                   identifier: storageIdentifier,
                   status: "recreated"
@@ -579,6 +607,8 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
                 )
               } else {
                 let failureContext=BookmarkLogContext(
+                  domainName: "BookmarkServices",
+                  metadata: LogMetadataDTOCollection(),
                   operation: "validateBookmark",
                   identifier: storageIdentifier,
                   status: "recreate_failed"
@@ -591,6 +621,8 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
 
             case let .failure(error):
               let failureContext=BookmarkLogContext(
+                domainName: "BookmarkServices",
+                metadata: LogMetadataDTOCollection(),
                 operation: "validateBookmark",
                 identifier: storageIdentifier,
                 status: "recreate_failed"
@@ -611,13 +643,14 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
         )
 
         let completedContext=BookmarkLogContext(
-          operation: "validateBookmark",
-          identifier: storageIdentifier,
-          status: "completed",
+          domainName: "BookmarkServices",
           metadata: LogMetadataDTOCollection()
             .withPublic(key: "isValid", value: String(exists))
             .withPublic(key: "isStale", value: String(isStale))
-            .withPublic(key: "wasRecreated", value: String(updatedBookmarkData != nil))
+            .withPublic(key: "wasRecreated", value: String(updatedBookmarkData != nil)),
+          operation: "validateBookmark",
+          identifier: storageIdentifier,
+          status: "completed"
         )
 
         await bookmarkLogger.info("Bookmark validation completed", context: completedContext)
@@ -626,6 +659,8 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
 
       case let .failure(error):
         let failureContext=BookmarkLogContext(
+          domainName: "BookmarkServices",
+          metadata: LogMetadataDTOCollection(),
           operation: "validateBookmark",
           identifier: storageIdentifier,
           status: "failed"
@@ -665,9 +700,10 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
   public func startAccessing(_ path: FilePathDTO) async
   -> Result<Bool, UmbraErrors.Security.Bookmark> {
     let context=BookmarkLogContext(
+      domainName: "BookmarkServices",
+      metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path),
       operation: "startAccessing",
-      status: "started",
-      metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path)
+      status: "started"
     )
 
     await bookmarkLogger.info("Starting access to security-scoped resource", context: context)
@@ -678,9 +714,10 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
 
       if !accessGranted {
         let errorContext=BookmarkLogContext(
+          domainName: "BookmarkServices",
+          metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path),
           operation: "startAccessing",
-          status: "error",
-          metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path)
+          status: "error"
         )
 
         let error=UmbraErrors.Security.Bookmark
@@ -696,11 +733,12 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
       activeResources[path]=newCount
 
       let successContext=BookmarkLogContext(
-        operation: "startAccessing",
-        status: "success",
+        domainName: "BookmarkServices",
         metadata: LogMetadataDTOCollection()
           .withSensitive(key: "path", value: path.path)
-          .withPublic(key: "accessCount", value: String(newCount))
+          .withPublic(key: "accessCount", value: String(newCount)),
+        operation: "startAccessing",
+        status: "success"
       )
 
       await bookmarkLogger.info(
@@ -710,9 +748,10 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
       return .success(true)
     } catch {
       let errorContext=BookmarkLogContext(
+        domainName: "BookmarkServices",
+        metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path),
         operation: "startAccessing",
-        status: "error",
-        metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path)
+        status: "error"
       )
 
       let bookmarkError=UmbraErrors.Security.Bookmark
@@ -753,9 +792,10 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
   public func stopAccessing(_ path: FilePathDTO) async
   -> Result<Int, UmbraErrors.Security.Bookmark> {
     let context=BookmarkLogContext(
+      domainName: "BookmarkServices",
+      metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path),
       operation: "stopAccessing",
-      status: "started",
-      metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path)
+      status: "started"
     )
 
     await bookmarkLogger.info("Stopping access to security-scoped resource", context: context)
@@ -763,9 +803,10 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
     // Get the current access count for this path
     guard let currentCount=activeResources[path], currentCount > 0 else {
       let warningContext=BookmarkLogContext(
+        domainName: "BookmarkServices",
+        metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path),
         operation: "stopAccessing",
-        status: "warning",
-        metadata: LogMetadataDTOCollection().withSensitive(key: "path", value: path.path)
+        status: "warning"
       )
 
       await bookmarkLogger.warning("No active accesses found for path", context: warningContext)
@@ -785,11 +826,12 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
     }
 
     let successContext=BookmarkLogContext(
-      operation: "stopAccessing",
-      status: "success",
+      domainName: "BookmarkServices",
       metadata: LogMetadataDTOCollection()
         .withSensitive(key: "path", value: path.path)
-        .withPublic(key: "accessCount", value: String(newCount))
+        .withPublic(key: "accessCount", value: String(newCount)),
+      operation: "stopAccessing",
+      status: "success"
     )
 
     await bookmarkLogger.info("Stopped accessing security-scoped resource", context: successContext)
@@ -806,6 +848,8 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
     withIdentifier storageIdentifier: String
   ) async -> Result<Void, UmbraErrors.Security.Bookmark> {
     let context=BookmarkLogContext(
+      domainName: "BookmarkServices",
+      metadata: LogMetadataDTOCollection(),
       operation: "removeBookmark",
       identifier: storageIdentifier,
       status: "started"
@@ -820,6 +864,8 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
     switch removeResult {
       case .success:
         let successContext=BookmarkLogContext(
+          domainName: "BookmarkServices",
+          metadata: LogMetadataDTOCollection(),
           operation: "removeBookmark",
           identifier: storageIdentifier,
           status: "success"
@@ -830,6 +876,8 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
 
       case let .failure(error):
         let errorContext=BookmarkLogContext(
+          domainName: "BookmarkServices",
+          metadata: LogMetadataDTOCollection(),
           operation: "removeBookmark",
           identifier: storageIdentifier,
           status: "error"
@@ -852,6 +900,11 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
    */
   public func verifyAllResourcesReleased() async -> Bool {
     let context=BookmarkLogContext(
+      domainName: "BookmarkServices",
+      metadata: LogMetadataDTOCollection().withPublic(
+        key: "activeCount",
+        value: String(activeResources.count)
+      ),
       operation: "verifyAllResourcesReleased",
       status: "started"
     )
@@ -864,12 +917,13 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
     let resourceCount=activeResources.count
 
     let successContext=BookmarkLogContext(
-      operation: "verifyAllResourcesReleased",
-      status: "success",
+      domainName: "BookmarkServices",
       metadata: LogMetadataDTOCollection().withPublic(
         key: "activeCount",
         value: String(resourceCount)
-      )
+      ),
+      operation: "verifyAllResourcesReleased",
+      status: "success"
     )
 
     await bookmarkLogger.info("Verified resource release status", context: successContext)
@@ -886,12 +940,13 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
    */
   public func forceReleaseAllResources() async -> Int {
     let context=BookmarkLogContext(
-      operation: "forceReleaseAllResources",
-      status: "started",
+      domainName: "BookmarkServices",
       metadata: LogMetadataDTOCollection().withPublic(
         key: "activeCount",
         value: String(activeResources.count)
-      )
+      ),
+      operation: "forceReleaseAllResources",
+      status: "started"
     )
 
     await bookmarkLogger.info("Forcibly releasing all security-scoped resources", context: context)
@@ -907,12 +962,13 @@ public actor SecurityBookmarkActor: SecurityInterfacesProtocols.SecurityBookmark
     activeResources.removeAll()
 
     let successContext=BookmarkLogContext(
-      operation: "forceReleaseAllResources",
-      status: "success",
+      domainName: "BookmarkServices",
       metadata: LogMetadataDTOCollection().withPublic(
         key: "releasedCount",
         value: String(resourceCount)
-      )
+      ),
+      operation: "forceReleaseAllResources",
+      status: "success"
     )
 
     await bookmarkLogger.info("Forcibly released all resources", context: successContext)

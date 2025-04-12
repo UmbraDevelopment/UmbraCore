@@ -85,13 +85,16 @@ public class ProviderVerifyHashCommand: BaseProviderCommand, ProviderCommand {
       algorithm: algorithm.rawValue,
       additionalOptions: [
         "inputData": data,
-        "expectedHash": expectedHash
+        "expectedHash": Data(expectedHash).base64EncodedString()
       ]
     )
 
     do {
       // Execute the hash verification operation using the provider
-      let result=try await provider.performSecureOperation(config: config)
+      let result=try await provider.performSecureOperation(
+        operation: .verify,
+        config: config
+      )
 
       // Check if the operation was successful
       if result.successful {

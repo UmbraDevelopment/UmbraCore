@@ -277,6 +277,7 @@ public actor ErrorLogger: ErrorLoggingProtocol {
 
     // Create a CoreLogContext to ensure consistent logging format
     return CoreLogContext(
+      operation: "errorLogging",
       source: source,
       correlationID: correlationID,
       metadata: createMetadataCollection(from: metadataDict)

@@ -363,12 +363,10 @@ public actor ApplicationSecurityProviderImpl: SecurityProviderProtocol {
     // This is a placeholder implementation
     // In production, this would compare the data hash against an expected value
 
-    let isValid=true // Placeholder result
-
     return SecurityResultDTO.success(
-      resultData: Data([isValid ? 1 : 0]), // 1 for valid, 0 for invalid
+      resultData: Data([1]), // 1 for valid
       executionTimeMs: 0.4,
-      metadata: ["isValid": isValid ? "true" : "false"]
+      metadata: ["isValid": "true"]
     )
   }
 

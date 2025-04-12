@@ -152,10 +152,6 @@ public actor PrivacyFilteredConsoleDestination: ActorLogDestination {
         #else
           return "<redacted>"
         #endif
-
-      default:
-        // Default to redacting unknown privacy levels
-        return "<redacted>"
     }
   }
 }

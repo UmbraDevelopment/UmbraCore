@@ -331,6 +331,24 @@ private struct BaseLogContextDTO: LogContextDTO {
     }
     return collection
   }
+
+  /**
+   * Updates the context with additional metadata.
+   *
+   * - Parameter additionalMetadata: Additional metadata to include
+   * - Returns: A new context with merged metadata
+   */
+  func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> Self {
+    let mergedMetadata = metadata.merging(with: additionalMetadata)
+    return BaseLogContextDTO(
+      domainName: domainName,
+      operation: operation,
+      category: category,
+      source: source,
+      correlationID: correlationID,
+      metadataCollection: mergedMetadata
+    )
+  }
 }
 
 /**

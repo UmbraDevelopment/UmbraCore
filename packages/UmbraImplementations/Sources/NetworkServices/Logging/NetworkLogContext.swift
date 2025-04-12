@@ -20,6 +20,9 @@ import NetworkInterfaces
 public struct NetworkLogContext: LogContextDTO {
   /// The domain name for this context
   public let domainName: String="Network"
+  
+  /// The category for the log entry
+  public let category: String = "Network"
 
   /// The operation being performed
   public let operation: String
@@ -52,6 +55,65 @@ public struct NetworkLogContext: LogContextDTO {
     self.source=source
     self.correlationID=correlationID
     self.metadata=metadata
+  }
+
+  /**
+   Creates a new context with additional metadata merged with existing metadata.
+   
+   - Parameter additionalMetadata: Additional metadata to include
+   - Returns: New context with merged metadata
+   */
+  public func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> Self {
+    var updatedMetadata = self.metadata
+    for entry in additionalMetadata.entries {
+      updatedMetadata = updatedMetadata.with(key: entry.key, value: entry.value, privacyLevel: entry.privacyLevel)
+    }
+    
+    return NetworkLogContext(
+      operation: self.operation,
+      source: self.source,
+      correlationID: self.correlationID,
+      metadata: updatedMetadata
+    )
+  }
+  
+  /**
+   Adds a public metadata entry to the context.
+   
+   - Parameters:
+     - key: The metadata key
+     - value: The metadata value
+   - Returns: A new context with the added metadata
+   */
+  public func withPublic(key: String, value: String) -> Self {
+    let updatedMetadata = self.metadata.withPublic(key: key, value: value)
+    return withMetadata(updatedMetadata)
+  }
+  
+  /**
+   Adds a private metadata entry to the context.
+   
+   - Parameters:
+     - key: The metadata key
+     - value: The metadata value
+   - Returns: A new context with the added metadata
+   */
+  public func withPrivate(key: String, value: String) -> Self {
+    let updatedMetadata = self.metadata.withPrivate(key: key, value: value)
+    return withMetadata(updatedMetadata)
+  }
+  
+  /**
+   Adds a protected metadata entry to the context.
+   Alias for withPrivate for backward compatibility.
+   
+   - Parameters:
+     - key: The metadata key
+     - value: The metadata value
+   - Returns: A new context with the added metadata
+   */
+  public func withProtected(key: String, value: String) -> Self {
+    return withPrivate(key: key, value: value)
   }
 
   /**

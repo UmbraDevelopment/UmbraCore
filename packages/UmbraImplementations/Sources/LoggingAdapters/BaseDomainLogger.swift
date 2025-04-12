@@ -201,7 +201,7 @@ struct BasicLogContext: LogContextDTO {
   let category: String = "General"
   let correlationID: String?=LogIdentifier(value: UUID().uuidString).description
   let source: String?
-  let metadata: LogMetadataDTOCollection = .init()
+  var metadata: LogMetadataDTOCollection = .init()
 
   init(source: String?=nil) {
     self.source=source
@@ -214,13 +214,19 @@ struct BasicLogContext: LogContextDTO {
     }
     
     // Create a new instance with the updated metadata
-    return BasicLogContext(source: self.source, metadata: newMetadata)
+    var result = self
+    result.metadata = newMetadata
+    return result
   }
 
   func withUpdatedMetadata(_ updatedMetadata: LogMetadataDTOCollection) -> Self {
-    // This method is redundant with withMetadata, but we need to keep it for compatibility
-    // Use the new withMetadata method for consistency
-    return withMetadata(updatedMetadata) as! Self // The forced cast is needed for protocol conformance
+    // This method exists for compatibility with the LogContextDTO protocol
+    // We need to modify self since we can't create a new instance due to type constraints
+    var result = self
+    for entry in updatedMetadata.entries {
+      result.metadata = result.metadata.with(key: entry.key, value: entry.value, privacyLevel: entry.privacyLevel)
+    }
+    return result
   }
 
   func asLogMetadata() -> LogMetadata? {
@@ -237,12 +243,5 @@ struct BasicLogContext: LogContextDTO {
 
   func toMetadata() -> LogMetadataDTOCollection {
     metadata
-  }
-}
-
-extension BasicLogContext {
-  init(source: String? = nil, metadata: LogMetadataDTOCollection = .init()) {
-    self.source = source
-    self.metadata = metadata
   }
 }

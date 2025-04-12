@@ -176,7 +176,7 @@ public struct SecureData: Sendable, Equatable {
  This class manages the lifecycle of the secure data and ensures
  proper memory protection and zeroing when the data is no longer needed.
  */
-private final class ManagedSecureStorage {
+private final class ManagedSecureStorage: @unchecked Sendable {
   /// The internal data storage
   private var data: Data
 

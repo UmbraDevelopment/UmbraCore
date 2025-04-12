@@ -183,6 +183,7 @@ public actor ErrorLoggerService: ErrorLoggingProtocol {
 
     // Create log context with metadata
     let logContext=CoreLogContext(
+      operation: "logError",
       source: "\(context.source.file):\(context.source.line)",
       correlationID: loggableError.correlationID ?? context.metadata["correlationID"] ?? UUID()
         .uuidString,

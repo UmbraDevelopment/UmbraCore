@@ -40,13 +40,13 @@ public protocol ProviderCommand {
  */
 public class BaseProviderCommand {
   /// The security provider to use for operations
-  protected let provider: SecurityProviderProtocol
+  internal let provider: SecurityProviderProtocol
 
   /// The secure storage to use for persisting cryptographic materials
-  protected let secureStorage: SecureStorageProtocol
+  internal let secureStorage: SecureStorageProtocol
 
   /// Optional logger for operation tracking
-  protected let logger: LoggingProtocol?
+  internal let logger: LoggingProtocol?
 
   /**
    Initialises a new base provider command.
@@ -76,7 +76,7 @@ public class BaseProviderCommand {
       - additionalMetadata: Additional metadata entries with privacy levels
    - Returns: A configured log context
    */
-  protected func createLogContext(
+  internal func createLogContext(
     operation: String,
     algorithm: String?=nil,
     correlationID: String,
@@ -96,16 +96,24 @@ public class BaseProviderCommand {
     // Add additional metadata with specified privacy levels
     for item in additionalMetadata {
       switch item.value.privacyLevel {
-        case .public:
+        case PrivacyLevel.public:
           metadata=metadata.withPublic(key: item.key, value: item.value.value)
         case .protected:
           metadata=metadata.withProtected(key: item.key, value: item.value.value)
-        case .private:
+        case PrivacyLevel.private:
           metadata=metadata.withPrivate(key: item.key, value: item.value.value)
       }
     }
 
-    return LogContextDTO(metadata: metadata)
+    // Create and return a concrete implementation of LogContextDTO
+    return ProviderLogContext(
+      domainName: "SecurityProvider",
+      operation: operation,
+      category: "CryptoServices",
+      source: algorithm != nil ? "\(operation).\(algorithm!)" : operation,
+      correlationID: correlationID,
+      metadata: metadata
+    )
   }
 
   /**
@@ -117,33 +125,43 @@ public class BaseProviderCommand {
       - additionalOptions: Additional options for the configuration
    - Returns: A configured SecurityConfigDTO
    */
-  protected func createSecurityConfig(
+  internal func createSecurityConfig(
     operation: SecurityOperationType,
     algorithm: String?=nil,
     additionalOptions: [String: Any]=[:]
   ) -> SecurityConfigDTO {
-    // Create base options
-    var options=SecurityConfigOptions()
-
-    // Set the operation type
-    options.operation=operation
-
+    // Create security config options
+    var options = SecurityConfigOptions()
+    
+    // Set standard metadata
+    var metadata: [String: String] = [
+      "operation": operation.rawValue
+    ]
+    
     // Add the algorithm if specified
     if let algorithm {
-      options.algorithm=algorithm
+      metadata["algorithm"] = algorithm
     }
-
-    // Add additional options to the metadata dictionary
-    var metadata: [String: Any]=[:]
+    
+    // Add additional options
     for (key, value) in additionalOptions {
-      metadata[key]=value
+      if let stringValue = value as? String {
+        metadata[key] = stringValue
+      } else {
+        metadata[key] = String(describing: value)
+      }
     }
-
+    
     // Set the metadata
-    options.metadata=metadata
-
-    // Create and return the config
-    return SecurityConfigDTO(options: options)
+    options.metadata = metadata
+    
+    // Create and return the config with appropriate default algorithms
+    return SecurityConfigDTO(
+      encryptionAlgorithm: .aes256CBC,
+      hashAlgorithm: .sha256,
+      providerType: .system,
+      options: options
+    )
   }
 
   /**
@@ -153,7 +171,7 @@ public class BaseProviderCommand {
       - message: The message to log
       - context: The logging context
    */
-  protected func logDebug(_ message: String, context: LogContextDTO) async {
+  internal func logDebug(_ message: String, context: LogContextDTO) async {
     await logger?.log(.debug, message, context: context)
   }
 
@@ -164,7 +182,7 @@ public class BaseProviderCommand {
       - message: The message to log
       - context: The logging context
    */
-  protected func logInfo(_ message: String, context: LogContextDTO) async {
+  internal func logInfo(_ message: String, context: LogContextDTO) async {
     await logger?.log(.info, message, context: context)
   }
 
@@ -175,7 +193,7 @@ public class BaseProviderCommand {
       - message: The message to log
       - context: The logging context
    */
-  protected func logWarning(_ message: String, context: LogContextDTO) async {
+  internal func logWarning(_ message: String, context: LogContextDTO) async {
     await logger?.log(.warning, message, context: context)
   }
 
@@ -186,23 +204,91 @@ public class BaseProviderCommand {
       - message: The message to log
       - context: The logging context
    */
-  protected func logError(_ message: String, context: LogContextDTO) async {
+  internal func logError(_ message: String, context: LogContextDTO) async {
     await logger?.log(.error, message, context: context)
   }
 
   /**
-   Creates a SecurityStorageError from a provider operation result.
+   Creates an appropriate SecurityStorageError from a provider result.
 
    - Parameter result: The SecurityResultDTO from the provider
    - Returns: An appropriate SecurityStorageError
    */
-  protected func createError(from result: SecurityResultDTO) -> SecurityStorageError {
-    if let errorCode=result.errorCode {
-      .providerError(code: errorCode, message: result.errorMessage ?? "Provider error")
-    } else if let errorMessage=result.errorMessage {
-      .operationFailed(errorMessage)
-    } else {
-      .operationFailed("Provider operation failed with unknown error")
+  internal func createError(from result: SecurityResultDTO) -> SecurityStorageError {
+    // Check if there's a specific error message
+    if let errorMessage = result.message, !errorMessage.isEmpty {
+      return SecurityStorageError.operationFailed(errorMessage)
     }
+    
+    // If no specific message, return a generic error based on the operation
+    if let operation = result.operation {
+      switch operation {
+      case "encrypt":
+        return SecurityStorageError.encryptionFailed
+      case "decrypt":
+        return SecurityStorageError.decryptionFailed
+      case "hash":
+        return SecurityStorageError.hashingFailed
+      case "verify":
+        return SecurityStorageError.hashVerificationFailed
+      case "generateKey":
+        return SecurityStorageError.keyGenerationFailed
+      default:
+        return SecurityStorageError.operationFailed("Security operation failed")
+      }
+    }
+    
+    // Default generic error
+    return SecurityStorageError.operationFailed("Unknown security operation error")
+  }
+}
+
+/**
+ Concrete implementation of LogContextDTO for provider commands.
+ */
+private struct ProviderLogContext: LogContextDTO {
+  /// The domain name for this context
+  public let domainName: String
+  
+  /// The operation being performed
+  public let operation: String
+  
+  /// The category for the log entry
+  public let category: String
+  
+  /// Source of the log (typically class/component name)
+  public let source: String?
+  
+  /// Correlation ID for tracking related logs
+  public let correlationID: String?
+  
+  /// Metadata collection with privacy annotations
+  public let metadata: LogMetadataDTOCollection
+  
+  /**
+   Creates a new context with additional metadata merged with existing metadata.
+   
+   - Parameter additionalMetadata: Additional metadata to include
+   - Returns: New context with merged metadata
+   */
+  public func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> Self {
+    var newMetadata = self.metadata
+    
+    for entry in additionalMetadata.entries {
+      newMetadata = newMetadata.with(
+        key: entry.key,
+        value: entry.value,
+        privacyLevel: entry.privacyLevel
+      )
+    }
+    
+    return ProviderLogContext(
+      domainName: self.domainName,
+      operation: self.operation,
+      category: self.category,
+      source: self.source,
+      correlationID: self.correlationID,
+      metadata: newMetadata
+    )
   }
 }

@@ -83,7 +83,10 @@ public class ProviderHashCommand: BaseProviderCommand, ProviderCommand {
 
     do {
       // Execute the hash operation using the provider
-      let result=try await provider.performSecureOperation(config: config)
+      let result=try await provider.performSecureOperation(
+        operation: .hash,
+        config: config
+      )
 
       // Check if the operation was successful
       if result.successful, let hashData=result.resultData {
@@ -92,7 +95,8 @@ public class ProviderHashCommand: BaseProviderCommand, ProviderCommand {
           context: logContext
         )
 
-        return .success(hashData)
+        // Convert Data to [UInt8] for the result
+        return .success([UInt8](hashData))
       } else {
         let error=createError(from: result)
 

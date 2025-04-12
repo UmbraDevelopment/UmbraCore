@@ -47,7 +47,7 @@ public actor BackupServicesActor: BackupServiceProtocol {
   private let commandFactory: BackupCommandFactory
 
   /// The Restic command factory
-  private let resticCommandFactory: BackupCommandFactory
+  private let resticCommandFactory: BackupResticCommandFactory
 
   /// Result parser for processing command output
   private let resultParser: BackupResultParser
@@ -90,7 +90,7 @@ public actor BackupServicesActor: BackupServiceProtocol {
     self.repositoryInfo=repositoryInfo
 
     // Create components for command infrastructure
-    resticCommandFactory=BackupCommandFactory()
+    resticCommandFactory=BackupResticCommandFactory()
     resultParser=BackupResultParser()
     errorMapper=BackupErrorMapper()
 

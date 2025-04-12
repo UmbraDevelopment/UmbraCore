@@ -141,6 +141,8 @@ public actor ResticServiceImpl: ResticServiceProtocol {
 
     return BaseLogContextDTO(
       domainName: "ResticServices",
+      operation: "backupOperation",
+      category: "ResticBackup",
       source: "ResticServiceImpl",
       metadata: collection
     )

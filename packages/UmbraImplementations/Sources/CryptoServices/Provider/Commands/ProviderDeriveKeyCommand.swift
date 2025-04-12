@@ -120,71 +120,62 @@ public class ProviderDeriveKeyCommand: BaseProviderCommand, ProviderCommand {
           additionalOptions: additionalOptions
         )
 
-        do {
-          // Execute the key derivation operation using the provider
-          let result=try await provider.performSecureOperation(config: config)
+        // Execute the key derivation operation using the provider
+        let result=try await provider.performSecureOperation(
+          operation: .deriveKey,
+          config: config
+        )
 
-          // Check if the operation was successful
-          if result.successful, let derivedKeyData=result.resultData {
-            // Store the derived key in secure storage
-            let storeResult=await secureStorage.storeSecureData(
-              derivedKeyData,
-              identifier: keyIdentifier
-            )
+        // Check if the operation was successful
+        if result.successful, let derivedKeyData=result.resultData {
+          // Store the derived key in secure storage
+          let storeResult=await secureStorage.storeSecureData(
+            derivedKeyData,
+            identifier: keyIdentifier
+          )
 
-            switch storeResult {
-              case .success:
-                // Create the key object
-                let key=CryptoKey(
-                  identifier: keyIdentifier,
-                  type: keyType,
-                  size: defaultSizeForKeyType(keyType),
-                  creationDate: Date()
-                )
+          switch storeResult {
+            case .success:
+              // Create the key object with required parameters
+              let key=CryptoKey(
+                id: keyIdentifier,
+                keyData: derivedKeyData,
+                creationDate: Date(),
+                expirationDate: nil,
+                purpose: .encryption, // Default purpose, adjust if needed
+                algorithm: .aes256,   // Default algorithm, adjust if needed
+                metadata: ["type": keyType.rawValue, "derived": "true"]
+              )
 
-                await logInfo(
-                  "Successfully derived \(keyType.rawValue) key",
-                  context: logContext.adding(
-                    key: "keyIdentifier",
-                    value: keyIdentifier,
-                    privacyLevel: .private
+              await logInfo(
+                "Successfully derived \(keyType) key with identifier \(keyIdentifier)",
+                context: logContext.withMetadata(
+                  LogMetadataDTOCollection().withPrivate(
+                    key: "keyIdentifier", 
+                    value: keyIdentifier
                   )
                 )
+              )
 
-                return .success(key)
+              return .success(key)
 
-              case let .failure(error):
-                await logError(
-                  "Failed to store derived key: \(error)",
-                  context: logContext
-                )
-                return .failure(error)
-            }
-          } else {
-            let error=createError(from: result)
-
-            await logError(
-              "Key derivation operation failed: \(error)",
-              context: logContext
-            )
-
-            return .failure(error)
+            case let .failure(error):
+              await logError(
+                "Failed to store derived key: \(error)",
+                context: logContext
+              )
+              return .failure(error)
           }
-        } catch {
+        } else {
+          let error=createError(from: result)
+
           await logError(
-            "Key derivation operation failed with exception: \(error.localizedDescription)",
+            "Key derivation operation failed: \(error)",
             context: logContext
           )
 
-          if let securityError=error as? SecurityStorageError {
-            return .failure(securityError)
-          } else {
-            return .failure(
-              .operationFailed("Key derivation failed: \(error.localizedDescription)")
-            )
-          }
+          return .failure(error)
         }
-
       case let .failure(error):
         await logError(
           "Failed to retrieve source key: \(error)",
@@ -203,22 +194,15 @@ public class ProviderDeriveKeyCommand: BaseProviderCommand, ProviderCommand {
    */
   private func defaultSizeForKeyType(_ keyType: KeyType) -> Int {
     switch keyType {
-      case .aes128:
-        128
-      case .aes256:
+      case .aes:
+        // Default to AES-256 for better security
         256
-      case .hmacSHA256:
-        256
-      case .hmacSHA512:
-        512
-      case .ecdsaP256:
-        256
-      case .ecdsaP384:
-        384
-      case .ecdsaP521:
-        521
-      case .rsaEncryption, .rsaSignature:
+      case .rsa:
+        // Default to 2048 bits for RSA
         2048
+      case .ec:
+        // Default to P-256 curve
+        256
     }
   }
 }

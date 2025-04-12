@@ -447,7 +447,7 @@ final class OperationsHandler {
     switch importResult {
       case let .success(dataIdentifier):
         // Check if key identifier is provided
-        guard let keyIdentifier=config.options?.metadata?["keyIdentifier"] else {
+        guard config.options?.metadata?["keyIdentifier"] != nil else {
           return .failure(
             errorDetails: "Missing key identifier in configuration",
             executionTimeMs: (Date().timeIntervalSince1970 - startTime) * 1000

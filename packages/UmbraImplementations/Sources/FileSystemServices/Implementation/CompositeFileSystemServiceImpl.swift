@@ -752,18 +752,6 @@ public actor CompositeFileSystemServiceImpl: CompositeFileSystemServiceProtocol 
         path: path.path
       )
       await logger.debug("Stopped accessing security-scoped resource", context: successContext)
-    } catch {
-      // Log the error
-      let errorContext=FileSystemLogContext(
-        operation: "stopAccessingSecurityScopedResource",
-        path: path.path,
-        metadata: LogMetadataDTOCollection()
-          .withPublic(key: "error", value: error.localizedDescription)
-      )
-      await logger.error(
-        "Error during stopAccessingSecurityScopedResource: \(error.localizedDescription)",
-        context: errorContext
-      )
     }
   }
 
@@ -943,7 +931,7 @@ public actor CompositeFileSystemServiceImpl: CompositeFileSystemServiceProtocol 
       let data=try await secureReadFile(at: path, options: nil)
 
       // Encrypt the data (placeholder for real encryption)
-      var encryptedData=data
+      let encryptedData=data
       // In a real implementation, this would use actual encryption
 
       // Write the encrypted data back
@@ -971,7 +959,7 @@ public actor CompositeFileSystemServiceImpl: CompositeFileSystemServiceProtocol 
       let encryptedData=try await secureReadFile(at: path, options: options)
 
       // Decrypt the data (placeholder for real decryption)
-      var decryptedData=encryptedData
+      let decryptedData=encryptedData
       // In a real implementation, this would use actual decryption
 
       return decryptedData
@@ -993,9 +981,10 @@ public actor CompositeFileSystemServiceImpl: CompositeFileSystemServiceProtocol 
 
     // Implement basic checksum calculation
     do {
-      // Read the file data
-      let data=try await secureReadFile(at: path, options: nil)
-
+      // Read the file data and use it in calculation (in real implementation)
+      _ = try await secureReadFile(at: path, options: nil)
+      
+      // In a real implementation, we would use the data for checksum calculation
       // Calculate checksum (placeholder implementation)
       let checksum=switch algorithm {
         case .md5:

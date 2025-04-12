@@ -4,6 +4,7 @@ import DomainSecurityTypes
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
+import SecurityCoreInterfaces
 
 /**
  Command for verifying cryptographic hashes.

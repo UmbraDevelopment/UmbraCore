@@ -6,15 +6,11 @@ import CryptoTypes
 import DomainSecurityTypes
 import Foundation
 import LoggingInterfaces
+import LoggingTypes
 import LoggingServices
 import SecurityInterfaces
 import SecurityProviders
 
-// Import implementation files
-// Note: We don't need to import CryptoServices since we're already in that module
-
-// import SecureStorageImplementations  // This module doesn't exist
-// Removed APIServices import to break dependency cycle
 import UmbraErrors
 
 /**
@@ -136,17 +132,29 @@ public actor CryptoServiceFactory {
   ) async -> SecureStorageProtocol {
     // Use the provided logger or create a suitable default
     let actualLogger: LoggingProtocol?
-    if let logger {
+    if let logger=logger {
       actualLogger=logger
     } else {
       let factory=LoggingServiceFactory.shared
-      actualLogger=await factory.createDevelopmentLogger(
+      let developmentLogger = await factory.createDevelopmentLogger(
         minimumLevel: .info
       )
+      actualLogger=developmentLogger as? LoggingProtocol
     }
 
     // This is a temporary solution until we have a proper implementation
-    return MockSecureStorage(logger: actualLogger)
+    return MockSecureStorage(logger: actualLogger ?? createFallbackLogger())
+  }
+
+  /**
+   Creates a simple fallback logger when no logger is provided.
+   
+   This avoids the need to import LoggingAdapters directly, helping with dependency management.
+   
+   - Returns: A minimal logging implementation.
+   */
+  private func createFallbackLogger() -> LoggingProtocol {
+    return LoggingServices.LoggingServiceFactory.shared.createDefaultLogger()
   }
 
   // MARK: - Security-Level Specific Implementations

@@ -4,6 +4,7 @@ import DomainSecurityTypes
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
+import SecurityCoreInterfaces
 
 /**
  Protocol defining the command pattern for cryptographic operations.
@@ -38,10 +39,10 @@ public protocol CryptoCommand<ResultType> {
  */
 public class BaseCryptoCommand {
   /// The secure storage to use for cryptographic materials
-  protected let secureStorage: SecureStorageProtocol
+  internal let secureStorage: SecureStorageProtocol
 
   /// Logger for operations
-  protected let logger: LoggingProtocol?
+  internal let logger: LoggingProtocol?
 
   /**
    Initialises a new base crypto command.
@@ -65,7 +66,7 @@ public class BaseCryptoCommand {
       - additionalMetadata: Additional metadata to include in the context
    - Returns: A configured log context
    */
-  protected func createLogContext(
+  internal func createLogContext(
     operation: String,
     algorithm: String?=nil,
     correlationID: String?=nil,
@@ -97,7 +98,7 @@ public class BaseCryptoCommand {
       - message: The log message
       - context: The logging context
    */
-  protected func logDebug(_ message: String, context: LogContextDTO) async {
+  internal func logDebug(_ message: String, context: LogContextDTO) async {
     await logger?.debug(message, context: context)
   }
 
@@ -108,7 +109,7 @@ public class BaseCryptoCommand {
       - message: The log message
       - context: The logging context
    */
-  protected func logInfo(_ message: String, context: LogContextDTO) async {
+  internal func logInfo(_ message: String, context: LogContextDTO) async {
     await logger?.info(message, context: context)
   }
 
@@ -119,7 +120,7 @@ public class BaseCryptoCommand {
       - message: The log message
       - context: The logging context
    */
-  protected func logWarning(_ message: String, context: LogContextDTO) async {
+  internal func logWarning(_ message: String, context: LogContextDTO) async {
     await logger?.warning(message, context: context)
   }
 
@@ -130,7 +131,7 @@ public class BaseCryptoCommand {
       - message: The log message
       - context: The logging context
    */
-  protected func logError(_ message: String, context: LogContextDTO) async {
+  internal func logError(_ message: String, context: LogContextDTO) async {
     await logger?.error(message, context: context)
   }
 }

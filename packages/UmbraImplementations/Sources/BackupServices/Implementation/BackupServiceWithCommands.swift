@@ -70,9 +70,9 @@ public actor BackupServiceWithCommands: BackupServiceProtocol {
     repositoryInfo: RepositoryInfo
   ) {
     // Create components for command execution
-    let resticCommandFactory=BackupCommandFactory()
     let resultParser=BackupResultParser()
     let errorMapper=BackupErrorMapper()
+    let resticCommandFactory=BackupResticCommandFactory()
 
     // Create the backup command factory
     commandFactory=BackupCommandFactory(

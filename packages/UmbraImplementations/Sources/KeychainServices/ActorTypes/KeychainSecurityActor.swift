@@ -223,7 +223,9 @@ public actor KeychainSecurityActor {
     keyIdentifier: String?=nil,
     additionalContext: LogMetadataDTOCollection?=nil
   ) async throws -> String {
-    let derivedKeyIdentifier=keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
+    // Derive the key identifier if not provided explicitly
+    // Using underscore to acknowledge intentional discard of the value
+    _ = keyIdentifier ?? deriveKeyIdentifier(forAccount: account)
 
     // Log the operation start
     await keychainLogger.logOperationStart(

@@ -301,6 +301,7 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
 
     // Create log context
     let logContext=CoreLogContext(
+      operation: "handleError",
       source: "\(context.source.file):\(context.source.line)",
       correlationID: error.correlationID ?? UUID().uuidString,
       metadata: error.createMetadataCollection()
@@ -393,6 +394,7 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
 
     // Log at info level with public classification
     let logContext=CoreLogContext(
+      operation: "showNotification",
       source: "UserNotification",
       correlationID: nil,
       metadata: metadata
@@ -450,6 +452,7 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
       .withPublic(key: "strategyCount", value: String(strategies.count))
 
     let logContext=CoreLogContext(
+      operation: "attemptRecovery",
       source: "DefaultErrorHandler.attemptRecovery",
       correlationID: nil,
       metadata: metadata
@@ -489,6 +492,7 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
     metadata=metadata.withPublic(key: "recoveryStatus", value: "success")
 
     let logContext=CoreLogContext(
+      operation: "recoverySucceeded",
       source: "ErrorRecovery",
       correlationID: error.correlationID ?? UUID().uuidString,
       metadata: metadata
@@ -514,6 +518,7 @@ public actor DefaultErrorHandler: ErrorHandlerProtocol {
     metadata=metadata.withPublic(key: "recoveryStatus", value: "failure")
 
     let logContext=CoreLogContext(
+      operation: "recoveryFailed",
       source: "ErrorRecovery",
       correlationID: error.correlationID ?? UUID().uuidString,
       metadata: metadata

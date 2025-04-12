@@ -40,6 +40,12 @@ public struct EnhancedLogContext: LogContextDTO {
 
   /// Operation name
   public let operationName: String
+  
+  /// The operation being performed (required by LogContextDTO)
+  public var operation: String { operationName }
+  
+  /// The category for the log entry (required by LogContextDTO)
+  public let category: String
 
   /**
    Initialise a new enhanced log context.
@@ -49,6 +55,7 @@ public struct EnhancedLogContext: LogContextDTO {
      - operationName: The operation name
      - source: Optional source information
      - correlationID: Optional correlation ID
+     - category: The category for the log entry
      - metadata: Initial metadata collection
    */
   public init(
@@ -56,12 +63,14 @@ public struct EnhancedLogContext: LogContextDTO {
     operationName: String,
     source: String?=nil,
     correlationID: String?=nil,
+    category: String,
     metadata: LogMetadataDTOCollection=LogMetadataDTOCollection()
   ) {
     self.domainName=domainName
     self.operationName=operationName
     self.source=source
     self.correlationID=correlationID
+    self.category=category
     self.metadata=metadata
   }
 
@@ -101,6 +110,7 @@ public struct EnhancedLogContext: LogContextDTO {
       operationName: operationName,
       source: source,
       correlationID: correlationID,
+      category: category,
       metadata: metadata
     )
   }
@@ -117,6 +127,7 @@ public struct EnhancedLogContext: LogContextDTO {
       operationName: operationName,
       source: source,
       correlationID: correlationID,
+      category: category,
       metadata: metadata
     )
   }
@@ -135,6 +146,7 @@ public struct EnhancedLogContext: LogContextDTO {
       operationName: operationName,
       source: source,
       correlationID: correlationID,
+      category: category,
       metadata: metadata.withPublic(key: key, value: value)
     )
   }
@@ -153,6 +165,7 @@ public struct EnhancedLogContext: LogContextDTO {
       operationName: operationName,
       source: source,
       correlationID: correlationID,
+      category: category,
       metadata: metadata.withPrivate(key: key, value: value)
     )
   }
@@ -171,6 +184,7 @@ public struct EnhancedLogContext: LogContextDTO {
       operationName: operationName,
       source: source,
       correlationID: correlationID,
+      category: category,
       metadata: metadata.withSensitive(key: key, value: value)
     )
   }
@@ -189,21 +203,22 @@ public struct EnhancedLogContext: LogContextDTO {
       operationName: operationName,
       source: source,
       correlationID: correlationID,
+      category: category,
       metadata: metadata.withHashed(key: key, value: value)
     )
   }
 
   /**
-   Creates a new context with merged metadata.
+   Creates a new context with the provided metadata merged with this context's metadata.
 
-   - Parameter newMetadata: The metadata collection to merge
-   - Returns: A new context with the merged metadata
+   - Parameter additionalMetadata: Additional metadata to include
+   - Returns: New context with merged metadata
    */
-  public func withMergedMetadata(_ newMetadata: LogMetadataDTOCollection) -> EnhancedLogContext {
+  public func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> Self {
     // Create a new metadata collection with all entries from both collections
     var mergedMetadata=metadata
 
-    for entry in newMetadata.entries {
+    for entry in additionalMetadata.entries {
       switch entry.privacyLevel {
         case .public:
           mergedMetadata=mergedMetadata.withPublic(key: entry.key, value: entry.value)
@@ -212,20 +227,26 @@ public struct EnhancedLogContext: LogContextDTO {
         case .sensitive:
           mergedMetadata=mergedMetadata.withSensitive(key: entry.key, value: entry.value)
         case .hash:
-          mergedMetadata=mergedMetadata.withHashed(key: entry.key, value: entry.value)
-        case .auto:
-          // For auto, default to private
+          mergedMetadata=mergedMetadata.withHash(key: entry.key, value: entry.value)
+        default:
+          // For any other privacy level, treat as private
           mergedMetadata=mergedMetadata.withPrivate(key: entry.key, value: entry.value)
       }
     }
 
     return EnhancedLogContext(
-      domainName: domainName,
-      operationName: operationName,
-      source: source,
-      correlationID: correlationID,
+      domainName: self.domainName,
+      operationName: self.operationName,
+      source: self.source,
+      correlationID: self.correlationID,
+      category: self.category,
       metadata: mergedMetadata
     )
+  }
+
+  // Maintain the existing method for backward compatibility
+  public func withMergedMetadata(_ newMetadata: LogMetadataDTOCollection) -> EnhancedLogContext {
+    return withMetadata(newMetadata)
   }
 
   /**
@@ -281,6 +302,7 @@ public struct EnhancedLogContext: LogContextDTO {
       operationName: operationName,
       source: source,
       correlationID: correlationID,
+      category: category,
       metadata: updatedMetadata
     )
   }
@@ -312,6 +334,7 @@ public struct EnhancedLogContext: LogContextDTO {
       operationName: operationName,
       source: source,
       correlationID: correlationID,
+      category: category,
       metadata: updatedMetadata
     )
   }

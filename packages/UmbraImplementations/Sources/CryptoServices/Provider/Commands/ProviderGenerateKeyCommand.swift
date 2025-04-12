@@ -98,7 +98,10 @@ public class ProviderGenerateKeyCommand: BaseProviderCommand, ProviderCommand {
 
     do {
       // Execute the key generation operation using the provider
-      let result=try await provider.performSecureOperation(config: config)
+      let result=try await provider.performSecureOperation(
+        operation: .generateKey,
+        config: config
+      )
 
       // Check if the operation was successful
       if result.successful, let keyData=result.resultData {
@@ -107,21 +110,29 @@ public class ProviderGenerateKeyCommand: BaseProviderCommand, ProviderCommand {
 
         switch storeResult {
           case .success:
-            // Create the key object
+            // Create the key object with required parameters
             let actualSize=size ?? defaultSizeForKeyType(keyType)
             let key=CryptoKey(
-              identifier: keyIdentifier,
-              type: keyType,
-              size: actualSize,
-              creationDate: Date()
+              id: keyIdentifier,
+              keyData: keyData,
+              creationDate: Date(),
+              expirationDate: nil,
+              purpose: .encryption, // Default purpose, adjust if needed
+              algorithm: .aes256,   // Default algorithm, adjust if needed
+              metadata: [
+                "type": keyType.rawValue,
+                "size": "\(actualSize)",
+                "generated": "true"
+              ]
             )
 
             await logInfo(
-              "Successfully generated \(keyType.rawValue) key",
-              context: logContext.adding(
-                key: "keyIdentifier",
-                value: keyIdentifier,
-                privacyLevel: .private
+              "Successfully generated \(keyType) key with identifier \(keyIdentifier)",
+              context: logContext.withMetadata(
+                LogMetadataDTOCollection().withPrivate(
+                  key: "keyIdentifier", 
+                  value: keyIdentifier
+                )
               )
             )
 
@@ -166,22 +177,15 @@ public class ProviderGenerateKeyCommand: BaseProviderCommand, ProviderCommand {
    */
   private func defaultSizeForKeyType(_ keyType: KeyType) -> Int {
     switch keyType {
-      case .aes128:
-        128
-      case .aes256:
+      case .aes:
+        // Default to AES-256 for better security
         256
-      case .hmacSHA256:
-        256
-      case .hmacSHA512:
-        512
-      case .ecdsaP256:
-        256
-      case .ecdsaP384:
-        384
-      case .ecdsaP521:
-        521
-      case .rsaEncryption, .rsaSignature:
+      case .rsa:
+        // Default to 2048 bits for RSA
         2048
+      case .ec:
+        // Default to P-256 curve
+        256
     }
   }
 }

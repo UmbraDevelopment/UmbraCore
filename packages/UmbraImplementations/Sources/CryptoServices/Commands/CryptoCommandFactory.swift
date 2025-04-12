@@ -3,6 +3,7 @@ import CryptoInterfaces
 import DomainSecurityTypes
 import Foundation
 import LoggingInterfaces
+import SecurityCoreInterfaces
 
 /**
  Factory for creating cryptographic operation command objects.

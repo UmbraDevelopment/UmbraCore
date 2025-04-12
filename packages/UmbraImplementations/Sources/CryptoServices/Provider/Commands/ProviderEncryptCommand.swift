@@ -97,7 +97,10 @@ public class ProviderEncryptCommand: BaseProviderCommand, ProviderCommand {
 
         do {
           // Execute the encryption operation using the provider
-          let result=try await provider.encrypt(config: config)
+          let result=try await provider.performSecureOperation(
+            operation: .encrypt,
+            config: config
+          )
 
           // Check if the operation was successful
           if result.successful, let encryptedData=result.resultData {

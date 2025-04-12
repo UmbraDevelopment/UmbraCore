@@ -103,6 +103,8 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
   ) async {
     let context=BaseLogContextDTO(
       domainName: "KeychainServices",
+      operation: "general",
+      category: "Keychain",
       source: source,
       metadataCollection: metadata
     )
@@ -124,6 +126,8 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
   ) async {
     let context=BaseLogContextDTO(
       domainName: "KeychainServices",
+      operation: "general",
+      category: "Keychain",
       source: source,
       metadataCollection: metadata
     )
@@ -145,6 +149,8 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
   ) async {
     let context=BaseLogContextDTO(
       domainName: "KeychainServices",
+      operation: "general",
+      category: "Keychain",
       source: source,
       metadataCollection: metadata
     )
@@ -166,6 +172,8 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
   ) async {
     let context=BaseLogContextDTO(
       domainName: "KeychainServices",
+      operation: "general",
+      category: "Keychain",
       source: source,
       metadataCollection: metadata
     )
@@ -187,6 +195,8 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
   ) async {
     let context=BaseLogContextDTO(
       domainName: "KeychainServices",
+      operation: "general",
+      category: "Keychain",
       source: source,
       metadataCollection: metadata
     )
@@ -214,6 +224,8 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
   ) async {
     let context=BaseLogContextDTO(
       domainName: "KeychainServices",
+      operation: "general",
+      category: "Keychain",
       source: source
     )
     await debug(message, context: context)
@@ -239,6 +251,8 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
   ) async {
     let context=BaseLogContextDTO(
       domainName: "KeychainServices",
+      operation: "general",
+      category: "Keychain",
       source: source
     )
     await info(message, context: context)
@@ -264,6 +278,8 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
   ) async {
     let context=BaseLogContextDTO(
       domainName: "KeychainServices",
+      operation: "general",
+      category: "Keychain",
       source: source
     )
     await warning(message, context: context)
@@ -289,6 +305,8 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
   ) async {
     let context=BaseLogContextDTO(
       domainName: "KeychainServices",
+      operation: "general",
+      category: "Keychain",
       source: source
     )
     await error(message, context: context)
@@ -314,6 +332,8 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
   ) async {
     let context=BaseLogContextDTO(
       domainName: "KeychainServices",
+      operation: "general",
+      category: "Keychain",
       source: source
     )
     await critical(message, context: context)
@@ -325,31 +345,76 @@ public actor DefaultLogger: LoggingProtocol, CoreLoggingProtocol {
  */
 private struct BaseLogContextDTO: LogContextDTO {
   let domainName: String
+  let operation: String
+  let category: String
   let source: String?
   let correlationID: String?
   let metadataCollection: LogMetadataDTOCollection?
+  
+  // Required by LogContextDTO protocol
+  var metadata: LogMetadataDTOCollection {
+    metadataCollection ?? LogMetadataDTOCollection()
+  }
 
   init(
     domainName: String,
-    source: String?=nil,
-    correlationID: String?=nil,
-    metadataCollection: LogMetadataDTOCollection?=nil
+    operation: String = "general",
+    category: String = "Keychain",
+    source: String? = nil,
+    correlationID: String? = nil,
+    metadataCollection: LogMetadataDTOCollection? = nil
   ) {
-    self.domainName=domainName
-    self.source=source
-    self.correlationID=correlationID
-    self.metadataCollection=metadataCollection
-  }
-
-  func getSource() -> String {
-    source ?? "DefaultLogger"
+    self.domainName = domainName
+    self.operation = operation
+    self.category = category
+    self.source = source
+    self.correlationID = correlationID
+    self.metadataCollection = metadataCollection
   }
 
   func getDomain() -> String {
     domainName
   }
 
-  var metadata: LogMetadataDTOCollection {
-    metadataCollection ?? LogMetadataDTOCollection()
+  /**
+   * Creates a metadata collection with context information.
+   *
+   * - Returns: A LogMetadataDTOCollection with context metadata
+   */
+  func createMetadataCollection() -> LogMetadataDTOCollection {
+    var collection = metadataCollection ?? LogMetadataDTOCollection()
+    collection = collection.withPublic(key: "domain", value: domainName)
+    collection = collection.withPublic(key: "operation", value: operation)
+    collection = collection.withPublic(key: "category", value: category)
+
+    if let source {
+      collection = collection.withPublic(key: "source", value: source)
+    }
+
+    if let correlationID {
+      collection = collection.withPublic(key: "correlationId", value: correlationID)
+    }
+
+    return collection
+  }
+
+  /**
+   * Updates the context with additional metadata.
+   *
+   * - Parameter additionalMetadata: Additional metadata to include
+   * - Returns: A new context with merged metadata
+   */
+  func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> Self {
+    let existingMetadata = metadataCollection ?? LogMetadataDTOCollection()
+    let mergedMetadata = existingMetadata.merging(with: additionalMetadata)
+
+    return BaseLogContextDTO(
+      domainName: domainName,
+      operation: operation,
+      category: category,
+      source: source,
+      correlationID: correlationID,
+      metadataCollection: mergedMetadata
+    )
   }
 }

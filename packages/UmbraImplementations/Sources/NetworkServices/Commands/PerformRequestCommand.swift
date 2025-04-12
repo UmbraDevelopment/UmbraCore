@@ -9,7 +9,7 @@ import NetworkInterfaces
  This command encapsulates the logic for performing a network request and
  processing the response, following the command pattern architecture.
  */
-public class PerformRequestCommand: BaseNetworkCommand, NetworkCommand {
+public class PerformRequestCommand: BaseNetworkCommand, NetworkCommand, @unchecked Sendable {
   /// The result type for this command
   public typealias ResultType=NetworkResponseDTO
 
@@ -77,7 +77,7 @@ public class PerformRequestCommand: BaseNetworkCommand, NetworkCommand {
         ]
       )
       await logger.log(.error, "Failed to create URL from request", context: errorContext)
-      throw error is NetworkError ? error : NetworkError.invalidURL(request.urlString)
+      throw error is NetworkError ? error : NetworkError.internalError(message: "Invalid URL")
     }
 
     // Create request log context
@@ -99,7 +99,7 @@ public class PerformRequestCommand: BaseNetworkCommand, NetworkCommand {
 
       // Process the response
       guard let httpResponse=urlResponse as? HTTPURLResponse else {
-        throw NetworkError.invalidResponse
+        throw NetworkError.internalError(message: "Invalid response type received")
       }
 
       // Calculate response size
@@ -128,9 +128,13 @@ public class PerformRequestCommand: BaseNetworkCommand, NetworkCommand {
 
       // Update statistics if available
       await statisticsProvider?.recordRequest(
-        url: request.urlString,
-        method: request.method.rawValue,
-        statusCode: httpResponse.statusCode,
+        response: NetworkResponseDTO(
+          statusCode: httpResponse.statusCode,
+          headers: httpResponse.allHeaderFields as? [String: String] ?? [:],
+          data: [UInt8](data),
+          isSuccess: true,
+          error: nil
+        ),
         requestSizeBytes: requestSizeBytes,
         responseSizeBytes: responseSizeBytes,
         durationMs: durationMs
@@ -138,18 +142,19 @@ public class PerformRequestCommand: BaseNetworkCommand, NetworkCommand {
 
       // Check status code for error responses
       if httpResponse.statusCode >= 400 {
-        throw NetworkError.httpError(
+        throw NetworkError.serverError(
           statusCode: httpResponse.statusCode,
-          data: data
+          message: String(data: data, encoding: .utf8) ?? "No error message provided"
         )
       }
 
       // Create and return the response
       return NetworkResponseDTO(
-        data: data,
         statusCode: httpResponse.statusCode,
         headers: httpResponse.allHeaderFields as? [String: String] ?? [:],
-        url: httpResponse.url
+        data: [UInt8](data),
+        isSuccess: true,
+        error: nil
       )
 
     } catch let error as URLError {
@@ -172,23 +177,29 @@ public class PerformRequestCommand: BaseNetworkCommand, NetworkCommand {
       await logger.log(.error, "Network request failed with URLError", context: errorContext)
 
       // Update error statistics
-      await statisticsProvider?.recordError(
-        url: request.urlString,
-        method: request.method.rawValue,
-        errorCode: String(error.code.rawValue),
+      await statisticsProvider?.recordRequest(
+        response: NetworkResponseDTO(
+          statusCode: 0,
+          headers: [:],
+          data: [],
+          isSuccess: false,
+          error: NetworkError.unknown(message: error.localizedDescription)
+        ),
+        requestSizeBytes: requestSizeBytes,
+        responseSizeBytes: 0,
         durationMs: durationMs
       )
 
       // Map URLError to NetworkError
       let networkError: NetworkError=switch error.code {
         case .notConnectedToInternet, .networkConnectionLost:
-          .noConnection
+          .networkUnavailable
         case .timedOut:
-          .timeout
+          .timeout(seconds: request.timeoutInterval)
         case .cancelled:
           .cancelled
         default:
-          .urlError(error)
+          .connectionFailed(reason: error.localizedDescription)
       }
 
       throw networkError
@@ -212,10 +223,16 @@ public class PerformRequestCommand: BaseNetworkCommand, NetworkCommand {
       await logger.log(.error, "Network request failed with NetworkError", context: errorContext)
 
       // Update error statistics
-      await statisticsProvider?.recordError(
-        url: request.urlString,
-        method: request.method.rawValue,
-        errorCode: String(describing: error),
+      await statisticsProvider?.recordRequest(
+        response: NetworkResponseDTO(
+          statusCode: 0,
+          headers: [:],
+          data: [],
+          isSuccess: false,
+          error: error
+        ),
+        requestSizeBytes: requestSizeBytes,
+        responseSizeBytes: 0,
         durationMs: durationMs
       )
 
@@ -244,14 +261,20 @@ public class PerformRequestCommand: BaseNetworkCommand, NetworkCommand {
       )
 
       // Update error statistics
-      await statisticsProvider?.recordError(
-        url: request.urlString,
-        method: request.method.rawValue,
-        errorCode: "unknown",
+      await statisticsProvider?.recordRequest(
+        response: NetworkResponseDTO(
+          statusCode: 0,
+          headers: [:],
+          data: [],
+          isSuccess: false,
+          error: NetworkError.unknown(message: error.localizedDescription)
+        ),
+        requestSizeBytes: requestSizeBytes,
+        responseSizeBytes: 0,
         durationMs: durationMs
       )
 
-      throw NetworkError.unknown(error.localizedDescription)
+      throw NetworkError.unknown(message: error.localizedDescription)
     }
   }
 }

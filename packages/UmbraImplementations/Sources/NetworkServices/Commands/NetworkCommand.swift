@@ -10,7 +10,7 @@ import NetworkInterfaces
  must fulfil, following the command pattern to encapsulate network operations in
  discrete command objects with a consistent interface.
  */
-public protocol NetworkCommand {
+public protocol NetworkCommand: Sendable {
   /// The type of result returned by this command when executed
   associatedtype ResultType: Sendable
 
@@ -32,21 +32,21 @@ public protocol NetworkCommand {
  including access to the URLSession, standardised logging, and utility methods
  that are commonly needed across network operations.
  */
-public class BaseNetworkCommand {
+public class BaseNetworkCommand: @unchecked Sendable {
   /// The URLSession for making network requests
-  protected let session: URLSession
+  internal let session: URLSession
 
   /// Default timeout interval for requests
-  protected let defaultTimeoutInterval: Double
+  internal let defaultTimeoutInterval: Double
 
   /// Default cache policy for requests
-  protected let defaultCachePolicy: CachePolicy
+  internal let defaultCachePolicy: CachePolicy
 
   /// Logging instance for network operations
-  protected let logger: PrivacyAwareLoggingProtocol
+  internal let logger: PrivacyAwareLoggingProtocol
 
   /// Statistics provider for collecting network metrics
-  protected let statisticsProvider: NetworkStatisticsProvider?
+  internal let statisticsProvider: NetworkStatisticsProvider?
 
   /**
    Initialises a new base network command.
@@ -80,12 +80,12 @@ public class BaseNetworkCommand {
       - additionalMetadata: Additional metadata for the log context
    - Returns: A configured network log context
    */
-  protected func createLogContext(
+  internal func createLogContext(
     operation: String,
     additionalMetadata: [String: (value: String, privacyLevel: PrivacyLevel)]=[:]
   ) -> NetworkLogContext {
     // Create a base log context
-    let context=NetworkLogContext(
+    var context=NetworkLogContext(
       operation: operation,
       source: "NetworkService"
     )
@@ -94,11 +94,14 @@ public class BaseNetworkCommand {
     for (key, value) in additionalMetadata {
       switch value.privacyLevel {
         case .public:
-          context.withPublic(key: key, value: value.value)
+          context = context.withPublic(key: key, value: value.value)
         case .protected:
-          context.withProtected(key: key, value: value.value)
+          context = context.withProtected(key: key, value: value.value)
         case .private:
-          context.withPrivate(key: key, value: value.value)
+          context = context.withPrivate(key: key, value: value.value)
+        case .sensitive, .hash, .never, .auto:
+          // For other privacy levels, default to private
+          context = context.withPrivate(key: key, value: value.value)
       }
     }
 
@@ -111,7 +114,7 @@ public class BaseNetworkCommand {
    - Parameter request: The network request
    - Returns: Constructed URL with query parameters, or nil if URL is invalid
    */
-  protected func constructURL(from request: NetworkRequestProtocol) -> URL? {
+  internal func constructURL(from request: NetworkRequestProtocol) -> URL? {
     guard var urlComponents=URLComponents(string: request.urlString) else {
       return nil
     }
@@ -130,10 +133,10 @@ public class BaseNetworkCommand {
    Creates a URLRequest from a NetworkRequestProtocol.
 
    - Parameter request: The network request
-   - Returns: Configured URLRequest
+   - Returns: The result of the operation
    - Throws: NetworkError if URL construction fails
    */
-  protected func createURLRequest(from request: NetworkRequestProtocol) throws -> URLRequest {
+  internal func createURLRequest(from request: NetworkRequestProtocol) throws -> URLRequest {
     guard let url=constructURL(from: request) else {
       throw NetworkError.invalidURL(request.urlString)
     }
@@ -141,7 +144,7 @@ public class BaseNetworkCommand {
     // Create and configure the URLRequest
     var urlRequest=URLRequest(
       url: url,
-      cachePolicy: request.cachePolicy,
+      cachePolicy: URLRequest.CachePolicy(rawValue: UInt(request.cachePolicy.hashValue)) ?? .useProtocolCachePolicy,
       timeoutInterval: request.timeoutInterval
     )
 
@@ -169,91 +172,87 @@ public class BaseNetworkCommand {
       - urlRequest: URLRequest to modify
    - Throws: NetworkError if body preparation fails
    */
-  protected func setRequestBody(_ body: RequestBody, for urlRequest: inout URLRequest) throws {
+  internal func setRequestBody(_ body: RequestBody, for urlRequest: inout URLRequest) throws {
     switch body {
       case let .json(encodable):
         let encoder=JSONEncoder()
         do {
-          let data=try encoder.encode(encodable)
-          urlRequest.httpBody=data
+          let jsonData=try encoder.encode(encodable)
+          urlRequest.httpBody=jsonData
           urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
         } catch {
-          throw NetworkError.encodingFailed
+          throw NetworkError.encodingFailed(reason: "Failed to encode JSON body")
         }
 
-      case let .urlEncoded(dictionary):
+      case let .form(parameters):
         var components=URLComponents()
-        components.queryItems=dictionary.map { key, value in
+        components.queryItems=parameters.map { key, value in
           URLQueryItem(name: key, value: value)
         }
-        urlRequest.httpBody=components.query?.data(using: .utf8)
-        urlRequest.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        
+        if let encodedData=components.query?.data(using: .utf8) {
+          urlRequest.httpBody=encodedData
+          urlRequest.setValue(
+            "application/x-www-form-urlencoded",
+            forHTTPHeaderField: "Content-Type"
+          )
+        }
 
-      case let .multipart(items, boundary):
-        let data=createMultipartBody(items: items, boundary: boundary)
-        urlRequest.httpBody=data
+      case let .data(bytes):
+        urlRequest.httpBody=Data(bytes)
+        // Content-Type is not set by default for raw data
+        // The caller should set the appropriate Content-Type header
+
+      case let .multipart(boundary, parts):
+        let multipartBody=createMultipartBody(items: parts, boundary: boundary)
+        urlRequest.httpBody=multipartBody
         urlRequest.setValue(
           "multipart/form-data; boundary=\(boundary)",
           forHTTPHeaderField: "Content-Type"
         )
-
-      case let .data(data, contentType):
-        urlRequest.httpBody=data
-        if let contentType {
-          urlRequest.setValue(contentType, forHTTPHeaderField: "Content-Type")
-        }
-
-      case let .text(text, encoding):
-        if let data=text.data(using: encoding) {
-          urlRequest.httpBody=data
-          urlRequest.setValue("text/plain; charset=\(encoding)", forHTTPHeaderField: "Content-Type")
-        } else {
-          throw NetworkError.encodingFailed
-        }
+        
+      case .empty:
+        // No body to set
+        break
     }
   }
 
   /**
-   Creates a multipart form data body from the given items.
+   Creates a multipart form body from the provided items.
 
    - Parameters:
-      - items: Array of multipart form items
-      - boundary: Boundary string to separate parts
+      - items: Array of multipart form data items
+      - boundary: The boundary string to use for separating form parts
    - Returns: Data containing the complete multipart form body
    */
-  protected func createMultipartBody(items: [MultipartFormItem], boundary: String) -> Data {
+  internal func createMultipartBody(items: [MultipartFormData], boundary: String) -> Data {
     var body=Data()
 
     for item in items {
+      // Add boundary
       body.append("--\(boundary)\r\n".data(using: .utf8)!)
-
-      // Add content disposition
-      body.append("Content-Disposition: form-data; name=\"\(item.name)\"".data(using: .utf8)!)
-
-      // Add filename if present
-      if let filename=item.filename {
-        body.append("; filename=\"\(filename)\"".data(using: .utf8)!)
+      
+      // Add Content-Disposition header
+      var header = "Content-Disposition: form-data; name=\"\(item.name)\""
+      if let filename = item.filename {
+        header += "; filename=\"\(filename)\""
       }
-      body.append("\r\n".data(using: .utf8)!)
-
-      // Add content type if present
-      if let contentType=item.contentType {
-        body.append("Content-Type: \(contentType)\r\n".data(using: .utf8)!)
-      }
-
-      // Separator between headers and content
-      body.append("\r\n".data(using: .utf8)!)
-
-      // Add content data
-      body.append(item.data)
-
-      // End of part
+      header += "\r\n"
+      body.append(header.data(using: .utf8)!)
+      
+      // Add Content-Type header
+      body.append("Content-Type: \(item.contentType)\r\n\r\n".data(using: .utf8)!)
+      
+      // Add data
+      body.append(Data(item.data))
+      
+      // Add line break
       body.append("\r\n".data(using: .utf8)!)
     }
-
-    // End of body
+    
+    // Add closing boundary
     body.append("--\(boundary)--\r\n".data(using: .utf8)!)
-
+    
     return body
   }
 
@@ -263,7 +262,7 @@ public class BaseNetworkCommand {
    - Parameter request: URLRequest to estimate
    - Returns: Estimated size in bytes
    */
-  protected func estimateRequestSize(_ request: URLRequest) -> Int {
+  internal func estimateRequestSize(_ request: URLRequest) -> Int {
     var size=0
 
     // Method line: GET /path HTTP/1.1

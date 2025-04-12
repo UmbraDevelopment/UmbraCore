@@ -7,7 +7,7 @@ import UmbraErrors
 ///
 /// This class centralises all command creation logic for snapshot-related
 /// operations, ensuring consistent command structure and arguments.
-struct ResticCommandFactory {
+struct SnapshotResticCommandFactory {
 
   /// Creates a command to get snapshot list with filters
   /// - Parameters:

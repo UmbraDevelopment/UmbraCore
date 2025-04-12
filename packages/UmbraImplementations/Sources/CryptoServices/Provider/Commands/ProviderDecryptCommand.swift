@@ -97,7 +97,10 @@ public class ProviderDecryptCommand: BaseProviderCommand, ProviderCommand {
 
         do {
           // Execute the decryption operation using the provider
-          let result=try await provider.decrypt(config: config)
+          let result=try await provider.performSecureOperation(
+            operation: .decrypt,
+            config: config
+          )
 
           // Check if the operation was successful
           if result.successful, let decryptedData=result.resultData {

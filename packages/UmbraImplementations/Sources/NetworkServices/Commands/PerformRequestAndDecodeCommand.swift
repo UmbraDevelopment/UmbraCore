@@ -10,7 +10,7 @@ import NetworkInterfaces
  decoding the response data into a specific type, following the command pattern architecture.
  */
 public class PerformRequestAndDecodeCommand<T: Decodable & Sendable>: BaseNetworkCommand,
-NetworkCommand {
+  NetworkCommand, @unchecked Sendable {
   /// The result type for this command
   public typealias ResultType=T
 
@@ -98,7 +98,7 @@ NetworkCommand {
       let decoder=JSONDecoder()
 
       // Try to decode the response data
-      let decodedObject=try decoder.decode(decodableType, from: response.data)
+      let decodedObject=try decoder.decode(decodableType, from: Data(response.data))
 
       // Log successful decoding
       await logger.log(
@@ -128,17 +128,17 @@ NetworkCommand {
       // but limit it to a reasonable size to avoid exposing sensitive data
       if !response.data.isEmpty {
         var dataPreview=""
-        if let jsonString=String(data: response.data.prefix(200), encoding: .utf8) {
+        if let jsonString=String(data: Data(response.data.prefix(200)), encoding: .utf8) {
           dataPreview=jsonString + (response.data.count > 200 ? "..." : "")
         } else {
           dataPreview="[Binary data, \(response.data.count) bytes]"
         }
 
-        let dataContext=errorContext.withPrivate(key: "responsePreview", value: dataPreview)
+        let dataContext = errorContext.withPrivate(key: "responsePreview", value: dataPreview)
         await logger.log(.debug, "Response data preview", context: dataContext)
       }
 
-      throw NetworkError.decodingFailed
+      throw NetworkError.decodingFailed(reason: "Failed to decode response data")
     }
   }
 }

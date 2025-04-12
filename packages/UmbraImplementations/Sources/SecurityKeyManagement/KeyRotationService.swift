@@ -125,7 +125,7 @@ public actor KeyRotationServiceImpl: KeyRotationServiceProtocol {
     }
 
     // Verify we can retrieve the key
-    guard try await keyStore.getKey(identifier: identifier) != nil else {
+    guard await keyStore.getKey(identifier: identifier) != nil else {
       throw KeyRotationError.keyNotFound(identifier)
     }
 

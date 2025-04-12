@@ -4,6 +4,7 @@ import DomainSecurityTypes
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
+import SecurityCoreInterfaces
 
 /**
  Command for importing external data into secure storage.
@@ -73,13 +74,16 @@ public class ImportDataCommand: BaseCryptoCommand, CryptoCommand {
 
     switch storeResult {
       case .success:
+        let updatedContext = logContext.withMetadata(
+          LogMetadataDTOCollection().withPrivate(
+            key: "dataIdentifier", 
+            value: dataIdentifier
+          )
+        )
+        
         await logInfo(
           "Successfully imported \(data.count) bytes of data",
-          context: logContext.adding(
-            key: "dataIdentifier",
-            value: dataIdentifier,
-            privacyLevel: .private
-          )
+          context: updatedContext
         )
 
         return .success(dataIdentifier)

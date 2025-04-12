@@ -45,6 +45,8 @@ public actor SimpleSecureStorage: SecureStorageProtocol {
 
     return SimpleLogContext(
       domainName: "CryptoServices",
+      operation: operation,
+      category: "Storage",
       source: "SimpleSecureStorage",
       correlationID: nil,
       metadata: metadata
@@ -126,6 +128,12 @@ private struct SimpleLogContext: LogContextDTO {
   /// The domain name
   public let domainName: String
 
+  /// The operation being performed (required by protocol)
+  public let operation: String
+  
+  /// The category for the log entry (required by protocol)
+  public let category: String
+
   /// The source identifier (optional as per protocol)
   public let source: String?
 
@@ -140,19 +148,52 @@ private struct SimpleLogContext: LogContextDTO {
 
    - Parameters:
       - domainName: The domain name
+      - operation: The operation being performed
+      - category: The category for the log entry
       - source: The source identifier
       - correlationID: Optional correlation ID for tracing
       - metadata: The log metadata
    */
   init(
     domainName: String,
+    operation: String,
+    category: String,
     source: String,
     correlationID: String?=nil,
     metadata: LogMetadataDTOCollection=LogMetadataDTOCollection()
   ) {
     self.domainName=domainName
+    self.operation=operation
+    self.category=category
     self.source=source
     self.correlationID=correlationID
     self.metadata=metadata
+  }
+
+  /**
+   Creates a new log context with additional metadata merged with the existing metadata.
+   
+   - Parameter additionalMetadata: Additional metadata to include
+   - Returns: New context with merged metadata
+   */
+  public func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> Self {
+    var newMetadata = self.metadata
+     
+    for entry in additionalMetadata.entries {
+      newMetadata = newMetadata.with(
+        key: entry.key,
+        value: entry.value,
+        privacyLevel: entry.privacyLevel
+      )
+    }
+     
+    return SimpleLogContext(
+      domainName: self.domainName,
+      operation: self.operation,
+      category: self.category,
+      source: self.source,
+      correlationID: self.correlationID,
+      metadata: newMetadata
+    )
   }
 }

@@ -52,6 +52,7 @@ public actor BookmarkLogger: DomainLoggerProtocol {
   public func log(_ level: LogLevel, _ message: String) async {
     // For backward compatibility, create a basic bookmark context
     let context=BookmarkLogContext(
+      domainName: "BookmarkServices",
       operation: "generic",
       status: "info"
     )
@@ -196,6 +197,7 @@ public actor BookmarkLogger: DomainLoggerProtocol {
     message: String?=nil
   ) async {
     var context=BookmarkLogContext(
+      domainName: "BookmarkServices",
       operation: operation,
       identifier: identifier,
       status: "started"
@@ -226,6 +228,7 @@ public actor BookmarkLogger: DomainLoggerProtocol {
     message: String?=nil
   ) async {
     var context=BookmarkLogContext(
+      domainName: "BookmarkServices",
       operation: operation,
       identifier: identifier,
       status: "success"
@@ -259,10 +262,11 @@ public actor BookmarkLogger: DomainLoggerProtocol {
     metadata=metadata.withPrivate(key: "warning", value: warningMessage)
 
     var context=BookmarkLogContext(
+      domainName: "BookmarkServices",
+      metadata: metadata,
       operation: operation,
       identifier: identifier,
-      status: "warning",
-      metadata: metadata
+      status: "warning"
     )
 
     // Merge additional context if provided
@@ -292,6 +296,7 @@ public actor BookmarkLogger: DomainLoggerProtocol {
     message: String?=nil
   ) async {
     var context=BookmarkLogContext(
+      domainName: "BookmarkServices",
       operation: operation,
       identifier: identifier,
       status: "error"

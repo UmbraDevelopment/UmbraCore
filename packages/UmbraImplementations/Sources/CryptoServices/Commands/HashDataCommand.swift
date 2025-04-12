@@ -152,7 +152,7 @@ public class HashDataCommand: BaseCryptoCommand, CryptoCommand {
     var hashBytes=[UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
 
     // Compute SHA-256 hash
-    _=dataToHash.withUnsafeBytes { dataBuffer in
+    dataToHash.withUnsafeBytes { dataBuffer in
       CC_SHA256(dataBuffer.baseAddress, CC_LONG(dataBuffer.count), &hashBytes)
     }
 
@@ -180,7 +180,7 @@ public class HashDataCommand: BaseCryptoCommand, CryptoCommand {
     var hashBytes=[UInt8](repeating: 0, count: Int(CC_SHA512_DIGEST_LENGTH))
 
     // Compute SHA-512 hash
-    _=dataToHash.withUnsafeBytes { dataBuffer in
+    dataToHash.withUnsafeBytes { dataBuffer in
       CC_SHA512(dataBuffer.baseAddress, CC_LONG(dataBuffer.count), &hashBytes)
     }
 
@@ -201,7 +201,7 @@ public class HashDataCommand: BaseCryptoCommand, CryptoCommand {
     var hashBytes=[UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
 
     // Compute HMAC-SHA256
-    _=key.withUnsafeBytes { keyBuffer in
+    key.withUnsafeBytes { keyBuffer in
       data.withUnsafeBytes { dataBuffer in
         CCHmac(
           CCHmacAlgorithm(kCCHmacAlgSHA256),
@@ -231,7 +231,7 @@ public class HashDataCommand: BaseCryptoCommand, CryptoCommand {
     var hashBytes=[UInt8](repeating: 0, count: Int(CC_SHA512_DIGEST_LENGTH))
 
     // Compute HMAC-SHA512
-    _=key.withUnsafeBytes { keyBuffer in
+    key.withUnsafeBytes { keyBuffer in
       data.withUnsafeBytes { dataBuffer in
         CCHmac(
           CCHmacAlgorithm(kCCHmacAlgSHA512),
