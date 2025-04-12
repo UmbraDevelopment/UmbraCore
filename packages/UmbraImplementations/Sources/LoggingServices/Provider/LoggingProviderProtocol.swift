@@ -8,7 +8,7 @@ import LoggingTypes
  This protocol defines the common interface for all logging providers,
  allowing different backend implementations to be used interchangeably.
  */
-public protocol LoggingProviderProtocol {
+public protocol LoggingProviderProtocol: Sendable {
     /**
      Write a log entry to a destination.
      

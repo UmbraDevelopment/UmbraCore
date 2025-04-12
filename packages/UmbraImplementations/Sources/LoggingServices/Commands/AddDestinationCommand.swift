@@ -53,36 +53,34 @@ public class AddDestinationCommand: BaseCommand, LogCommand {
      */
     public func execute(context: LoggingInterfaces.LogContextDTO) async throws -> Bool {
         // Create a log context for this specific operation
-        let operationContext = LoggingInterfaces.BaseLogContextDTO(
+        let _ = LoggingInterfaces.BaseLogContextDTO(
             domainName: "LoggingServices",
             operation: "addDestination",
-            category: "DestinationManagement",
-            source: "UmbraCore",
+            category: "Command",
+            source: "AddDestinationCommand",
             metadata: LoggingInterfaces.LogMetadataDTOCollection()
-                .withPublic(key: "destinationId", value: destination.id)
-                .withPublic(key: "destinationName", value: destination.name)
-                .withPublic(key: "destinationType", value: destination.type.rawValue)
-                .withPublic(key: "validateConfiguration", value: String(options.validateConfiguration))
-                .withPublic(key: "testDestination", value: String(options.testDestination))
         )
         
-        // Log operation start
-        await logInfo("Starting to add destination '\(destination.name)' (\(destination.id))")
+        // Validate provider is available
+        guard let provider = await loggingServices.getProvider(for: destination.type) else {
+            throw LoggingTypes.LoggingError.invalidDestinationConfig("Unsupported destination type: \(destination.type)")
+        }
         
         do {
             // Check if destination already exists
-            if let existing = await getDestination(id: destination.id) {
+            if await getDestination(id: destination.id) != nil {
                 throw LoggingTypes.LoggingError.destinationAlreadyExists(identifier: destination.id)
             }
             
             // Validate destination configuration if requested
             if options.validateConfiguration {
-                let validationResult = try await loggingServices.validateDestination(destination, for: provider)
+                // Use a local copy to avoid data races with actor-isolated access
+                let localProvider = provider
+                let validationResult = await loggingServices.validateDestination(destination, for: localProvider)
                 
                 if !validationResult.isValid {
-                    let issues = validationResult.validationMessages.joined(separator: ", ")
                     throw LoggingTypes.LoggingError.invalidDestinationConfig(
-                        "Destination configuration is invalid: \(issues)"
+                        "Invalid destination configuration: \(validationResult.errors.joined(separator: ", "))"
                     )
                 }
             }

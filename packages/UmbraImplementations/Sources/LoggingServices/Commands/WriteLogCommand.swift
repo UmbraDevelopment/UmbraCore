@@ -52,7 +52,7 @@ public class WriteLogCommand: BaseCommand, LogCommand {
      */
     public func execute(context: LoggingInterfaces.LogContextDTO) async throws -> Bool {
         // Create a log context for this specific operation
-        let operationContext = LoggingInterfaces.BaseLogContextDTO(
+        let _ = LoggingInterfaces.BaseLogContextDTO(
             domainName: "LoggingServices",
             operation: "writeLog",
             category: "LogWrite",
@@ -112,21 +112,21 @@ public class WriteLogCommand: BaseCommand, LogCommand {
         for filterRule in destination.configuration.filterRules ?? [] {
             // Check for level filtering
             if filterRule.field == "level" {
-                if entry.level.rawValue == filterRule.value && filterRule.operation == .exclude {
+                if entry.level.rawValue == filterRule.value && filterRule.operation.rawValue == "exclude" {
                     return false
                 }
             }
             
             // Check for category filtering
             if filterRule.field == "category" {
-                if entry.category == filterRule.value && filterRule.operation == .exclude {
+                if entry.category == filterRule.value && filterRule.operation.rawValue == "exclude" {
                     return false
                 }
             }
             
             // Check for message filtering (contains check)
             if filterRule.field == "message" {
-                if entry.message.contains(filterRule.value) && filterRule.operation == .exclude {
+                if entry.message.contains(filterRule.value) && filterRule.operation.rawValue == "exclude" {
                     return false
                 }
             }
@@ -143,7 +143,7 @@ public class WriteLogCommand: BaseCommand, LogCommand {
      */
     private func applyRedactionRules(_ entry: LoggingInterfaces.LogEntryDTO) -> LoggingInterfaces.LogEntryDTO {
         // If no redaction rules, return the original entry
-        if destination.configuration.redactionRules?.isEmpty != false {
+        if destination.configuration.redactionRules?.isEmpty ?? true {
             return entry
         }
         

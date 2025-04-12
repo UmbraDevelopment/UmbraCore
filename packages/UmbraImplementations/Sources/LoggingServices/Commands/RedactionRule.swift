@@ -98,7 +98,8 @@ public struct RedactionRule: Sendable {
      */
     public func redact(metadata: LogMetadataDTOCollection) -> LogMetadataDTOCollection {
         // No redaction needed for empty metadata
-        guard let keys = try? metadata.getKeys() else {
+        let keys = metadata.getKeys()
+        guard !keys.isEmpty else {
             return metadata
         }
         
@@ -116,7 +117,7 @@ public struct RedactionRule: Sendable {
             }
             
             // Get string value and apply redaction
-            if let value = try? metadata.getString(key: key) {
+            if let value = metadata.getString(key: key) {
                 let redactedValue = redact(value)
                 if value != redactedValue {
                     // Only update if actually changed

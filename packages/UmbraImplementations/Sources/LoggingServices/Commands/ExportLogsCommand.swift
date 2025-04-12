@@ -54,7 +54,7 @@ public class ExportLogsCommand: BaseCommand, LogCommand {
      */
     public func execute(context: LoggingInterfaces.LogContextDTO) async throws -> Data {
         // Create a log context for this specific operation
-        let operationContext = LoggingInterfaces.BaseLogContextDTO(
+        let _ = LoggingInterfaces.BaseLogContextDTO(
             domainName: "LoggingServices",
             operation: "exportLogs",
             category: "LogExport",

@@ -4,7 +4,7 @@ import LoggingTypes
 
 /// Implementation of a logging actor for bootstrap purposes
 /// Provides a minimal implementation to satisfy protocol requirements
-public actor DummyPrivacyAwareLoggingActor: PrivacyAwareLoggingProtocol, LoggingProtocol {
+public actor DummyLoggingActor: PrivacyAwareLoggingProtocol, LoggingProtocol {
     /// The logging actor used by this logger
     public nonisolated var loggingActor: LoggingActor {
         return LoggingActor(destinations: [])
@@ -12,6 +12,9 @@ public actor DummyPrivacyAwareLoggingActor: PrivacyAwareLoggingProtocol, Logging
     
     /// The minimum log level for this actor
     private var minimumLogLevel: LogLevel = .info
+    
+    /// Create a new dummy logging actor
+    public init() {}
     
     /// Log a message with the given level
     public func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {

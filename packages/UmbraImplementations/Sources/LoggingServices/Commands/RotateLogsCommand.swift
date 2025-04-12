@@ -54,7 +54,7 @@ public class RotateLogsCommand: BaseCommand, LogCommand {
      */
     public func execute(context: LoggingInterfaces.LogContextDTO) async throws -> Bool {
         // Create a log context for this specific operation
-        let operationContext = LoggingInterfaces.BaseLogContextDTO(
+        let _ = LoggingInterfaces.BaseLogContextDTO(
             domainName: "LoggingServices",
             operation: "rotateLogs",
             category: "LogRotation",
@@ -62,7 +62,6 @@ public class RotateLogsCommand: BaseCommand, LogCommand {
             metadata: LoggingInterfaces.LogMetadataDTOCollection()
                 .withPublic(key: "destinationId", value: destinationId)
                 .withPublic(key: "forceRotation", value: String(options.forceRotation))
-                .withPublic(key: "maxBackupCount", value: String(options.maxBackupCount))
         )
         
         // Log operation start

@@ -53,7 +53,7 @@ public class RemoveDestinationCommand: BaseCommand, LogCommand {
      */
     public func execute(context: LoggingInterfaces.LogContextDTO) async throws -> Bool {
         // Create a log context for this specific operation
-        let operationContext = LoggingInterfaces.BaseLogContextDTO(
+        let _ = LoggingInterfaces.BaseLogContextDTO(
             domainName: "LoggingServices",
             operation: "removeDestination",
             category: "DestinationManagement",
@@ -81,7 +81,7 @@ public class RemoveDestinationCommand: BaseCommand, LogCommand {
                     "Flushing logs before removing destination"
                 )
                 
-                try await provider.flushLogs(for: destination)
+                let _ = try await provider.flushLogs(for: destination)
             }
             
             // Archive logs if requested

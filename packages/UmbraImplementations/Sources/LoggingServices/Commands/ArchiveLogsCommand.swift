@@ -53,16 +53,12 @@ public class ArchiveLogsCommand: BaseCommand, LogCommand {
      */
     public func execute(context: LoggingInterfaces.LogContextDTO) async throws -> Bool {
         // Create a log context for this specific operation
-        let operationContext = LoggingInterfaces.BaseLogContextDTO(
+        let _ = LoggingInterfaces.BaseLogContextDTO(
             domainName: "LoggingServices",
             operation: "archiveLogs",
-            category: "LogArchiving",
-            source: "UmbraCore",
+            category: "Command",
+            source: "ArchiveLogsCommand",
             metadata: LoggingInterfaces.LogMetadataDTOCollection()
-                .withPublic(key: "destinationId", value: destinationId)
-                .withPublic(key: "archivePath", value: options.destinationPath)
-                .withPublic(key: "format", value: options.format.rawValue)
-                .withPublic(key: "compress", value: String(options.compress))
         )
         
         // Log operation start

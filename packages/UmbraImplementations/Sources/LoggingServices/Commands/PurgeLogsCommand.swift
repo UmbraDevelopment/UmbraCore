@@ -54,17 +54,12 @@ public class PurgeLogsCommand: BaseCommand, LogCommand {
      */
     public func execute(context: LoggingInterfaces.LogContextDTO) async throws -> Bool {
         // Create a log context for this specific operation
-        let operationContext = LoggingInterfaces.BaseLogContextDTO(
+        let _ = LoggingInterfaces.BaseLogContextDTO(
             domainName: "LoggingServices",
             operation: "purgeLogs",
-            category: "LogPurge",
-            source: "UmbraCore",
+            category: "Command",
+            source: "PurgeLogsCommand",
             metadata: LoggingInterfaces.LogMetadataDTOCollection()
-                .withPublic(key: "createBackup", value: String(options.createBackup))
-                .withProtected(key: "backupPath", value: options.backupPath ?? "none")
-                .withPublic(key: "dryRun", value: String(options.dryRun))
-                .withPublic(key: "hasFilterCriteria", value: String(options.filterCriteria != nil))
-                .withPublic(key: "targetDestinations", value: String(options.destinationIds.count))
         )
         
         // Log operation start

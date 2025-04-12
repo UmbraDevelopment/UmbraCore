@@ -10,7 +10,7 @@ import LoggingInterfaces
  */
 public actor LoggingServicesActor: PrivacyAwareLoggingProtocol {
     /// Factory for creating logging commands
-    private let commandFactory: LogCommandFactory
+    private var commandFactory: LogCommandFactory
     
     /// The configured log providers, keyed by destination type
     private let providers: [LogDestinationType: LoggingProviderProtocol]
@@ -37,17 +37,58 @@ public actor LoggingServicesActor: PrivacyAwareLoggingProtocol {
         - commandFactory: Optional command factory to use
      */
     public init(
-        providers: [LogDestinationType: LoggingProviderProtocol] = [:],
-        commandFactory: LogCommandFactory? = nil
+        providers: [LogDestinationType: LoggingProviderProtocol] = [:]
     ) {
+        // Create a placeholder for the factory - will be properly initialized in postInit
+        self.commandFactory = LogCommandDummyFactory()
         self.providers = providers
         
-        // For initialization, use a placeholder (self needs to be fully initialized first)
-        self.commandFactory = LogCommandFactory(
+        // Complete initialization in postInit()
+        Task {
+            await postInit()
+        }
+    }
+    
+    /**
+     Completes the initialization by setting up proper factories.
+     This breaks the circular dependency and allows proper initialization.
+     */
+    private func postInit() async {
+        // Create the real factory with proper dependencies
+        let realFactory = LogCommandFactory(
             providers: providers,
-            logger: DummyPrivacyAwareLoggingActor(),
+            logger: DummyLoggingActor(),
             loggingServicesActor: self
         )
+        
+        // Now we can safely assign the real factory since we're in an actor-isolated context
+        self.commandFactory = realFactory
+    }
+    
+    /**
+     Configures the actor after initialization to avoid circular references.
+     
+     This method must be called immediately after creating the actor.
+     */
+    public func configure() async {
+        // Create the real command factory now that the actor is fully initialized
+        let realFactory = LogCommandFactory(
+            providers: providers,
+            logger: DummyLoggingActor(),
+            loggingServicesActor: self
+        )
+        
+        // Replace the dummy factory using the new configure method
+        configure(commandFactory: realFactory)
+    }
+    
+    /// Configure this actor with a new command factory.
+    /// This method replaces the command factory with a new one, allowing
+    /// dependencies to be properly initialized.
+    /// - Parameter newFactory: The new command factory
+    internal func configure(commandFactory newFactory: LogCommandFactory) {
+        // Now that commandFactory is a var, we can directly assign the new value
+        self.commandFactory = newFactory
     }
     
     // MARK: - PrivacyAwareLoggingProtocol Methods
@@ -83,16 +124,21 @@ public actor LoggingServicesActor: PrivacyAwareLoggingProtocol {
         for (_, destination) in activeDestinations {
             if destination.isEnabled && level.rawValue >= destination.minimumLevel.rawValue {
                 // Get provider for this destination type
-                if let provider = providers[destination.type] {
-                    do {
-                        // Write log entry to destination using the provider
-                        // Note: writeLogEntry is defined in the protocol extension as a default implementation
-                        _ = try await provider.writeLogEntry(entry: entry, to: destination)
-                    } catch {
-                        // Silently ignore provider errors for now
-                        // In a real implementation, we'd want to handle these more gracefully
-                        print("Error writing log entry: \(error.localizedDescription)")
-                    }
+                guard let provider = providers[destination.type] else {
+                    continue
+                }
+                
+                do {
+                    // Use nonisolated version to avoid data races
+                    let localProvider = provider
+                    
+                    // Write log entry to destination using the provider
+                    // Note: writeLogEntry is defined in the protocol extension as a default implementation
+                    _ = try await localProvider.writeLogEntry(entry: entry, to: destination)
+                } catch {
+                    // Silently ignore provider errors for now
+                    // In a real implementation, we'd want to handle these more gracefully
+                    print("Error writing log entry: \(error.localizedDescription)")
                 }
             }
         }
@@ -504,5 +550,15 @@ public actor LoggingServicesActor: PrivacyAwareLoggingProtocol {
         @unknown default:
             return .public
         }
+    }
+    
+    /**
+     Get a provider for a specific destination type.
+     
+     - Parameter type: The destination type
+     - Returns: The provider, or nil if none is available
+     */
+    public func getProvider(for type: LogDestinationType) -> LoggingProviderProtocol? {
+        return providers[type]
     }
 }
