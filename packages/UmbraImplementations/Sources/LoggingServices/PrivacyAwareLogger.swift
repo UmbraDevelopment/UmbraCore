@@ -59,7 +59,7 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
      - message: The message to log
      - context: Contextual information about the log as DTO
    */
-  public func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
+  public func log(_ level: LogLevel, _ message: String, context: LoggingInterfaces.LogContextDTO) async {
     // Check if this log level should be processed
     guard backend.shouldLog(level: level, minimumLevel: minimumLevel) else {
       return
@@ -91,9 +91,9 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
    - Parameter metadata: The metadata to use directly
    - Returns: A metadata collection
    */
-  private func createMetadataCollection(from metadata: LogMetadataDTOCollection?)
-  -> LogMetadataDTOCollection {
-    metadata ?? LogMetadataDTOCollection()
+  private func createMetadataCollection(from metadata: LoggingInterfaces.LogMetadataDTOCollection?)
+  -> LoggingInterfaces.LogMetadataDTOCollection {
+    metadata ?? LoggingInterfaces.LogMetadataDTOCollection()
   }
 
   /**
@@ -104,7 +104,7 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
    - Returns: A PrivacyMetadata instance
    */
   @available(*, deprecated, message: "Use LogMetadataDTOCollection directly instead")
-  private func convertToPrivacyMetadata(_ metadata: LogMetadataDTOCollection) -> PrivacyMetadata {
+  private func convertToPrivacyMetadata(_ metadata: LoggingInterfaces.LogMetadataDTOCollection) -> PrivacyMetadata {
     // Use the built-in conversion method from LogMetadataDTOCollection
     metadata.toPrivacyMetadata()
   }
@@ -112,8 +112,8 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
   // MARK: - LoggingProtocol Methods
 
   /// Log a trace message
-  public func trace(_ message: String, metadata: LogMetadataDTOCollection?, source: String) async {
-    let context=BaseLogContextDTO(
+  public func trace(_ message: String, metadata: LoggingInterfaces.LogMetadataDTOCollection?, source: String) async {
+    let context=LoggingInterfaces.BaseLogContextDTO(
       domainName: identifier,
       operation: "trace",
       category: "Diagnostics",
@@ -124,8 +124,8 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
   }
 
   /// Log a debug message
-  public func debug(_ message: String, metadata: LogMetadataDTOCollection?, source: String) async {
-    let context=BaseLogContextDTO(
+  public func debug(_ message: String, metadata: LoggingInterfaces.LogMetadataDTOCollection?, source: String) async {
+    let context=LoggingInterfaces.BaseLogContextDTO(
       domainName: identifier,
       operation: "debug",
       category: "Diagnostics",
@@ -136,8 +136,8 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
   }
 
   /// Log an info message
-  public func info(_ message: String, metadata: LogMetadataDTOCollection?, source: String) async {
-    let context=BaseLogContextDTO(
+  public func info(_ message: String, metadata: LoggingInterfaces.LogMetadataDTOCollection?, source: String) async {
+    let context=LoggingInterfaces.BaseLogContextDTO(
       domainName: identifier,
       operation: "info",
       category: "Information",
@@ -150,10 +150,10 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
   /// Log a warning message
   public func warning(
     _ message: String,
-    metadata: LogMetadataDTOCollection?,
+    metadata: LoggingInterfaces.LogMetadataDTOCollection?,
     source: String
   ) async {
-    let context=BaseLogContextDTO(
+    let context=LoggingInterfaces.BaseLogContextDTO(
       domainName: identifier,
       operation: "warning",
       category: "Warning",
@@ -164,8 +164,8 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
   }
 
   /// Log an error message
-  public func error(_ message: String, metadata: LogMetadataDTOCollection?, source: String) async {
-    let context=BaseLogContextDTO(
+  public func error(_ message: String, metadata: LoggingInterfaces.LogMetadataDTOCollection?, source: String) async {
+    let context=LoggingInterfaces.BaseLogContextDTO(
       domainName: identifier,
       operation: "error",
       category: "Error",
@@ -178,10 +178,10 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
   /// Log a critical message
   public func critical(
     _ message: String,
-    metadata: LogMetadataDTOCollection?,
+    metadata: LoggingInterfaces.LogMetadataDTOCollection?,
     source: String
   ) async {
-    let context=BaseLogContextDTO(
+    let context=LoggingInterfaces.BaseLogContextDTO(
       domainName: identifier,
       operation: "critical",
       category: "Critical",
@@ -192,32 +192,32 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
   }
 
   /// Log a trace message
-  public func trace(_ message: String, context: LogContextDTO) async {
+  public func trace(_ message: String, context: LoggingInterfaces.LogContextDTO) async {
     await log(.trace, message, context: context)
   }
 
   /// Log a debug message
-  public func debug(_ message: String, context: LogContextDTO) async {
+  public func debug(_ message: String, context: LoggingInterfaces.LogContextDTO) async {
     await log(.debug, message, context: context)
   }
 
   /// Log an info message
-  public func info(_ message: String, context: LogContextDTO) async {
+  public func info(_ message: String, context: LoggingInterfaces.LogContextDTO) async {
     await log(.info, message, context: context)
   }
 
   /// Log a warning message
-  public func warning(_ message: String, context: LogContextDTO) async {
+  public func warning(_ message: String, context: LoggingInterfaces.LogContextDTO) async {
     await log(.warning, message, context: context)
   }
 
   /// Log an error message
-  public func error(_ message: String, context: LogContextDTO) async {
+  public func error(_ message: String, context: LoggingInterfaces.LogContextDTO) async {
     await log(.error, message, context: context)
   }
 
   /// Log a critical message
-  public func critical(_ message: String, context: LogContextDTO) async {
+  public func critical(_ message: String, context: LoggingInterfaces.LogContextDTO) async {
     await log(.critical, message, context: context)
   }
 
@@ -231,7 +231,7 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
   public func log(
     _ level: LogLevel,
     _ message: PrivacyString,
-    context: LogContextDTO
+    context: LoggingInterfaces.LogContextDTO
   ) async {
     // Check if this log level should be processed
     guard backend.shouldLog(level: level, minimumLevel: minimumLevel) else {
@@ -268,10 +268,10 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
   public func log(
     _ level: LogLevel,
     _ message: PrivacyString,
-    metadata: LogMetadataDTOCollection?,
+    metadata: LoggingInterfaces.LogMetadataDTOCollection?,
     source: String
   ) async {
-    let context=BaseLogContextDTO(
+    let context=LoggingInterfaces.BaseLogContextDTO(
       domainName: identifier,
       operation: "log",
       category: "General",
@@ -291,7 +291,7 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
     _ level: LogLevel,
     _ message: String,
     sensitiveValues: LoggingTypes.LogMetadata,
-    context: LogContextDTO
+    context: LoggingInterfaces.LogContextDTO
   ) async {
     // Convert sensitive values to metadata
     var metadata=context.metadata
@@ -319,7 +319,7 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
     sensitiveValues: LoggingTypes.LogMetadata,
     source: String
   ) async {
-    let context=BaseLogContextDTO(
+    let context=LoggingInterfaces.BaseLogContextDTO(
       domainName: identifier,
       operation: "logSensitive",
       category: "General",
@@ -333,7 +333,7 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
   public func logError(
     _ error: Error,
     privacyLevel: LogPrivacyLevel,
-    context: LogContextDTO
+    context: LoggingInterfaces.LogContextDTO
   ) async {
     var message="Error occurred: \(error.localizedDescription)"
 
@@ -366,7 +366,7 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
     }
 
     // Create a new context with the updated metadata
-    let updatedContext=BaseLogContextDTO(
+    let updatedContext=LoggingInterfaces.BaseLogContextDTO(
       domainName: context.domainName,
       operation: "logError",
       category: "Error",
@@ -427,10 +427,10 @@ public actor PrivacyAwareLogger: PrivacyAwareLoggingProtocol, LoggingProtocol {
   public func logError(
     _ error: Error,
     privacyLevel: LoggingTypes.LogPrivacyLevel,
-    metadata: LogMetadataDTOCollection?,
+    metadata: LoggingInterfaces.LogMetadataDTOCollection?,
     source: String
   ) async {
-    let context=BaseLogContextDTO(
+    let context=LoggingInterfaces.BaseLogContextDTO(
       domainName: identifier,
       operation: "logError",
       category: "Error",

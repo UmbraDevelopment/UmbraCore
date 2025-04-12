@@ -4,15 +4,32 @@ import LoggingTypes
 
 /// Implementation of a logging actor for bootstrap purposes
 /// Provides a minimal implementation to satisfy protocol requirements
-public actor DummyPrivacyAwareLoggingActor: PrivacyAwareLoggingProtocol {
+public actor DummyPrivacyAwareLoggingActor: PrivacyAwareLoggingProtocol, LoggingProtocol {
+    /// The logging actor used by this logger
+    public nonisolated var loggingActor: LoggingActor {
+        return LoggingActor(destinations: [])
+    }
+    
+    /// The minimum log level for this actor
+    private var minimumLogLevel: LogLevel = .info
+    
     /// Log a message with the given level
     public func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
-        // No-op implementation for bootstrap purposes
+        // Only print messages at or above the minimum level
+        if level.rawValue >= minimumLogLevel.rawValue {
+            print("[\(level.rawValue.uppercased())] \(message)")
+        }
+    }
+    
+    /// Log an error
+    public func logError(_ error: Error, privacyLevel: LogPrivacyLevel, context: LogContextDTO) async {
+        await log(.error, "Error: \(error.localizedDescription)", context: context)
     }
     
     /// Log a message with privacy annotations
     public func log(_ level: LogLevel, _ message: PrivacyString, context: LogContextDTO) async {
-        // No-op implementation for bootstrap purposes
+        // For dummy implementation, just log the raw value
+        await log(level, message.content, context: context)
     }
     
     /// Log sensitive information with appropriate privacy controls
@@ -20,8 +37,8 @@ public actor DummyPrivacyAwareLoggingActor: PrivacyAwareLoggingProtocol {
         // No-op implementation for bootstrap purposes
     }
     
-    /// Log an error with privacy controls
-    public func logError(_ error: Error, privacyLevel: LogPrivacyLevel, context: LogContextDTO) async {
-        // No-op implementation for bootstrap purposes
+    /// Log a string directly
+    public func logString(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
+        await log(level, message, context: context)
     }
 }

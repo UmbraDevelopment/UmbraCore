@@ -1,7 +1,6 @@
 import Foundation
-import LoggingInterfaces
 import LoggingTypes
-import SchedulingTypes
+import LoggingInterfaces
 
 /**
  Factory for creating logging commands.
@@ -11,10 +10,10 @@ import SchedulingTypes
  */
 public class LogCommandFactory {
     /// Logger instance for logging operations
-    private let logger: PrivacyAwareLoggingProtocol
+    private let logger: LoggingInterfaces.PrivacyAwareLoggingProtocol
     
     /// Map of providers by destination type
-    private let providers: [LogDestinationType: LoggingProviderProtocol]
+    private let providers: [LoggingInterfaces.LogDestinationType: LoggingProviderProtocol]
     
     /// Reference to the LoggingServicesActor
     private let loggingServicesActor: LoggingServicesActor
@@ -28,8 +27,8 @@ public class LogCommandFactory {
         - loggingServicesActor: Reference to the LoggingServicesActor
      */
     public init(
-        providers: [LogDestinationType: LoggingProviderProtocol],
-        logger: PrivacyAwareLoggingProtocol,
+        providers: [LoggingInterfaces.LogDestinationType: LoggingProviderProtocol],
+        logger: LoggingInterfaces.PrivacyAwareLoggingProtocol,
         loggingServicesActor: LoggingServicesActor
     ) {
         self.providers = providers
@@ -38,26 +37,26 @@ public class LogCommandFactory {
     }
     
     /**
-     Creates a write log command.
+     Creates a write log command for a destination.
      
      - Parameters:
         - entry: The log entry to write
-        - destinationIds: The destinations to write to (empty means all registered destinations)
-     - Returns: The created command
-     - Throws: LoggingError if no provider is available for the destination type
+        - destination: The destination to write to
+     - Returns: A configured WriteLogCommand instance
+     - Throws: LoggingError if no suitable provider is available
      */
-    public func createWriteCommand(
-        entry: LogEntryDTO,
-        destinationIds: [String] = []
+    public func makeWriteLogCommand(
+        entry: LoggingInterfaces.LogEntryDTO,
+        destination: LoggingInterfaces.LogDestinationDTO
     ) throws -> WriteLogCommand {
-        // Use default provider for writing
-        guard let provider = defaultProvider() else {
-            throw LoggingError.initialisationFailed(reason: "No default provider available")
+        // Get the provider for this destination type
+        guard let provider = providerFor(destinationType: destination.type) else {
+            throw LoggingTypes.LoggingError.invalidDestinationConfig("No provider available for destination type: \(destination.type.rawValue)")
         }
         
         return WriteLogCommand(
             entry: entry,
-            destinationIds: destinationIds,
+            destination: destination,
             provider: provider,
             loggingServices: loggingServicesActor
         )
@@ -69,15 +68,15 @@ public class LogCommandFactory {
      - Parameters:
         - destination: The destination to add
         - options: Options for adding the destination
-     - Returns: The created command
-     - Throws: LoggingError if no provider is available for the destination type
+     - Returns: A configured AddDestinationCommand instance
+     - Throws: LoggingError if no suitable provider is available
      */
-    public func createAddDestinationCommand(
-        destination: LogDestinationDTO,
-        options: AddDestinationOptionsDTO = .default
+    public func makeAddDestinationCommand(
+        destination: LoggingInterfaces.LogDestinationDTO,
+        options: LoggingInterfaces.AddDestinationOptionsDTO = .default
     ) throws -> AddDestinationCommand {
         guard let provider = providerFor(destinationType: destination.type) else {
-            throw LoggingError.destinationNotFound("No provider available for destination type: \(destination.type.rawValue)")
+            throw LoggingTypes.LoggingError.invalidDestinationConfig("No provider available for destination type: \(destination.type.rawValue)")
         }
         
         return AddDestinationCommand(
@@ -99,11 +98,11 @@ public class LogCommandFactory {
      */
     public func createRemoveDestinationCommand(
         destinationId: String,
-        options: RemoveDestinationOptionsDTO = .default
+        options: LoggingInterfaces.RemoveDestinationOptionsDTO = .default
     ) throws -> RemoveDestinationCommand {
         // Use default provider for removing destinations
         guard let provider = defaultProvider() else {
-            throw LoggingError.initialisationFailed(reason: "No default provider available")
+            throw LoggingInterfaces.LoggingError.initialisationFailed("No default provider available")
         }
         
         return RemoveDestinationCommand(
@@ -125,12 +124,10 @@ public class LogCommandFactory {
      */
     public func createRotateLogsCommand(
         destinationId: String,
-        options: RotateLogsOptionsDTO = .default
+        options: LoggingInterfaces.RotateLogsOptionsDTO = .default
     ) throws -> RotateLogsCommand {
-        // Since we need the destination type to select a provider,
-        // we'll defer provider selection to the command execution
         guard let provider = defaultProvider() else {
-            throw LoggingError.initialisationFailed(reason: "No default provider available")
+            throw LoggingInterfaces.LoggingError.initialisationFailed("No default provider available")
         }
         
         return RotateLogsCommand(
@@ -152,12 +149,10 @@ public class LogCommandFactory {
      */
     public func createExportLogsCommand(
         destinationId: String,
-        options: ExportLogsOptionsDTO = .default
+        options: LoggingInterfaces.ExportLogsOptionsDTO = .default
     ) throws -> ExportLogsCommand {
-        // Since we need the destination type to select a provider,
-        // we'll defer provider selection to the command execution
         guard let provider = defaultProvider() else {
-            throw LoggingError.initialisationFailed(reason: "No default provider available")
+            throw LoggingInterfaces.LoggingError.initialisationFailed("No default provider available")
         }
         
         return ExportLogsCommand(
@@ -179,12 +174,10 @@ public class LogCommandFactory {
      */
     public func createQueryLogsCommand(
         destinationId: String,
-        options: QueryLogsOptionsDTO = .default
+        options: LoggingInterfaces.QueryLogsOptionsDTO = .default
     ) throws -> QueryLogsCommand {
-        // Since we need the destination type to select a provider,
-        // we'll defer provider selection to the command execution
         guard let provider = defaultProvider() else {
-            throw LoggingError.initialisationFailed(reason: "No default provider available")
+            throw LoggingInterfaces.LoggingError.initialisationFailed("No default provider available")
         }
         
         return QueryLogsCommand(
@@ -206,12 +199,10 @@ public class LogCommandFactory {
      */
     public func createArchiveLogsCommand(
         destinationId: String,
-        options: ArchiveLogsOptionsDTO
+        options: LoggingInterfaces.ArchiveLogsOptionsDTO
     ) throws -> ArchiveLogsCommand {
-        // Since we need the destination type to select a provider,
-        // we'll defer provider selection to the command execution
         guard let provider = defaultProvider() else {
-            throw LoggingError.initialisationFailed(reason: "No default provider available")
+            throw LoggingInterfaces.LoggingError.initialisationFailed("No default provider available")
         }
         
         return ArchiveLogsCommand(
@@ -226,18 +217,17 @@ public class LogCommandFactory {
      Creates a purge logs command.
      
      - Parameters:
-        - destinationId: The ID of the destination to purge logs from, or nil for all destinations
+        - destinationId: The ID of the destination to purge logs from (optional)
         - options: Options for purging logs
      - Returns: The created command
      - Throws: LoggingError if no provider is available
      */
     public func createPurgeLogsCommand(
         destinationId: String? = nil,
-        options: PurgeLogsOptionsDTO = .default
+        options: LoggingInterfaces.PurgeLogsOptionsDTO = .default
     ) throws -> PurgeLogsCommand {
-        // Use default provider for purging
         guard let provider = defaultProvider() else {
-            throw LoggingError.initialisationFailed(reason: "No default provider available")
+            throw LoggingInterfaces.LoggingError.initialisationFailed("No default provider available")
         }
         
         return PurgeLogsCommand(
@@ -253,21 +243,39 @@ public class LogCommandFactory {
     /**
      Gets a provider for a specific destination type.
      
-     - Parameters:
-        - destinationType: The destination type to get a provider for
-     - Returns: A provider for the destination type, or nil if none is available
+     - Parameter destinationType: The destination type to get a provider for
+     - Returns: The provider if available, nil otherwise
      */
-    private func providerFor(destinationType: LogDestinationType) -> LoggingProviderProtocol? {
+    private func providerFor(destinationType: LoggingInterfaces.LogDestinationType) -> LoggingProviderProtocol? {
         return providers[destinationType]
     }
     
     /**
      Gets the default provider.
      
-     - Returns: The default provider, or nil if none is available
+     - Returns: The default provider if available, nil otherwise
      */
     private func defaultProvider() -> LoggingProviderProtocol? {
-        // Prefer console provider, then file provider, then any available provider
-        return providers[.console] ?? providers[.file] ?? providers.values.first
+        // Use file provider as default if available
+        if let fileProvider = providers[.file] {
+            return fileProvider
+        }
+        
+        // Otherwise, use the first available provider
+        return providers.first?.value
+    }
+    
+    /**
+     Gets a destination by ID.
+     
+     This delegates to the logging services actor to get the destination.
+     
+     - Parameter id: The ID of the destination to get
+     - Returns: The destination if found, nil otherwise
+     */
+    private func getDestination(id: String) -> LoggingInterfaces.LogDestinationDTO? {
+        // Since this is asynchronous, we can't directly call it from this method
+        // Callers will need to handle this asynchronously
+        return nil
     }
 }

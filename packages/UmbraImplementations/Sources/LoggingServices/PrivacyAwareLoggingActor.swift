@@ -146,7 +146,7 @@ public actor PrivacyAwareLoggingActor: PrivacyAwareLoggingProtocol {
    - Parameters:
      - level: The severity level of the log entry
      - message: The textual content of the log message
-     - context: A LogContextDTO containing contextual information
+     - context: A LoggingInterfaces.LogContextDTO containing contextual information
 
    ## Example
 
@@ -154,7 +154,7 @@ public actor PrivacyAwareLoggingActor: PrivacyAwareLoggingProtocol {
    await logger.log(.info, "User logged in", context: authContext)
    ```
    */
-  public func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
+  public func log(_ level: LogLevel, _ message: String, context: LoggingInterfaces.LogContextDTO) async {
     // Convert LogLevel to UmbraLogLevel
     let umbraLevel=convertToUmbraLogLevel(level)
 
@@ -274,7 +274,7 @@ public actor PrivacyAwareLoggingActor: PrivacyAwareLoggingProtocol {
    await logger.debug("Processing payment", context: paymentContext)
    ```
    */
-  public func debug(_ message: String, context: LogContextDTO) async {
+  public func debug(_ message: String, context: LoggingInterfaces.LogContextDTO) async {
     await log(.debug, message, context: context)
   }
 
@@ -291,7 +291,7 @@ public actor PrivacyAwareLoggingActor: PrivacyAwareLoggingProtocol {
    await logger.info("User logged in", context: authContext)
    ```
    */
-  public func info(_ message: String, context: LogContextDTO) async {
+  public func info(_ message: String, context: LoggingInterfaces.LogContextDTO) async {
     await log(.info, message, context: context)
   }
 
@@ -308,7 +308,7 @@ public actor PrivacyAwareLoggingActor: PrivacyAwareLoggingProtocol {
    await logger.warning("API rate limit exceeded", context: apiContext)
    ```
    */
-  public func warning(_ message: String, context: LogContextDTO) async {
+  public func warning(_ message: String, context: LoggingInterfaces.LogContextDTO) async {
     await log(.warning, message, context: context)
   }
 
@@ -325,7 +325,7 @@ public actor PrivacyAwareLoggingActor: PrivacyAwareLoggingProtocol {
    await logger.error("Payment processing failed", context: paymentContext)
    ```
    */
-  public func error(_ message: String, context: LogContextDTO) async {
+  public func error(_ message: String, context: LoggingInterfaces.LogContextDTO) async {
     await log(.error, message, context: context)
   }
 
@@ -342,7 +342,7 @@ public actor PrivacyAwareLoggingActor: PrivacyAwareLoggingProtocol {
    await logger.critical("System shutdown initiated", context: systemContext)
    ```
    */
-  public func critical(_ message: String, context: LogContextDTO) async {
+  public func critical(_ message: String, context: LoggingInterfaces.LogContextDTO) async {
     await log(.critical, message, context: context)
   }
 
@@ -366,7 +366,7 @@ public actor PrivacyAwareLoggingActor: PrivacyAwareLoggingProtocol {
    await logger.log(.info, message, context: baseContext)
    ```
    */
-  public func log(_ level: LogLevel, _ message: PrivacyString, context: LogContextDTO) async {
+  public func log(_ level: LogLevel, _ message: PrivacyString, context: LoggingInterfaces.LogContextDTO) async {
     // Apply privacy controls to the message
     let processedMessage=message
       .rawValue // In a real implementation, use message.processForLogging()
@@ -433,7 +433,7 @@ public actor PrivacyAwareLoggingActor: PrivacyAwareLoggingProtocol {
     _ level: LogLevel,
     _ message: String,
     sensitiveValues _: LoggingTypes.LogMetadata,
-    context: LogContextDTO
+    context: LoggingInterfaces.LogContextDTO
   ) async {
     // Convert LogLevel to UmbraLogLevel
     let umbraLevel=convertToUmbraLogLevel(level)
@@ -499,7 +499,7 @@ public actor PrivacyAwareLoggingActor: PrivacyAwareLoggingProtocol {
   public func logError(
     _ error: Error,
     privacyLevel: LogPrivacyLevel,
-    context: LogContextDTO
+    context: LoggingInterfaces.LogContextDTO
   ) async {
     // Convert context to PrivacyAwareLogDTO if it's not already
     let privacyContext: PrivacyAwareLogDTO=if let existingPrivacyContext=context as? PrivacyAwareLogDTO {

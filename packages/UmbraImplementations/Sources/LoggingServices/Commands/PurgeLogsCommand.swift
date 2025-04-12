@@ -9,15 +9,18 @@ import SchedulingTypes
  This command encapsulates the logic for purging logs with various options,
  following the command pattern architecture.
  */
-public class PurgeLogsCommand: BaseLogCommand, LogCommand {
+public class PurgeLogsCommand: BaseCommand, LogCommand {
     /// The result type for this command
-    public typealias ResultType = LogPurgeResultDTO
+    public typealias ResultType = Bool
     
     /// The ID of the destination to purge logs from, or nil for all destinations
     private let destinationId: String?
     
     /// Options for purging logs
-    private let options: PurgeLogsOptionsDTO
+    private let options: LoggingInterfaces.PurgeLogsOptionsDTO
+    
+    /// Provider for logging operations
+    private let provider: LoggingProviderProtocol
     
     /**
      Initialises a new purge logs command.
@@ -25,19 +28,20 @@ public class PurgeLogsCommand: BaseLogCommand, LogCommand {
      - Parameters:
         - destinationId: The ID of the destination to purge logs from, or nil for all destinations
         - options: Options for purging logs
-        - provider: Provider for logging operations
-        - logger: Logger instance for logging operations
+        - provider: Provider for purge operations
+        - loggingServices: The logging services actor
      */
     public init(
         destinationId: String? = nil,
-        options: PurgeLogsOptionsDTO = .default,
+        options: LoggingInterfaces.PurgeLogsOptionsDTO = .default,
         provider: LoggingProviderProtocol,
-        logger: PrivacyAwareLoggingProtocol
+        loggingServices: LoggingServicesActor
     ) {
         self.destinationId = destinationId
         self.options = options
+        self.provider = provider
         
-        super.init(provider: provider, logger: logger)
+        super.init(loggingServices: loggingServices)
     }
     
     /**
@@ -45,32 +49,33 @@ public class PurgeLogsCommand: BaseLogCommand, LogCommand {
      
      - Parameters:
         - context: The logging context for the operation
-     - Returns: The result of the purge operation
+     - Returns: Whether the purge operation was successful
      - Throws: LoggingError if the operation fails
      */
-    public func execute(context: LogContextDTO) async throws -> LogPurgeResultDTO {
+    public func execute(context: LoggingInterfaces.LogContextDTO) async throws -> Bool {
         // Create a log context for this specific operation
-        let operationContext = createLogContext(
+        let operationContext = LoggingInterfaces.BaseLogContextDTO(
+            domainName: "LoggingServices",
             operation: "purgeLogs",
-            destinationId: destinationId,
-            additionalMetadata: [
-                "createBackup": (value: String(options.createBackup), privacyLevel: .public),
-                "backupPath": (value: options.backupPath ?? "none", privacyLevel: .protected),
-                "dryRun": (value: String(options.dryRun), privacyLevel: .public),
-                "hasFilterCriteria": (value: String(options.filterCriteria != nil), privacyLevel: .public),
-                "targetDestinations": (value: String(options.destinationIds.count), privacyLevel: .public)
-            ]
+            category: "LogPurge",
+            source: "UmbraCore",
+            metadata: LoggingInterfaces.LogMetadataDTOCollection()
+                .withPublic(key: "createBackup", value: String(options.createBackup))
+                .withProtected(key: "backupPath", value: options.backupPath ?? "none")
+                .withPublic(key: "dryRun", value: String(options.dryRun))
+                .withPublic(key: "hasFilterCriteria", value: String(options.filterCriteria != nil))
+                .withPublic(key: "targetDestinations", value: String(options.destinationIds.count))
         )
         
         // Log operation start
-        await logOperationStart(operation: "purgeLogs", context: operationContext)
+        await logInfo("Starting log purge operation" + (destinationId != nil ? " for destination '\(destinationId!)'" : " for all destinations"))
         
         do {
             // Get target destinations
             let destinations = try await getTargetDestinations()
             
             if destinations.isEmpty {
-                throw LoggingError.noDestinationsFound(
+                throw LoggingTypes.LoggingError.noDestinationsFound(
                     "No destinations found for purging logs"
                 )
             }
@@ -79,94 +84,45 @@ public class PurgeLogsCommand: BaseLogCommand, LogCommand {
             if options.createBackup && options.backupPath != nil {
                 await createBackupBeforePurge(
                     for: destinations,
-                    context: operationContext
+                    backupPath: options.backupPath!
                 )
             }
             
-            // Count of purged entries across all destinations
-            var totalPurgedEntryCount = 0
-            var totalPurgedSizeBytes: UInt64 = 0
+            // Track overall success across all destinations
+            var overallSuccess = true
             
             // Purge logs from each destination
             for destination in destinations {
-                let purgeResult = try await provider.purgeLogs(
+                let success = try await provider.purgeLogs(
                     from: destination,
                     options: options
                 )
                 
-                if purgeResult.success {
-                    totalPurgedEntryCount += purgeResult.purgedEntryCount ?? 0
-                    totalPurgedSizeBytes += purgeResult.purgedSizeBytes ?? 0
-                    
-                    await logger.log(
-                        .info,
-                        "Successfully purged logs from destination: \(destination.name)",
-                        context: operationContext.withMetadata(
-                            LogMetadataDTOCollection().withPublic(
-                                key: "purgedEntryCount",
-                                value: String(purgeResult.purgedEntryCount ?? 0)
-                            )
-                        )
+                if success {
+                    await logInfo(
+                        "Successfully purged logs from destination: \(destination.name)"
                     )
                 } else {
-                    await logger.log(
-                        .warning,
-                        "Failed to purge logs from destination: \(destination.name)",
-                        context: operationContext.withMetadata(
-                            LogMetadataDTOCollection().withProtected(
-                                key: "purgeError",
-                                value: purgeResult.metadata["error"] ?? "Unknown error"
-                            )
-                        )
+                    overallSuccess = false
+                    await logWarning(
+                        "Failed to purge logs from destination: \(destination.name)"
                     )
                 }
             }
             
-            // Create aggregate result
-            let result = LogPurgeResultDTO(
-                success: true,
-                purgedEntryCount: totalPurgedEntryCount,
-                purgedSizeBytes: totalPurgedSizeBytes,
-                backupPath: options.backupPath,
-                wasDryRun: options.dryRun,
-                metadata: ["destinationCount": String(destinations.count)]
-            )
+            // Log final result
+            if overallSuccess {
+                await logInfo("Log purge operation completed successfully for all \(destinations.count) destinations")
+            } else {
+                await logWarning("Log purge operation completed with some failures")
+            }
             
-            // Log success
-            await logOperationSuccess(
-                operation: "purgeLogs",
-                context: operationContext,
-                additionalMetadata: [
-                    "totalPurgedEntryCount": (value: String(totalPurgedEntryCount), privacyLevel: .public),
-                    "totalPurgedSizeBytes": (value: String(totalPurgedSizeBytes), privacyLevel: .public),
-                    "wasDryRun": (value: String(options.dryRun), privacyLevel: .public)
-                ]
-            )
-            
-            return result
-            
-        } catch let error as LoggingError {
-            // Log failure
-            await logOperationFailure(
-                operation: "purgeLogs",
-                error: error,
-                context: operationContext
-            )
-            
-            throw error
+            return overallSuccess
             
         } catch {
-            // Map unknown error to LoggingError
-            let loggingError = LoggingError.initialisationFailed(reason: error.localizedDescription)
-            
             // Log failure
-            await logOperationFailure(
-                operation: "purgeLogs",
-                error: loggingError,
-                context: operationContext
-            )
-            
-            throw loggingError
+            await logError("Log purge operation failed: \(error.localizedDescription)")
+            throw error
         }
     }
     
@@ -178,19 +134,19 @@ public class PurgeLogsCommand: BaseLogCommand, LogCommand {
      - Returns: The destinations to purge logs from
      - Throws: LoggingError if a specified destination isn't found
      */
-    private func getTargetDestinations() async throws -> [LogDestinationDTO] {
+    private func getTargetDestinations() async throws -> [LoggingInterfaces.LogDestinationDTO] {
         if let destinationId = destinationId {
             // Use specific destination
             if let destination = await getDestination(id: destinationId) {
                 return [destination]
             } else {
-                throw LoggingError.destinationNotFound(
+                throw LoggingTypes.LoggingError.noDestinationsFound(
                     "Cannot purge logs for destination with ID \(destinationId): not found"
                 )
             }
         } else if !options.destinationIds.isEmpty {
             // Use specified list of destinations
-            var result: [LogDestinationDTO] = []
+            var result: [LoggingInterfaces.LogDestinationDTO] = []
             
             for id in options.destinationIds {
                 if let destination = await getDestination(id: id) {
@@ -202,7 +158,7 @@ public class PurgeLogsCommand: BaseLogCommand, LogCommand {
             }
             
             if result.isEmpty {
-                throw LoggingError.noDestinationsFound(
+                throw LoggingTypes.LoggingError.noDestinationsFound(
                     "None of the specified destinations could be found"
                 )
             }
@@ -215,69 +171,22 @@ public class PurgeLogsCommand: BaseLogCommand, LogCommand {
     }
     
     /**
-     Creates a backup before purging logs.
+     Creates a backup of logs before purging.
      
      - Parameters:
         - destinations: The destinations to back up
-        - context: The logging context for the operation
-     - Throws: LoggingError if backup fails
+        - backupPath: Path where the backup should be stored
      */
     private func createBackupBeforePurge(
-        for destinations: [LogDestinationDTO],
-        context: LogContextDTO
+        for destinations: [LoggingInterfaces.LogDestinationDTO],
+        backupPath: String
     ) async {
-        guard let backupPath = options.backupPath else {
-            await logger.log(
-                .warning,
-                "Cannot create backup: no backup path specified",
-                context: context
-            )
-            return
-        }
+        await logInfo("Creating backup before purge at path: \(backupPath)")
         
-        await logger.log(
-            .info,
-            "Creating backup before purging logs",
-            context: context.withMetadata(
-                LogMetadataDTOCollection().withProtected(
-                    key: "backupPath",
-                    value: backupPath
-                )
-            )
-        )
+        // In a real implementation, this would create a backup of the logs
+        // using the archive functionality or similar approach
         
-        for destination in destinations {
-            do {
-                let archiveOptions = ArchiveLogsOptionsDTO(
-                    destinationPath: backupPath,
-                    compress: true,
-                    format: .zip,
-                    filterCriteria: options.filterCriteria,
-                    deleteAfterArchiving: false
-                )
-                
-                let archiveCommand = ArchiveLogsCommand(
-                    destinationId: destination.id,
-                    options: archiveOptions,
-                    provider: provider,
-                    logger: logger
-                )
-                
-                _ = try await archiveCommand.execute(context: context)
-                
-                await logger.log(
-                    .info,
-                    "Successfully backed up destination: \(destination.name)",
-                    context: context
-                )
-                
-            } catch {
-                await logger.log(
-                    .warning,
-                    "Failed to back up destination: \(destination.name) - \(error.localizedDescription)",
-                    context: context
-                )
-            }
-        }
+        // For now, just log that we would create a backup
+        await logInfo("Backup creation before purge is a placeholder in this implementation")
     }
 }

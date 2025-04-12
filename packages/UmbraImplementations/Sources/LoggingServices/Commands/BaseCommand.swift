@@ -20,19 +20,22 @@ public class BaseCommand {
     /// Log a message at info level
     /// - Parameter message: The message to log
     internal func logInfo(_ message: String) async {
-        await loggingServices.logString(.info, message, context: createCommandContext())
+        await loggingServices.logString(LoggingInterfaces.LogLevel.info, message, context: createCommandContext())
     }
     
     /// Log a message at warning level
-    /// - Parameter message: The message to log
-    internal func logWarning(_ message: String) async {
-        await loggingServices.logString(.warning, message, context: createCommandContext())
+    /// - Parameters:
+    ///   - message: The message to log
+    ///   - details: Optional additional details
+    internal func logWarning(_ message: String, details: String? = nil) async {
+        let finalMessage = details != nil ? "\(message): \(details!)" : message
+        await loggingServices.logString(LoggingInterfaces.LogLevel.warning, finalMessage, context: createCommandContext())
     }
     
     /// Log a message at error level
     /// - Parameter message: The message to log
     internal func logError(_ message: String) async {
-        await loggingServices.logString(.error, message, context: createCommandContext())
+        await loggingServices.logString(LoggingInterfaces.LogLevel.error, message, context: createCommandContext())
     }
     
     /// Log operation success
@@ -46,13 +49,13 @@ public class BaseCommand {
     
     /// Create a command context for logging
     /// - Returns: The log context
-    private func createCommandContext() -> BaseLogContextDTO {
-        return BaseLogContextDTO(
+    private func createCommandContext() -> LoggingInterfaces.BaseLogContextDTO {
+        return LoggingInterfaces.BaseLogContextDTO(
             domainName: "LoggingServices",
             operation: "Command",
             category: String(describing: type(of: self)),
             source: "UmbraCore",
-            metadata: LogMetadataDTOCollection()
+            metadata: LoggingInterfaces.LogMetadataDTOCollection()
         )
     }
     
@@ -61,13 +64,13 @@ public class BaseCommand {
     /// Get a destination by ID
     /// - Parameter id: The destination ID
     /// - Returns: The destination if found
-    internal func getDestination(id: String) async -> LogDestinationDTO? {
+    internal func getDestination(id: String) async -> LoggingInterfaces.LogDestinationDTO? {
         return await loggingServices.getDestination(id: id)
     }
     
     /// Get all registered destinations
     /// - Returns: All destinations
-    internal func getAllDestinations() async -> [LogDestinationDTO] {
+    internal func getAllDestinations() async -> [LoggingInterfaces.LogDestinationDTO] {
         return await loggingServices.getAllDestinations()
     }
     
@@ -76,7 +79,7 @@ public class BaseCommand {
     ///   - destination: The destination to validate
     ///   - provider: The provider to use
     /// - Returns: The validation result
-    internal func validateDestination(_ destination: LogDestinationDTO, for provider: any LoggingProviderProtocol) async -> LogDestinationValidationResultDTO {
+    internal func validateDestination(_ destination: LoggingInterfaces.LogDestinationDTO, for provider: LoggingInterfaces.LoggingProviderProtocol) async -> LoggingInterfaces.LogDestinationValidationResultDTO {
         return await loggingServices.validateDestination(destination, for: provider)
     }
     
@@ -85,13 +88,13 @@ public class BaseCommand {
     ///   - entry: The entry to filter
     ///   - rules: The rules to apply
     /// - Returns: Whether the entry passes the filters
-    internal func applyFilterRules(to entry: LogEntryDTO, rules: [UmbraLogFilterRuleDTO]) async -> Bool {
+    internal func applyFilterRules(to entry: LoggingInterfaces.LogEntryDTO, rules: [UmbraLogFilterRuleDTO]) async -> Bool {
         return await loggingServices.applyFilterRules(to: entry, rules: rules)
     }
     
     /// Register a destination with the logging services
     /// - Parameter destination: The destination to register
-    internal func registerDestination(_ destination: LogDestinationDTO) async {
+    internal func registerDestination(_ destination: LoggingInterfaces.LogDestinationDTO) async {
         _ = try? await loggingServices.addDestination(destination)
     }
     
@@ -106,7 +109,7 @@ public class BaseCommand {
     ///   - entry: The entry to redact
     ///   - rules: The rules to apply
     /// - Returns: The redacted entry
-    internal func applyRedactionRules(to entry: LogEntryDTO, rules: [UmbraLogRedactionRuleDTO]) -> LogEntryDTO {
+    internal func applyRedactionRules(to entry: LoggingInterfaces.LogEntryDTO, rules: [UmbraLogRedactionRuleDTO]) -> LoggingInterfaces.LogEntryDTO {
         // If no rules, return the original entry
         if rules.isEmpty {
             return entry

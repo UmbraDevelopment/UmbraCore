@@ -4,20 +4,23 @@ import LoggingTypes
 import SchedulingTypes
 
 /**
- Command for rotating logs.
+ Command for rotating logs in a destination.
  
- This command encapsulates the logic for log rotation operations,
+ This command encapsulates the logic for rotating logs in a destination,
  following the command pattern architecture.
  */
-public class RotateLogsCommand: BaseLogCommand, LogCommand {
+public class RotateLogsCommand: BaseCommand, LogCommand {
     /// The result type for this command
-    public typealias ResultType = LogRotationResultDTO
+    public typealias ResultType = Bool
     
     /// The ID of the destination to rotate logs for
     private let destinationId: String
     
     /// Options for rotating logs
-    private let options: RotateLogsOptionsDTO
+    private let options: LoggingInterfaces.RotateLogsOptionsDTO
+    
+    /// Provider for logging operations
+    private let provider: LoggingProviderProtocol
     
     /**
      Initialises a new rotate logs command.
@@ -25,19 +28,20 @@ public class RotateLogsCommand: BaseLogCommand, LogCommand {
      - Parameters:
         - destinationId: The ID of the destination to rotate logs for
         - options: Options for rotating logs
-        - provider: Provider for logging operations
-        - logger: Logger instance for logging operations
+        - provider: Provider for rotation operations
+        - loggingServices: The logging services actor
      */
     public init(
         destinationId: String,
-        options: RotateLogsOptionsDTO = .default,
+        options: LoggingInterfaces.RotateLogsOptionsDTO = .default,
         provider: LoggingProviderProtocol,
-        logger: PrivacyAwareLoggingProtocol
+        loggingServices: LoggingServicesActor
     ) {
         self.destinationId = destinationId
         self.options = options
+        self.provider = provider
         
-        super.init(provider: provider, logger: logger)
+        super.init(loggingServices: loggingServices)
     }
     
     /**
@@ -45,92 +49,57 @@ public class RotateLogsCommand: BaseLogCommand, LogCommand {
      
      - Parameters:
         - context: The logging context for the operation
-     - Returns: The result of the rotation operation
+     - Returns: Whether the operation was successful
      - Throws: LoggingError if the operation fails
      */
-    public func execute(context: LogContextDTO) async throws -> LogRotationResultDTO {
+    public func execute(context: LoggingInterfaces.LogContextDTO) async throws -> Bool {
         // Create a log context for this specific operation
-        let operationContext = createLogContext(
+        let operationContext = LoggingInterfaces.BaseLogContextDTO(
+            domainName: "LoggingServices",
             operation: "rotateLogs",
-            destinationId: destinationId,
-            additionalMetadata: [
-                "forceRotation": (value: String(options.forceRotation), privacyLevel: .public),
-                "compressRotatedLogs": (value: String(options.compressRotatedLogs), privacyLevel: .public)
-            ]
+            category: "LogRotation",
+            source: "UmbraCore",
+            metadata: LoggingInterfaces.LogMetadataDTOCollection()
+                .withPublic(key: "destinationId", value: destinationId)
+                .withPublic(key: "forceRotation", value: String(options.forceRotation))
+                .withPublic(key: "maxBackupCount", value: String(options.maxBackupCount))
         )
         
         // Log operation start
-        await logOperationStart(operation: "rotateLogs", context: operationContext)
+        await logInfo("Starting log rotation for destination '\(destinationId)'")
         
         do {
             // Check if destination exists
             guard let destination = await getDestination(id: destinationId) else {
-                throw LoggingError.destinationNotFound(
-                    "Cannot rotate logs for destination with ID \(destinationId): not found"
-                )
+                throw LoggingTypes.LoggingError.destinationNotFound("Destination with ID \(destinationId) not found")
             }
             
             // Check if the destination type supports rotation
-            if destination.type != LogDestinationType.file {
-                throw LoggingError.invalidDestinationConfig(
+            guard destination.type == .file else {
+                throw LoggingTypes.LoggingError.invalidDestinationConfig(
                     "Log rotation is only supported for file destinations"
                 )
             }
             
             // Rotate logs using provider
-            let rotationResult = try await provider.rotateLogs(
+            let success = try await provider.rotateLogs(
                 for: destination,
                 options: options
             )
             
-            // Log success or failure based on rotation result
-            if rotationResult.success {
-                await logOperationSuccess(
-                    operation: "rotateLogs",
-                    context: operationContext,
-                    additionalMetadata: [
-                        "rotatedFilePath": (value: rotationResult.rotatedFilePath ?? "unknown", privacyLevel: .protected),
-                        "rotatedSizeBytes": (value: String(rotationResult.rotatedSizeBytes ?? 0), privacyLevel: .public),
-                        "rotatedEntryCount": (value: String(rotationResult.rotatedEntryCount ?? 0), privacyLevel: .public)
-                    ]
-                )
+            // Log success or failure
+            if success {
+                await logInfo("Successfully rotated logs for destination '\(destinationId)'")
             } else {
-                await logger.log(
-                    .warning,
-                    "Log rotation completed with issues",
-                    context: operationContext.withMetadata(
-                        LogMetadataDTOCollection().withProtected(
-                            key: "rotationError",
-                            value: rotationResult.metadata["error"] ?? "Unknown error"
-                        )
-                    )
-                )
+                await logWarning("Failed to rotate logs for destination '\(destinationId)'")
             }
             
-            return rotationResult
-            
-        } catch let error as LoggingError {
-            // Log failure
-            await logOperationFailure(
-                operation: "rotateLogs",
-                error: error,
-                context: operationContext
-            )
-            
-            throw error
+            return success
             
         } catch {
-            // Map unknown error to LoggingError
-            let loggingError = LoggingError.writeFailure(error.localizedDescription)
-            
             // Log failure
-            await logOperationFailure(
-                operation: "rotateLogs",
-                error: loggingError,
-                context: operationContext
-            )
-            
-            throw loggingError
+            await logError("Log rotation failed: \(error.localizedDescription)")
+            throw error
         }
     }
 }

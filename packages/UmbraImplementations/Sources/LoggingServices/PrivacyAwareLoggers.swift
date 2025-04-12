@@ -10,21 +10,21 @@ public protocol DomainLogger: Sendable {
   /// - Parameters:
   ///   - context: The context for the log
   ///   - message: Optional custom message
-  func logOperationStart<T: LogContextDTO>(context: T, message: String?) async
+  func logOperationStart<T: LoggingInterfaces.LogContextDTO>(context: T, message: String?) async
 
   /// Log an operation success
   /// - Parameters:
   ///   - context: The context for the log
   ///   - result: Optional result information
   ///   - message: Optional custom message
-  func logOperationSuccess<T: LogContextDTO, R>(context: T, result: R?, message: String?) async
+  func logOperationSuccess<T: LoggingInterfaces.LogContextDTO, R>(context: T, result: R?, message: String?) async
 
   /// Log an operation error
   /// - Parameters:
   ///   - context: The context for the log
   ///   - error: The error that occurred
   ///   - message: Optional custom message
-  func logOperationError<T: LogContextDTO>(context: T, error: Error, message: String?) async
+  func logOperationError<T: LoggingInterfaces.LogContextDTO>(context: T, error: Error, message: String?) async
 
   /**
    Logs a loggable error with enhanced privacy controls.
@@ -38,6 +38,20 @@ public protocol DomainLogger: Sendable {
     _ error: LoggableErrorDTO,
     severity: LogLevel,
     message: String?
+  ) async
+
+  /**
+    Log an operation with custom log level
+    
+    - Parameters:
+      - level: The log level to use
+      - context: The context for the log
+      - message: Custom message
+   */
+  func logOperation<T: LoggingInterfaces.LogContextDTO>(
+    level: LogLevel,
+    context: T,
+    message: String
   ) async
 }
 
@@ -60,7 +74,7 @@ public struct BaseDomainLogger: DomainLogger {
       - message: Optional custom message
    */
   public func logOperationStart(
-    context: some LogContextDTO,
+    context: some LoggingInterfaces.LogContextDTO,
     message: String?=nil
   ) async {
     let logMessage=message ?? "Starting operation"
@@ -76,7 +90,7 @@ public struct BaseDomainLogger: DomainLogger {
       - message: Optional custom message
    */
   public func logOperationSuccess(
-    context: some LogContextDTO,
+    context: some LoggingInterfaces.LogContextDTO,
     result: (some Any)?,
     message: String?=nil
   ) async {
@@ -113,7 +127,7 @@ public struct BaseDomainLogger: DomainLogger {
       - message: Optional custom message
    */
   public func logOperationError(
-    context: some LogContextDTO,
+    context: some LoggingInterfaces.LogContextDTO,
     error: Error,
     message: String?=nil
   ) async {
@@ -187,15 +201,49 @@ public struct BaseDomainLogger: DomainLogger {
     await logger.log(severity, logMessage, context: context)
   }
 
-  // MARK: - Helper Functions
+  /**
+    Log an operation with custom log level
+    
+    - Parameters:
+      - level: The log level to use
+      - context: The context for the log
+      - message: Custom message
+   */
+  public func logOperation<T: LoggingInterfaces.LogContextDTO>(
+    level: LogLevel,
+    context: T,
+    message: String
+  ) async {
+    await logger.log(level, message, context: context)
+  }
 
-  /// Helper method to convert LogMetadataDTOCollection directly without conversion
-  /// - Parameter metadata: The metadata to use directly
-  /// - Returns: The same metadata collection
-  private func createMetadataCollection(from metadata: LogMetadataDTOCollection?)
-  -> LogMetadataDTOCollection {
-    // If already a LogMetadataDTOCollection, just return it (or empty if nil)
-    metadata ?? LogMetadataDTOCollection()
+  /**
+   Create customised metadata collection for domain-specific context
+   
+   - Parameters:
+     - defaultMetadata: The default metadata to start with
+     - operation: The operation name
+     - additionalMetadata: Additional key-value pairs to add
+   - Returns: A metadata collection with domain context
+  */
+  internal func createMetadata(
+    defaultMetadata: LoggingInterfaces.LogMetadataDTOCollection = LoggingInterfaces.LogMetadataDTOCollection(),
+    operation: String,
+    additionalMetadata: [String: (value: String, privacyLevel: LoggingTypes.LogPrivacyLevel)] = [:]
+  ) -> LoggingInterfaces.LogMetadataDTOCollection {
+    var metadata = defaultMetadata
+    metadata = metadata.withPublic(key: "operation", value: operation)
+    for (key, value) in additionalMetadata {
+      // Convert LogPrivacyLevel to the appropriate method
+      if value.privacyLevel == .public {
+        metadata = metadata.withPublic(key: key, value: value.value)
+      } else if value.privacyLevel == .private {
+        metadata = metadata.withPrivate(key: key, value: value.value)
+      } else if value.privacyLevel == .sensitive {
+        metadata = metadata.withSensitive(key: key, value: value.value)
+      }
+    }
+    return metadata
   }
 }
 
@@ -210,82 +258,133 @@ public struct SnapshotLogger {
     domainLogger=BaseDomainLogger(logger: logger)
   }
 
-  /// Log a snapshot operation start
-  /// - Parameters:
-  ///   - snapshotID: The snapshot ID
-  ///   - operation: The operation being performed
-  ///   - additionalContext: Additional context information
-  ///   - message: Optional custom message
+  /**
+   Log an operation start with snapshot context
+   
+   - Parameters:
+     - snapshotID: The ID of the snapshot
+     - operation: The operation being performed
+     - additionalContext: Additional context information
+     - message: Optional custom message
+  */
   public func logOperationStart(
     snapshotID: String,
     operation: String,
-    additionalContext: LogMetadataDTOCollection=LogMetadataDTOCollection(),
+    additionalContext: LoggingInterfaces.LogMetadataDTOCollection = LoggingInterfaces.LogMetadataDTOCollection(),
     message: String?=nil
   ) async {
-    let context=SnapshotLogContext(
+    let context = createSnapshotContext(
       snapshotID: snapshotID,
       operation: operation,
       additionalContext: additionalContext
     )
-
-    let defaultMessage="Starting snapshot \(operation) operation"
-    await domainLogger.logOperationStart(context: context, message: message ?? defaultMessage)
+    
+    await logOperationStart(context: context, message: message)
   }
-
-  /// Log a snapshot operation success
-  /// - Parameters:
-  ///   - snapshotID: The snapshot ID
-  ///   - operation: The operation being performed
-  ///   - result: Optional result information
-  ///   - additionalContext: Additional context information
-  ///   - message: Optional custom message
+  
+  /**
+   Log an operation success with snapshot context
+   
+   - Parameters:
+     - snapshotID: The ID of the snapshot
+     - operation: The operation being performed
+     - result: Optional result information
+     - additionalContext: Additional context information
+     - message: Optional custom message
+  */
   public func logOperationSuccess(
     snapshotID: String,
     operation: String,
     result: (some Sendable)?=nil,
-    additionalContext: LogMetadataDTOCollection=LogMetadataDTOCollection(),
+    additionalContext: LoggingInterfaces.LogMetadataDTOCollection = LoggingInterfaces.LogMetadataDTOCollection(),
     message: String?=nil
   ) async {
-    let context=SnapshotLogContext(
+    let context = createSnapshotContext(
       snapshotID: snapshotID,
       operation: operation,
       additionalContext: additionalContext
     )
-
-    let defaultMessage="Snapshot \(operation) completed successfully"
-    await domainLogger.logOperationSuccess(
-      context: context,
-      result: result,
-      message: message ?? defaultMessage
-    )
+    
+    await logOperationSuccess(context: context, result: result, message: message)
   }
-
-  /// Log a snapshot operation error
-  /// - Parameters:
-  ///   - snapshotID: The snapshot ID
-  ///   - operation: The operation being performed
-  ///   - error: The error that occurred
-  ///   - additionalContext: Additional context information
-  ///   - message: Optional custom message
+  
+  /**
+   Log an operation error with snapshot context
+   
+   - Parameters:
+     - snapshotID: The ID of the snapshot
+     - operation: The operation being performed
+     - error: The error that occurred
+     - additionalContext: Additional context information
+     - message: Optional custom message
+  */
   public func logOperationError(
     snapshotID: String,
     operation: String,
     error: Error,
-    additionalContext: LogMetadataDTOCollection=LogMetadataDTOCollection(),
+    additionalContext: LoggingInterfaces.LogMetadataDTOCollection = LoggingInterfaces.LogMetadataDTOCollection(),
     message: String?=nil
   ) async {
-    let context=SnapshotLogContext(
+    let context = createSnapshotContext(
       snapshotID: snapshotID,
       operation: operation,
       additionalContext: additionalContext
     )
+    
+    await logOperationError(context: context, error: error, message: message)
+  }
 
-    let defaultMessage="Snapshot \(operation) operation failed"
-    await domainLogger.logOperationError(
-      context: context,
-      error: error,
-      message: message ?? defaultMessage
+  /// Create a snapshot context
+  private func createSnapshotContext(
+    snapshotID: String,
+    operation: String,
+    additionalContext: LoggingInterfaces.LogMetadataDTOCollection
+  ) -> SnapshotLogContext {
+    SnapshotLogContext(
+      snapshotID: snapshotID,
+      operation: operation,
+      additionalContext: additionalContext
     )
+  }
+
+  /// Log an operation start
+  /// - Parameters:
+  ///   - context: The context for the log
+  ///   - message: Optional custom message
+  private func logOperationStart(
+    context: SnapshotLogContext,
+    message: String?=nil
+  ) async {
+    let defaultMessage="Starting snapshot \(context.operation) operation"
+    await domainLogger.logOperationStart(context: context, message: message ?? defaultMessage)
+  }
+
+  /// Log an operation success
+  /// - Parameters:
+  ///   - context: The context for the log
+  ///   - result: Optional result information
+  ///   - message: Optional custom message
+  private func logOperationSuccess(
+    context: SnapshotLogContext,
+    result: (some Sendable)?=nil,
+    message: String?=nil
+  ) async {
+    let defaultMessage="Snapshot \(context.operation) completed successfully"
+    await domainLogger.logOperationSuccess(context: context, result: result, message: message ?? defaultMessage)
+  }
+
+  /// Log an operation error
+  /// - Parameters:
+  ///   - context: The context for the log
+  ///   - error: The error that occurred
+  ///   - message: Optional custom message
+  private func logOperationError(
+    context: SnapshotLogContext,
+    error: Error,
+    message: String?=nil
+  ) async {
+    let defaultMessage="Snapshot \(context.operation) operation failed"
+    await domainLogger.logOperationError(context: context, error: error, message: message ?? defaultMessage)
   }
 }
 
@@ -309,7 +408,7 @@ public struct KeyManagementLogger {
   public func logOperationStart(
     keyIdentifier: String,
     operation: String,
-    additionalContext: LogMetadataDTOCollection=LogMetadataDTOCollection(),
+    additionalContext: LoggingInterfaces.LogMetadataDTOCollection=LoggingInterfaces.LogMetadataDTOCollection(),
     message: String?=nil
   ) async {
     let context=KeyManagementLogContext(
@@ -333,7 +432,7 @@ public struct KeyManagementLogger {
     keyIdentifier: String,
     operation: String,
     result: (some Sendable)?=nil,
-    additionalContext: LogMetadataDTOCollection=LogMetadataDTOCollection(),
+    additionalContext: LoggingInterfaces.LogMetadataDTOCollection=LoggingInterfaces.LogMetadataDTOCollection(),
     message: String?=nil
   ) async {
     let context=KeyManagementLogContext(
@@ -361,7 +460,7 @@ public struct KeyManagementLogger {
     keyIdentifier: String,
     operation: String,
     error: Error,
-    additionalContext: LogMetadataDTOCollection=LogMetadataDTOCollection(),
+    additionalContext: LoggingInterfaces.LogMetadataDTOCollection=LoggingInterfaces.LogMetadataDTOCollection(),
     message: String?=nil
   ) async {
     let context=KeyManagementLogContext(
@@ -413,11 +512,11 @@ public struct KeychainLogger {
     account: String,
     operation: String,
     keyIdentifier: String?=nil,
-    additionalContext: LogMetadataDTOCollection?=nil,
+    additionalContext: LoggingInterfaces.LogMetadataDTOCollection?=nil,
     message: String?=nil
   ) async {
     // Create base metadata with operation information
-    var context=LogMetadataDTOCollection()
+    var context=LoggingInterfaces.LogMetadataDTOCollection()
       .withPrivate(key: "account", value: account)
       .withPublic(key: "operation", value: operation)
 
@@ -462,11 +561,11 @@ public struct KeychainLogger {
     operation: String,
     error: Error,
     keyIdentifier: String?=nil,
-    additionalContext: LogMetadataDTOCollection?=nil,
+    additionalContext: LoggingInterfaces.LogMetadataDTOCollection?=nil,
     message: String?=nil
   ) async {
     // Create base metadata with operation and error information
-    var context=LogMetadataDTOCollection()
+    var context=LoggingInterfaces.LogMetadataDTOCollection()
       .withPrivate(key: "account", value: account)
       .withPublic(key: "operation", value: operation)
       .withPrivate(key: "error", value: error.localizedDescription)
@@ -533,11 +632,11 @@ public struct CryptoLogger {
     operation: String,
     algorithm: String?=nil,
     keyID: String?=nil,
-    additionalContext: LogMetadataDTOCollection?=nil,
+    additionalContext: LoggingInterfaces.LogMetadataDTOCollection?=nil,
     message: String?=nil
   ) async {
     // Create base metadata with operation information
-    var context=LogMetadataDTOCollection()
+    var context=LoggingInterfaces.LogMetadataDTOCollection()
       .withPublic(key: "operation", value: operation)
 
     // Add algorithm information if available
@@ -586,11 +685,11 @@ public struct CryptoLogger {
     error: Error,
     algorithm: String?=nil,
     keyID: String?=nil,
-    additionalContext: LogMetadataDTOCollection?=nil,
+    additionalContext: LoggingInterfaces.LogMetadataDTOCollection?=nil,
     message: String?=nil
   ) async {
     // Create base metadata with operation and error information
-    var context=LogMetadataDTOCollection()
+    var context=LoggingInterfaces.LogMetadataDTOCollection()
       .withPublic(key: "operation", value: operation)
       .withPrivate(key: "error", value: error.localizedDescription)
       .withPrivate(key: "errorType", value: String(describing: type(of: error)))
@@ -688,7 +787,7 @@ public class EnhancedErrorLogger: LegacyErrorLoggingProtocol {
   public func logError(
     _ error: Error,
     level: LogLevel,
-    metadata: LogMetadataDTOCollection?,
+    metadata: LoggingInterfaces.LogMetadataDTOCollection?,
     source: String,
     message: String?
   ) async {
@@ -721,7 +820,7 @@ public class EnhancedErrorLogger: LegacyErrorLoggingProtocol {
     message: String?=nil
   ) async {
     // Create updated metadata collection
-    var updatedMetadata=LogMetadataDTOCollection()
+    var updatedMetadata=LoggingInterfaces.LogMetadataDTOCollection()
 
     // Add error metadata
     updatedMetadata=updatedMetadata.withPrivate(
@@ -796,54 +895,54 @@ public class EnhancedErrorLogger: LegacyErrorLoggingProtocol {
         source: errorSource,
         metadata: metadataDTO,
         correlationID: nil
-      )
+    )
 
-      // Get the log message or use the error's message
-      let logMessage=message ?? loggableError.getLogMessage()
+    // Get the log message or use the error's message
+    let logMessage=message ?? loggableError.getLogMessage()
 
-      // Log with error severity or specified level
-      await logger.log(level, logMessage, context: context)
-    } else {
-      // For standard errors, create basic metadata
-      var metadata=LogMetadataDTOCollection()
+    // Log with error severity or specified level
+    await logger.log(level, logMessage, context: context)
+  } else {
+    // For standard errors, create basic metadata
+    var metadata=LoggingInterfaces.LogMetadataDTOCollection()
 
-      metadata=metadata.withPrivate(
-        key: "errorDescription",
-        value: error.localizedDescription
-      )
+    metadata=metadata.withPrivate(
+      key: "errorDescription",
+      value: error.localizedDescription
+    )
 
-      metadata=metadata.withPublic(
-        key: "errorType",
-        value: String(describing: type(of: error))
-      )
+    metadata=metadata.withPublic(
+      key: "errorType",
+      value: String(describing: type(of: error))
+    )
 
-      // Create basic context
-      let context=BaseLogContextDTO(
-        domainName: "Error",
-        operation: "logStructuredError",
-        category: "ErrorHandling",
-        source: source ?? "UnknownSource",
-        metadata: metadata,
-        correlationID: nil
-      )
+    // Create basic context
+    let context=BaseLogContextDTO(
+      domainName: "Error",
+      operation: "logStructuredError",
+      category: "ErrorHandling",
+      source: source ?? "UnknownSource",
+      metadata: metadata,
+      correlationID: nil
+    )
 
-      // Use default message or a generic one
-      let logMessage=message ?? "Error: \(error.localizedDescription)"
+    // Use default message or a generic one
+    let logMessage=message ?? "Error: \(error.localizedDescription)"
 
-      // Log with the specified level
-      await logger.log(level, logMessage, context: context)
-    }
+    // Log with the specified level
+    await logger.log(level, logMessage, context: context)
   }
+}
 
   // MARK: - Helper Functions
 
   /// Helper method to convert LogMetadataDTOCollection directly without conversion
   /// - Parameter metadata: The metadata to use directly
   /// - Returns: The same metadata collection
-  private func createMetadataCollection(from metadata: LogMetadataDTOCollection?)
-  -> LogMetadataDTOCollection {
+  private func createMetadataCollection(from metadata: LoggingInterfaces.LogMetadataDTOCollection?)
+  -> LoggingInterfaces.LogMetadataDTOCollection {
     // If already a LogMetadataDTOCollection, just return it (or empty if nil)
-    metadata ?? LogMetadataDTOCollection()
+    metadata ?? LoggingInterfaces.LogMetadataDTOCollection()
   }
 }
 
@@ -880,7 +979,7 @@ public protocol LegacyErrorLoggingProtocol {
   func logError(
     _ error: Error,
     level: LogLevel,
-    metadata: LogMetadataDTOCollection?,
+    metadata: LoggingInterfaces.LogMetadataDTOCollection?,
     source: String,
     message: String?
   ) async
@@ -924,13 +1023,13 @@ public struct FileSystemLogger {
     path: String?=nil,
     level: LogLevel = .info,
     message: String?=nil,
-    additionalContext: LogMetadataDTOCollection?=nil
+    additionalContext: LoggingInterfaces.LogMetadataDTOCollection?=nil
   ) async {
     // Create a file system context with the operation and path
     let fsContext=FileSystemLogContext(
       operation: operation,
       path: path,
-      additionalContext: additionalContext ?? LogMetadataDTOCollection()
+      additionalContext: additionalContext ?? LoggingInterfaces.LogMetadataDTOCollection()
     )
 
     let defaultMessage=path != nil ?
@@ -957,14 +1056,14 @@ public struct FileSystemLogger {
     operation: String,
     error: Error,
     path: String?=nil,
-    additionalContext: LogMetadataDTOCollection?=nil,
+    additionalContext: LoggingInterfaces.LogMetadataDTOCollection?=nil,
     message: String?=nil
   ) async {
     // Create a file system context with the operation and path
     let fsContext=FileSystemLogContext(
       operation: operation,
       path: path,
-      additionalContext: additionalContext ?? LogMetadataDTOCollection()
+      additionalContext: additionalContext ?? LoggingInterfaces.LogMetadataDTOCollection()
     )
 
     let defaultMessage="Error during file system operation \(operation): \(error.localizedDescription)"
@@ -988,13 +1087,13 @@ public struct FileSystemLogger {
     _ path: String,
     operation: String,
     level: LogLevel = .info,
-    additionalContext: LogMetadataDTOCollection?=nil
+    additionalContext: LoggingInterfaces.LogMetadataDTOCollection?=nil
   ) async {
     // Create a file system context directly - it already handles path privacy
     let fsContext=FileSystemLogContext(
       operation: operation,
       path: path,
-      additionalContext: additionalContext ?? LogMetadataDTOCollection()
+      additionalContext: additionalContext ?? LoggingInterfaces.LogMetadataDTOCollection()
     )
 
     let message=switch level {

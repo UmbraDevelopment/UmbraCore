@@ -1,23 +1,25 @@
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
-import SchedulingTypes
 
 /**
  Command for adding a new log destination.
  
- This command encapsulates the logic for adding and registering a new 
- log destination, following the command pattern architecture.
+ This command encapsulates the logic for registering a new destination,
+ validating its configuration, and performing a test write if requested.
  */
-public class AddDestinationCommand: BaseLogCommand, LogCommand {
+public class AddDestinationCommand: BaseCommand, LogCommand {
     /// The result type for this command
     public typealias ResultType = Bool
     
     /// The destination to add
-    private let destination: LogDestinationDTO
+    private let destination: LoggingInterfaces.LogDestinationDTO
     
     /// Options for adding the destination
-    private let options: AddDestinationOptionsDTO
+    private let options: LoggingInterfaces.AddDestinationOptionsDTO
+    
+    /// Provider for logging operations
+    private let provider: LoggingProviderProtocol
     
     /**
      Initialises a new add destination command.
@@ -25,19 +27,20 @@ public class AddDestinationCommand: BaseLogCommand, LogCommand {
      - Parameters:
         - destination: The destination to add
         - options: Options for adding the destination
-        - provider: Provider for logging operations
-        - logger: Logger instance for logging operations
+        - provider: Provider for destination operations
+        - loggingServices: The logging services actor
      */
     public init(
-        destination: LogDestinationDTO,
-        options: AddDestinationOptionsDTO = .default,
+        destination: LoggingInterfaces.LogDestinationDTO,
+        options: LoggingInterfaces.AddDestinationOptionsDTO = .default,
         provider: LoggingProviderProtocol,
-        logger: PrivacyAwareLoggingProtocol
+        loggingServices: LoggingServicesActor
     ) {
         self.destination = destination
         self.options = options
+        self.provider = provider
         
-        super.init(provider: provider, logger: logger)
+        super.init(loggingServices: loggingServices)
     }
     
     /**
@@ -48,61 +51,57 @@ public class AddDestinationCommand: BaseLogCommand, LogCommand {
      - Returns: Whether the operation was successful
      - Throws: LoggingError if the operation fails
      */
-    public func execute(context: LogContextDTO) async throws -> Bool {
+    public func execute(context: LoggingInterfaces.LogContextDTO) async throws -> Bool {
         // Create a log context for this specific operation
-        let operationContext = createLogContext(
+        let operationContext = LoggingInterfaces.BaseLogContextDTO(
+            domainName: "LoggingServices",
             operation: "addDestination",
-            destinationId: destination.id,
-            additionalMetadata: [
-                "destinationType": (value: destination.type.rawValue, privacyLevel: .public),
-                "destinationName": (value: destination.name, privacyLevel: .public),
-                "minimumLevel": (value: destination.minimumLevel.rawValue, privacyLevel: .public)
-            ]
+            category: "DestinationManagement",
+            source: "UmbraCore",
+            metadata: LoggingInterfaces.LogMetadataDTOCollection()
+                .withPublic(key: "destinationId", value: destination.id)
+                .withPublic(key: "destinationName", value: destination.name)
+                .withPublic(key: "destinationType", value: destination.type.rawValue)
+                .withPublic(key: "validateConfiguration", value: String(options.validateConfiguration))
+                .withPublic(key: "testDestination", value: String(options.testDestination))
         )
         
         // Log operation start
-        await logOperationStart(operation: "addDestination", context: operationContext)
+        await logInfo("Starting to add destination '\(destination.name)' (\(destination.id))")
         
         do {
             // Check if destination already exists
             if let existing = await getDestination(id: destination.id) {
-                if !options.overwriteExisting {
-                    throw LoggingError.destinationAlreadyExists(identifier: "Destination with ID \(destination.id) already exists")
-                } else {
-                    await logger.log(
-                        .warning,
-                        "Overwriting existing destination with ID: \(destination.id)",
-                        context: operationContext
-                    )
-                }
+                throw LoggingTypes.LoggingError.destinationAlreadyExists(identifier: destination.id)
             }
             
             // Validate destination configuration if requested
             if options.validateConfiguration {
-                let validationResult = await validateDestination(destination, for: provider)
+                let validationResult = try await loggingServices.validateDestination(destination, for: provider)
                 
                 if !validationResult.isValid {
-                    let issues = validationResult.issues.joined(separator: ", ")
-                    throw LoggingError.invalidDestinationConfig(
+                    let issues = validationResult.validationMessages.joined(separator: ", ")
+                    throw LoggingTypes.LoggingError.invalidDestinationConfig(
                         "Destination configuration is invalid: \(issues)"
                     )
                 }
             }
             
-            // Test the destination if requested
+            // Test write to destination if requested
             if options.testDestination {
-                await logger.log(
-                    .debug,
-                    "Testing destination before adding",
-                    context: operationContext
+                await logInfo(
+                    "Performing test write to destination '\(destination.name)'"
                 )
                 
-                // Create a test log entry
-                let testEntry = LogEntryDTO(
+                let testEntry = LoggingInterfaces.LogEntryDTO(
+                    timestamp: Date().timeIntervalSince1970,
                     level: .info,
-                    message: "Test log entry for destination validation",
-                    category: "LoggingSystem",
-                    metadata: LogMetadataDTOCollection.empty
+                    message: "Test log entry from UmbraCore",
+                    category: "Test",
+                    metadata: LoggingInterfaces.LogMetadataDTOCollection()
+                        .withPublic(key: "test", value: "true"),
+                    source: "LoggingServices",
+                    entryID: UUID().uuidString
                 )
                 
                 let success = try await provider.writeLog(
@@ -111,48 +110,32 @@ public class AddDestinationCommand: BaseLogCommand, LogCommand {
                 )
                 
                 if !success {
-                    throw LoggingError.writeFailure(
+                    throw LoggingTypes.LoggingError.writeFailure(
                         "Test write to destination failed"
                     )
                 }
+                
+                await logInfo(
+                    "Test write to destination '\(destination.name)' was successful"
+                )
             }
             
             // Register the destination
-            await registerDestination(destination)
+            let success = try await loggingServices.addDestination(destination)
             
             // Log success
-            await logOperationSuccess(
-                operation: "addDestination",
-                context: operationContext,
-                additionalMetadata: [
-                    "totalDestinations": (value: String(Self.registeredDestinations.count), privacyLevel: .public)
-                ]
-            )
+            if success {
+                await logInfo("Successfully added destination '\(destination.name)' (\(destination.id))")
+            } else {
+                await logWarning("Failed to add destination '\(destination.name)' (\(destination.id))")
+            }
             
-            return true
-            
-        } catch let error as LoggingError {
-            // Log failure
-            await logOperationFailure(
-                operation: "addDestination",
-                error: error,
-                context: operationContext
-            )
-            
-            throw error
+            return success
             
         } catch {
-            // Map unknown error to LoggingError
-            let loggingError = LoggingError.initialisationFailed(reason: error.localizedDescription)
-            
             // Log failure
-            await logOperationFailure(
-                operation: "addDestination",
-                error: loggingError,
-                context: operationContext
-            )
-            
-            throw loggingError
+            await logError("Failed to add destination: \(error.localizedDescription)")
+            throw error
         }
     }
 }

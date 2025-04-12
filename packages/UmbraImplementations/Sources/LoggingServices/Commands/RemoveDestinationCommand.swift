@@ -1,15 +1,14 @@
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
-import SchedulingTypes
 
 /**
  Command for removing a log destination.
  
- This command encapsulates the logic for removing a log destination,
- following the command pattern architecture.
+ This command encapsulates the logic for removing a registered destination,
+ ensuring that proper cleanup such as log flushing is performed.
  */
-public class RemoveDestinationCommand: BaseLogCommand, LogCommand {
+public class RemoveDestinationCommand: BaseCommand, LogCommand {
     /// The result type for this command
     public typealias ResultType = Bool
     
@@ -17,7 +16,10 @@ public class RemoveDestinationCommand: BaseLogCommand, LogCommand {
     private let destinationId: String
     
     /// Options for removing the destination
-    private let options: RemoveDestinationOptionsDTO
+    private let options: LoggingInterfaces.RemoveDestinationOptionsDTO
+    
+    /// Provider for logging operations
+    private let provider: LoggingProviderProtocol
     
     /**
      Initialises a new remove destination command.
@@ -25,19 +27,20 @@ public class RemoveDestinationCommand: BaseLogCommand, LogCommand {
      - Parameters:
         - destinationId: The ID of the destination to remove
         - options: Options for removing the destination
-        - provider: Provider for logging operations
-        - logger: Logger instance for logging operations
+        - provider: Provider for destination operations
+        - loggingServices: The logging services actor
      */
     public init(
         destinationId: String,
-        options: RemoveDestinationOptionsDTO = .default,
+        options: LoggingInterfaces.RemoveDestinationOptionsDTO = .default,
         provider: LoggingProviderProtocol,
-        logger: PrivacyAwareLoggingProtocol
+        loggingServices: LoggingServicesActor
     ) {
         self.destinationId = destinationId
         self.options = options
+        self.provider = provider
         
-        super.init(provider: provider, logger: logger)
+        super.init(loggingServices: loggingServices)
     }
     
     /**
@@ -48,34 +51,34 @@ public class RemoveDestinationCommand: BaseLogCommand, LogCommand {
      - Returns: Whether the operation was successful
      - Throws: LoggingError if the operation fails
      */
-    public func execute(context: LogContextDTO) async throws -> Bool {
+    public func execute(context: LoggingInterfaces.LogContextDTO) async throws -> Bool {
         // Create a log context for this specific operation
-        let operationContext = createLogContext(
+        let operationContext = LoggingInterfaces.BaseLogContextDTO(
+            domainName: "LoggingServices",
             operation: "removeDestination",
-            destinationId: destinationId,
-            additionalMetadata: [
-                "flushBeforeRemoval": (value: String(options.flushBeforeRemoval), privacyLevel: .public),
-                "archiveLogs": (value: String(options.archiveLogs), privacyLevel: .public)
-            ]
+            category: "DestinationManagement",
+            source: "UmbraCore",
+            metadata: LoggingInterfaces.LogMetadataDTOCollection()
+                .withPublic(key: "destinationId", value: destinationId)
+                .withPublic(key: "flushBeforeRemoval", value: String(options.flushBeforeRemoval))
+                .withPublic(key: "archiveLogs", value: String(options.archiveLogs))
         )
         
         // Log operation start
-        await logOperationStart(operation: "removeDestination", context: operationContext)
+        await logInfo("Starting to remove destination with ID '\(destinationId)'")
         
         do {
             // Check if destination exists
             guard let destination = await getDestination(id: destinationId) else {
-                throw LoggingError.destinationNotFound(
+                throw LoggingInterfaces.LoggingError.destinationNotFound(
                     "Cannot remove destination with ID \(destinationId): not found"
                 )
             }
             
             // Flush pending logs if requested
             if options.flushBeforeRemoval {
-                await logger.log(
-                    .debug,
-                    "Flushing logs before removing destination",
-                    context: operationContext
+                await logInfo(
+                    "Flushing logs before removing destination"
                 )
                 
                 try await provider.flushLogs(for: destination)
@@ -83,83 +86,57 @@ public class RemoveDestinationCommand: BaseLogCommand, LogCommand {
             
             // Archive logs if requested
             if options.archiveLogs {
-                await logger.log(
-                    .debug,
-                    "Archiving logs before removing destination",
-                    context: operationContext
+                await logInfo(
+                    "Archiving logs before removing destination"
                 )
                 
                 if let archivePath = options.archivePath {
-                    let archiveOptions = ArchiveLogsOptionsDTO(
+                    let archiveOptions = LoggingInterfaces.ArchiveLogsOptionsDTO(
                         destinationPath: archivePath,
                         compress: true,
                         format: .zip,
-                        deleteAfterArchiving: false
+                        filterCriteria: nil,
+                        deleteAfterArchiving: false,
+                        encryptionPassword: nil
                     )
                     
-                    let archiveResult = try await provider.archiveLogs(
+                    let success = try await provider.archiveLogs(
                         from: destination,
                         options: archiveOptions
                     )
                     
-                    if !archiveResult.success {
-                        await logger.log(
-                            .warning,
-                            "Archiving logs failed, but continuing with removal",
-                            context: operationContext
+                    if !success {
+                        await logWarning(
+                            "Archiving logs failed, but continuing with removal"
                         )
                     } else {
-                        await logger.log(
-                            .info,
-                            "Successfully archived logs to: \(archiveResult.archivePath ?? "unknown")",
-                            context: operationContext
+                        await logInfo(
+                            "Successfully archived logs to: \(archivePath)"
                         )
                     }
                 } else {
-                    await logger.log(
-                        .warning,
-                        "Cannot archive logs: no archive path specified",
-                        context: operationContext
+                    await logWarning(
+                        "Cannot archive logs: no archive path specified"
                     )
                 }
             }
             
-            // Unregister the destination
-            await unregisterDestination(id: destinationId)
+            // Remove the destination
+            let success = try await loggingServices.removeDestination(withId: destinationId)
             
             // Log success
-            await logOperationSuccess(
-                operation: "removeDestination",
-                context: operationContext,
-                additionalMetadata: [
-                    "remainingDestinations": (value: String(Self.registeredDestinations.count), privacyLevel: .public)
-                ]
-            )
+            if success {
+                await logInfo("Successfully removed destination with ID '\(destinationId)'")
+            } else {
+                await logWarning("Failed to remove destination with ID '\(destinationId)'")
+            }
             
-            return true
-            
-        } catch let error as LoggingError {
-            // Log failure
-            await logOperationFailure(
-                operation: "removeDestination",
-                error: error,
-                context: operationContext
-            )
-            
-            throw error
+            return success
             
         } catch {
-            // Map unknown error to LoggingError
-            let loggingError = LoggingError.initialisationFailed(reason: error.localizedDescription)
-            
             // Log failure
-            await logOperationFailure(
-                operation: "removeDestination",
-                error: loggingError,
-                context: operationContext
-            )
-            
-            throw loggingError
+            await logError("Failed to remove destination: \(error.localizedDescription)")
+            throw error
         }
     }
 }

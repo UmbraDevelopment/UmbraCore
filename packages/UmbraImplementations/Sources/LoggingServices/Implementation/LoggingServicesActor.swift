@@ -1,7 +1,6 @@
 import Foundation
-import LoggingInterfaces
 import LoggingTypes
-import SchedulingTypes
+import LoggingInterfaces
 
 /**
  Primary implementation of the logging services actor.
@@ -86,8 +85,9 @@ public actor LoggingServicesActor: PrivacyAwareLoggingProtocol {
                 // Get provider for this destination type
                 if let provider = providers[destination.type] {
                     do {
-                        // Write log entry to destination
-                        _ = try await provider.writeLogEntry(entry, to: destination)
+                        // Write log entry to destination using the provider
+                        // Note: writeLogEntry is defined in the protocol extension as a default implementation
+                        _ = try await provider.writeLogEntry(entry: entry, to: destination)
                     } catch {
                         // Silently ignore provider errors for now
                         // In a real implementation, we'd want to handle these more gracefully
@@ -271,7 +271,7 @@ public actor LoggingServicesActor: PrivacyAwareLoggingProtocol {
      */
     public func addDestination(
         _ destination: LogDestinationDTO,
-        options: AddDestinationOptionsDTO = .default
+        options: LoggingInterfaces.AddDestinationOptionsDTO = .default
     ) async throws -> Bool {
         // Simple implementation during refactoring
         activeDestinations[destination.id] = destination
@@ -295,7 +295,7 @@ public actor LoggingServicesActor: PrivacyAwareLoggingProtocol {
      */
     public func removeDestination(
         withId destinationId: String,
-        options: RemoveDestinationOptionsDTO = .default
+        options: LoggingInterfaces.RemoveDestinationOptionsDTO = .default
     ) async throws -> Bool {
         activeDestinations.removeValue(forKey: destinationId)
         defaultDestinationIds.removeAll { $0 == destinationId }
@@ -504,57 +504,5 @@ public actor LoggingServicesActor: PrivacyAwareLoggingProtocol {
         @unknown default:
             return .public
         }
-    }
-}
-
-/// Implementation of a logging actor for bootstrap purposes
-/// Provides a minimal implementation to satisfy protocol requirements
-public actor DummyPrivacyAwareLoggingActor: PrivacyAwareLoggingProtocol {
-    /// The minimum log level for this actor
-    private var minimumLogLevel: LogLevel = .info
-    
-    /// The destinations for this actor
-    private var destinations: [any ActorLogDestination] = []
-    
-    /// Initialize with no destinations
-    public init(destinations: [any ActorLogDestination] = [], minimumLogLevel: LogLevel = .info) {
-        self.minimumLogLevel = minimumLogLevel
-        self.destinations = destinations
-    }
-    
-    /// Simple log method that just prints to console
-    public func log(_ level: LogLevel, _ message: String, context: any LogContextDTO) async {
-        // Print to console during bootstrap
-        print("[\(level.rawValue)] \(message)")
-    }
-    
-    public func log(_ level: LogLevel, _ message: PrivacyString, context: any LogContextDTO) async {
-        // Print to console during bootstrap
-        print("[\(level.rawValue)] \(message.content)")
-    }
-    
-    public func logString(_ level: LogLevel, _ message: String, context: any LogContextDTO) async {
-        // Print to console during bootstrap
-        print("[\(level.rawValue)] \(message)")
-    }
-    
-    public func logPrivacy(_ level: LogLevel, _ privacyScope: () -> PrivacyAnnotatedString, context: any LogContextDTO) async {
-        // Print to console during bootstrap
-        print("[\(level.rawValue)] \(privacyScope().stringValue)")
-    }
-    
-    public func logSensitive(_ level: LogLevel, _ message: String, sensitiveValues: LoggingTypes.LogMetadata, context: any LogContextDTO) async {
-        // Print to console during bootstrap
-        print("[\(level.rawValue)] \(message)")
-    }
-    
-    public func logError(_ error: Error, privacyLevel: LogPrivacyLevel, context: any LogContextDTO) async {
-        // Print to console during bootstrap
-        print("[\(LogLevel.error.rawValue)] \(error.localizedDescription)")
-    }
-    
-    public func logError(_ error: Error, level: LogLevel, context: any LogContextDTO, privacyLevel: LogPrivacyLevel) async {
-        // Print to console during bootstrap
-        print("[\(level.rawValue)] \(error.localizedDescription)")
     }
 }

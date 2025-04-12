@@ -9,7 +9,7 @@ import SchedulingTypes
  This command encapsulates the logic for exporting logs from a destination,
  following the command pattern architecture.
  */
-public class ExportLogsCommand: BaseLogCommand, LogCommand {
+public class ExportLogsCommand: BaseCommand, LogCommand {
     /// The result type for this command
     public typealias ResultType = Data
     
@@ -17,27 +17,31 @@ public class ExportLogsCommand: BaseLogCommand, LogCommand {
     private let destinationId: String
     
     /// Options for exporting logs
-    private let options: ExportLogsOptionsDTO
+    private let options: LoggingInterfaces.ExportLogsOptionsDTO
+    
+    /// Provider for logging operations
+    private let provider: LoggingProviderProtocol
     
     /**
      Initialises a new export logs command.
      
      - Parameters:
-        - destinationId: The ID of the destination to export logs from
+        - destinationId: The ID of the destination to export logs for
         - options: Options for exporting logs
-        - provider: Provider for logging operations
-        - logger: Logger instance for logging operations
+        - provider: Provider for export operations
+        - loggingServices: The logging services actor
      */
     public init(
         destinationId: String,
-        options: ExportLogsOptionsDTO = .default,
+        options: LoggingInterfaces.ExportLogsOptionsDTO = .default,
         provider: LoggingProviderProtocol,
-        logger: PrivacyAwareLoggingProtocol
+        loggingServices: LoggingServicesActor
     ) {
         self.destinationId = destinationId
         self.options = options
+        self.provider = provider
         
-        super.init(provider: provider, logger: logger)
+        super.init(loggingServices: loggingServices)
     }
     
     /**
@@ -48,27 +52,29 @@ public class ExportLogsCommand: BaseLogCommand, LogCommand {
      - Returns: The exported log data
      - Throws: LoggingError if the operation fails
      */
-    public func execute(context: LogContextDTO) async throws -> Data {
+    public func execute(context: LoggingInterfaces.LogContextDTO) async throws -> Data {
         // Create a log context for this specific operation
-        let operationContext = createLogContext(
+        let operationContext = LoggingInterfaces.BaseLogContextDTO(
+            domainName: "LoggingServices",
             operation: "exportLogs",
-            destinationId: destinationId,
-            additionalMetadata: [
-                "exportFormat": (value: options.format.rawValue, privacyLevel: .public),
-                "includeMetadata": (value: String(options.includeMetadata), privacyLevel: .public),
-                "applyRedactionRules": (value: String(options.applyRedactionRules), privacyLevel: .public),
-                "maxEntries": (value: options.maxEntries.map(String.init) ?? "unlimited", privacyLevel: .public),
-                "sortOrder": (value: options.sortOrder.rawValue, privacyLevel: .public)
-            ]
+            category: "LogExport",
+            source: "UmbraCore",
+            metadata: LoggingInterfaces.LogMetadataDTOCollection()
+                .withPublic(key: "destinationId", value: destinationId)
+                .withPublic(key: "exportFormat", value: options.format.rawValue)
+                .withPublic(key: "includeMetadata", value: String(options.includeMetadata))
+                .withPublic(key: "applyRedactionRules", value: String(options.applyRedactionRules))
+                .withPublic(key: "maxEntries", value: options.maxEntries.map(String.init) ?? "unlimited")
+                .withPublic(key: "sortOrder", value: options.sortOrder.rawValue)
         )
         
         // Log operation start
-        await logOperationStart(operation: "exportLogs", context: operationContext)
+        await logInfo("Starting log export operation for destination '\(destinationId)'")
         
         do {
             // Check if destination exists
             guard let destination = await getDestination(id: destinationId) else {
-                throw LoggingError.destinationNotFound(
+                throw LoggingInterfaces.LoggingError.destinationNotFound(
                     "Cannot export logs for destination with ID \(destinationId): not found"
                 )
             }
@@ -80,38 +86,14 @@ public class ExportLogsCommand: BaseLogCommand, LogCommand {
             )
             
             // Log success
-            await logOperationSuccess(
-                operation: "exportLogs",
-                context: operationContext,
-                additionalMetadata: [
-                    "exportedDataSize": (value: String(exportedData.count), privacyLevel: .public)
-                ]
-            )
+            await logInfo("Successfully exported \(exportedData.count) bytes of log data in \(options.format.rawValue) format")
             
             return exportedData
             
-        } catch let error as LoggingError {
-            // Log failure
-            await logOperationFailure(
-                operation: "exportLogs",
-                error: error,
-                context: operationContext
-            )
-            
-            throw error
-            
         } catch {
-            // Map unknown error to LoggingError
-            let loggingError = LoggingError.serialisationFailed(reason: error.localizedDescription)
-            
             // Log failure
-            await logOperationFailure(
-                operation: "exportLogs",
-                error: loggingError,
-                context: operationContext
-            )
-            
-            throw loggingError
+            await logError("Log export failed: \(error.localizedDescription)")
+            throw error
         }
     }
 }

@@ -1,23 +1,25 @@
 import Foundation
-import LoggingInterfaces
 import LoggingTypes
-import SchedulingTypes
+import LoggingInterfaces
 
 /**
  Command for querying logs from a destination.
  
- This command encapsulates the logic for retrieving and filtering logs,
- following the command pattern architecture.
+ This command encapsulates the logic for querying logs from a destination,
+ applying any filtering rules defined in the query options.
  */
-public class QueryLogsCommand: BaseLogCommand, LogCommand {
+public class QueryLogsCommand: BaseCommand, LogCommand {
     /// The result type for this command
-    public typealias ResultType = [LogEntryDTO]
+    public typealias ResultType = [LoggingInterfaces.LogEntryDTO]
     
     /// The ID of the destination to query logs from
     private let destinationId: String
     
     /// Options for querying logs
-    private let options: QueryLogsOptionsDTO
+    private let options: LoggingInterfaces.QueryLogsOptionsDTO
+    
+    /// Provider for logging operations
+    private let provider: LoggingProviderProtocol
     
     /**
      Initialises a new query logs command.
@@ -25,94 +27,68 @@ public class QueryLogsCommand: BaseLogCommand, LogCommand {
      - Parameters:
         - destinationId: The ID of the destination to query logs from
         - options: Options for querying logs
-        - provider: Provider for logging operations
-        - logger: Logger instance for logging operations
+        - provider: The logging provider
+        - loggingServices: The logging services actor
      */
     public init(
         destinationId: String,
-        options: QueryLogsOptionsDTO = .default,
+        options: LoggingInterfaces.QueryLogsOptionsDTO = .default,
         provider: LoggingProviderProtocol,
-        logger: PrivacyAwareLoggingProtocol
+        loggingServices: LoggingServicesActor
     ) {
         self.destinationId = destinationId
         self.options = options
+        self.provider = provider
         
-        super.init(provider: provider, logger: logger)
+        super.init(loggingServices: loggingServices)
     }
     
     /**
-     Executes the query logs command.
+     Executes the command to query logs from the destination.
      
-     - Parameters:
-        - context: The logging context for the operation
-     - Returns: The matching log entries
+     - Parameter context: The context for this command execution
+     - Returns: The log entries matching the query
      - Throws: LoggingError if the operation fails
      */
-    public func execute(context: LogContextDTO) async throws -> [LogEntryDTO] {
+    public func execute(context: LoggingInterfaces.LogContextDTO) async throws -> [LoggingInterfaces.LogEntryDTO] {
         // Create a log context for this specific operation
-        let operationContext = createLogContext(
+        let operationContext = LoggingInterfaces.BaseLogContextDTO(
+            domainName: "LoggingServices",
             operation: "queryLogs",
-            destinationId: destinationId,
-            additionalMetadata: [
-                "maxEntries": (value: options.maxEntries.map(String.init) ?? "unlimited", privacyLevel: .public),
-                "offset": (value: String(options.offset), privacyLevel: .public),
-                "sortOrder": (value: options.sortOrder.rawValue, privacyLevel: .public),
-                "includeMetadata": (value: String(options.includeMetadata), privacyLevel: .public),
-                "applyRedactionRules": (value: String(options.applyRedactionRules), privacyLevel: .public),
-                "hasFilterCriteria": (value: String(options.filterCriteria != nil), privacyLevel: .public)
-            ]
+            category: "LogQuery",
+            source: "UmbraCore",
+            metadata: LoggingInterfaces.LogMetadataDTOCollection()
+                .withPublic(key: "destinationId", value: destinationId)
+                .withPublic(key: "maxEntries", value: options.maxEntries.map(String.init) ?? "unlimited")
+                .withPublic(key: "offset", value: String(options.offset))
+                .withPublic(key: "sortOrder", value: options.sortOrder.rawValue)
+                .withPublic(key: "includeMetadata", value: String(options.includeMetadata))
+                .withPublic(key: "applyRedactionRules", value: String(options.applyRedactionRules))
         )
         
-        // Log operation start
-        await logOperationStart(operation: "queryLogs", context: operationContext)
+        await logInfo("Starting log query for destination '\(destinationId)'")
         
         do {
-            // Check if destination exists
+            // Get the destination
             guard let destination = await getDestination(id: destinationId) else {
-                throw LoggingError.destinationNotFound(
-                    "Cannot query logs for destination with ID \(destinationId): not found"
-                )
+                throw LoggingInterfaces.LoggingError.destinationNotFound("Destination with ID '\(destinationId)' not found")
             }
             
-            // Query logs using provider
-            let logEntries = try await provider.queryLogs(
+            // Query logs from the destination
+            let entries = try await provider.queryLogs(
                 from: destination,
                 options: options
             )
             
             // Log success
-            await logOperationSuccess(
-                operation: "queryLogs",
-                context: operationContext,
-                additionalMetadata: [
-                    "retrievedEntryCount": (value: String(logEntries.count), privacyLevel: .public)
-                ]
-            )
+            await logInfo("Query completed successfully, retrieved \(entries.count) log entries")
             
-            return logEntries
-            
-        } catch let error as LoggingError {
-            // Log failure
-            await logOperationFailure(
-                operation: "queryLogs",
-                error: error,
-                context: operationContext
-            )
-            
-            throw error
+            return entries
             
         } catch {
-            // Map unknown error to LoggingError
-            let loggingError = LoggingError.serialisationFailed(reason: error.localizedDescription)
-            
             // Log failure
-            await logOperationFailure(
-                operation: "queryLogs",
-                error: loggingError,
-                context: operationContext
-            )
-            
-            throw loggingError
+            await logError("Log query failed: \(error.localizedDescription)")
+            throw error
         }
     }
 }
