@@ -23,20 +23,14 @@ public struct ConfigSchemaDTO: Codable, Equatable, Sendable {
     public let metadata: [String: String]
     
     /**
-     Definition of an expected property and its constraints.
+     Definition of a property in the schema.
      */
-    public struct PropertyDefinition: Codable, Equatable, Sendable {
+    public final class PropertyDefinition: Codable, Equatable, Sendable {
         /// Property type
         public let type: PropertyType
         
-        /// Property description
-        public let description: String
-        
-        /// Default value if not specified
-        public let defaultValue: ConfigValueDTO?
-        
-        /// Whether the property is deprecated
-        public let deprecated: Bool
+        /// Format for string types
+        public let format: StringFormat?
         
         /// Nested properties for object types
         public let properties: [String: PropertyDefinition]?
@@ -46,6 +40,15 @@ public struct ConfigSchemaDTO: Codable, Equatable, Sendable {
         
         /// Validation constraints
         public let constraints: ValidationConstraints?
+        
+        /// Property description
+        public let description: String
+        
+        /// Default value if not specified
+        public let defaultValue: ConfigValueDTO?
+        
+        /// Whether the property is deprecated
+        public let deprecated: Bool
         
         /**
          Initialises a property definition.
@@ -66,7 +69,8 @@ public struct ConfigSchemaDTO: Codable, Equatable, Sendable {
             deprecated: Bool = false,
             properties: [String: PropertyDefinition]? = nil,
             items: PropertyDefinition? = nil,
-            constraints: ValidationConstraints? = nil
+            constraints: ValidationConstraints? = nil,
+            format: StringFormat? = nil
         ) {
             self.type = type
             self.description = description
@@ -75,6 +79,19 @@ public struct ConfigSchemaDTO: Codable, Equatable, Sendable {
             self.properties = properties
             self.items = items
             self.constraints = constraints
+            self.format = format
+        }
+        
+        /// Compare two PropertyDefinition instances for equality
+        public static func == (lhs: PropertyDefinition, rhs: PropertyDefinition) -> Bool {
+            lhs.type == rhs.type &&
+            lhs.format == rhs.format &&
+            lhs.properties == rhs.properties &&
+            lhs.items == rhs.items &&
+            lhs.constraints == rhs.constraints &&
+            lhs.description == rhs.description &&
+            lhs.defaultValue == rhs.defaultValue &&
+            lhs.deprecated == rhs.deprecated
         }
     }
     

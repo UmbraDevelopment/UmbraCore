@@ -1194,7 +1194,7 @@ public actor CompositeFileSystemServiceImpl: CompositeFileSystemServiceProtocol 
         try fileManager.createDirectory(
           atPath: path,
           withIntermediateDirectories: true,
-          attributes: options?.attributes
+          attributes: options?.attributes?.toDictionary()
         )
 
         // Get the directory attributes for the result metadata
@@ -1275,7 +1275,7 @@ public actor CompositeFileSystemServiceImpl: CompositeFileSystemServiceProtocol 
         let created=fileManager.createFile(
           atPath: path,
           contents: nil,
-          attributes: fileOptions.attributes
+          attributes: fileOptions.attributes?.toDictionary()
         )
 
         guard created else {
@@ -1464,7 +1464,6 @@ public actor CompositeFileSystemServiceImpl: CompositeFileSystemServiceProtocol 
 
       return result
     } catch let fsError as FileSystemInterfaces.FileSystemError {
-      // If it's already a FileSystemError, just rethrow it
       throw fsError
     } catch {
       let moveError=FileSystemInterfaces.FileSystemError.moveError(

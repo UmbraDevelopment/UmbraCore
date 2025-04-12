@@ -28,7 +28,8 @@ public actor CryptoLogger: DomainLoggerProtocol {
     let context=CryptoLogContext(
       operation: "generic",
       algorithm: "unknown",
-      status: "info"
+      status: "info",
+      category: "general"
     )
 
     await log(level, message, context: context)
@@ -173,7 +174,8 @@ public actor CryptoLogger: DomainLoggerProtocol {
       operation: operation,
       algorithm: algorithm,
       status: "started",
-      keyID: keyID
+      keyID: keyID,
+      category: "operations"
     )
 
     await info("Starting \(operation) operation using \(algorithm)", context: context)
@@ -197,7 +199,8 @@ public actor CryptoLogger: DomainLoggerProtocol {
       algorithm: algorithm,
       status: "completed",
       keyID: keyID,
-      details: details
+      details: details,
+      category: "operations"
     )
 
     await info(
@@ -224,7 +227,8 @@ public actor CryptoLogger: DomainLoggerProtocol {
       algorithm: algorithm,
       status: "failed",
       keyID: keyID,
-      error: error
+      error: error,
+      category: "operations"
     )
 
     await logError(error, context: context)
@@ -243,6 +247,7 @@ public struct CryptoLogContext: LogContextDTO {
   public let correlationID: String?
   public let source: String?="CryptoService"
   public let metadata: LogMetadataDTOCollection
+  public let category: String
 
   // Additional crypto-specific properties
   public let operation: String
@@ -269,7 +274,8 @@ public struct CryptoLogContext: LogContextDTO {
     keyID: String?=nil,
     details: String?=nil,
     error: Error?=nil,
-    correlationID: String?=LogIdentifier(value: UUID().uuidString).description
+    correlationID: String?=LogIdentifier(value: UUID().uuidString).description,
+    category: String
   ) {
     self.operation=operation
     self.algorithm=algorithm
@@ -278,6 +284,7 @@ public struct CryptoLogContext: LogContextDTO {
     self.details=details
     self.error=error
     self.correlationID=correlationID
+    self.category=category
 
     // Build metadata collection with appropriate privacy levels
     var metadataBuilder=LogMetadataDTOCollection()
@@ -326,7 +333,32 @@ public struct CryptoLogContext: LogContextDTO {
       keyID: keyID,
       details: details,
       error: error,
-      correlationID: correlationID
+      correlationID: correlationID,
+      category: category
+    )
+  }
+
+  /**
+   Creates a new context with additional metadata.
+   
+   - Parameter additionalMetadata: The metadata to add to the context
+   - Returns: A new context with the combined metadata
+   */
+  public func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> CryptoLogContext {
+    var newMetadata = self.metadata
+    for entry in additionalMetadata.entries {
+      newMetadata = newMetadata.with(key: entry.key, value: entry.value, privacyLevel: entry.privacyLevel)
+    }
+    
+    return CryptoLogContext(
+      operation: self.operation,
+      algorithm: self.algorithm,
+      status: self.status,
+      keyID: self.keyID,
+      details: self.details,
+      error: self.error,
+      correlationID: self.correlationID,
+      category: self.category
     )
   }
 
@@ -363,7 +395,8 @@ public struct CryptoLogContext: LogContextDTO {
       keyID: keyID,
       details: details,
       error: error,
-      correlationID: correlationID
+      correlationID: correlationID,
+      category: category
     )
   }
 

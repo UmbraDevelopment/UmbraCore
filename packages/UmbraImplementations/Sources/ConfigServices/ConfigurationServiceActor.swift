@@ -913,6 +913,8 @@ public actor ConfigurationServiceActor: ConfigurationServiceProtocol {
 
     return BaseLogContextDTO(
       domainName: "Configuration",
+      operation: "ConfigOperation",
+      category: "Settings",
       source: source,
       metadata: metadataCollection
     )

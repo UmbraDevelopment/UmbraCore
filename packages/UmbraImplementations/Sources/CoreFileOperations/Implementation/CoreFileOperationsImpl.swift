@@ -54,6 +54,8 @@ public actor CoreFileOperationsImpl: CoreFileOperationsProtocol {
 
     return BaseLogContextDTO(
       domainName: "CoreFileOperations",
+      operation: "FileOperation",
+      category: "FileSystem",
       source: "CoreFileOperationsImpl",
       metadata: collection
     )
@@ -279,7 +281,7 @@ public actor CoreFileOperationsImpl: CoreFileOperationsProtocol {
         try fileManager.createDirectory(
           atPath: directoryPath,
           withIntermediateDirectories: true,
-          attributes: nil
+          attributes: options?.attributes?.toDictionary()
         )
       }
 
@@ -300,7 +302,7 @@ public actor CoreFileOperationsImpl: CoreFileOperationsProtocol {
 
       // Set attributes if specified
       if let attributes=options?.attributes {
-        try fileManager.setAttributes(attributes, ofItemAtPath: path)
+        try fileManager.setAttributes(attributes.toDictionary(), ofItemAtPath: path)
       }
 
       // Get the file attributes for the result metadata
@@ -479,7 +481,7 @@ public actor CoreFileOperationsImpl: CoreFileOperationsProtocol {
       try fileManager.createDirectory(
         atPath: path,
         withIntermediateDirectories: true, // Always create intermediate directories
-        attributes: options?.attributes
+        attributes: options?.attributes?.toDictionary()
       )
 
       // Get directory attributes for result metadata
@@ -551,7 +553,7 @@ public actor CoreFileOperationsImpl: CoreFileOperationsProtocol {
       let success=fileManager.createFile(
         atPath: path,
         contents: nil,
-        attributes: options?.attributes
+        attributes: options?.attributes?.toDictionary()
       )
 
       guard success else {

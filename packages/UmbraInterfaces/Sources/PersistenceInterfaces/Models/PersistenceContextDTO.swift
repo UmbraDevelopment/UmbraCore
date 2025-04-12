@@ -1,5 +1,6 @@
 import Foundation
 import CoreDTOs
+import LoggingTypes
 
 /**
  Data Transfer Object for persistence operation context.
@@ -15,7 +16,7 @@ public struct PersistenceContextDTO {
     public let category: String
     
     /// Metadata associated with the operation
-    public let metadata: MetadataDTOCollection
+    public let metadata: LogMetadataDTOCollection
     
     /// Optional correlation ID for tracking related operations
     public let correlationId: String?
@@ -32,7 +33,7 @@ public struct PersistenceContextDTO {
     public init(
         operation: String,
         category: String,
-        metadata: MetadataDTOCollection = MetadataDTOCollection(),
+        metadata: LogMetadataDTOCollection = LogMetadataDTOCollection(),
         correlationId: String? = nil
     ) {
         self.operation = operation
@@ -47,10 +48,14 @@ public struct PersistenceContextDTO {
      - Parameter metadata: The metadata to add to the context
      - Returns: A new context with the combined metadata
      */
-    public func withMetadata(_ additionalMetadata: MetadataDTOCollection) -> PersistenceContextDTO {
+    public func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> PersistenceContextDTO {
         var combinedMetadata = self.metadata
-        for (key, value) in additionalMetadata.items {
-            combinedMetadata.add(key: key, value: value)
+        for entry in additionalMetadata.entries {
+            combinedMetadata = combinedMetadata.with(
+                key: entry.key, 
+                value: entry.value, 
+                privacyLevel: entry.privacyLevel
+            )
         }
         
         return PersistenceContextDTO(

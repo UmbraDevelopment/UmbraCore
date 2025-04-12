@@ -53,8 +53,8 @@ public struct FileMetadataDTO: Sendable {
   /// Extended attributes, if any
   public let extendedAttributes: [String: Data]?
 
-  /// File resource values
-  public let resourceValues: [URLResourceKey: Any]?
+  /// File resource values in a Sendable-compatible wrapper
+  public let resourceValues: SendableResourceValues?
 
   /// Creates a new file metadata object
   public init(
@@ -84,7 +84,7 @@ public struct FileMetadataDTO: Sendable {
     self.ownerID=ownerID
     self.groupID=groupID
     self.extendedAttributes=extendedAttributes
-    self.resourceValues=resourceValues
+    self.resourceValues=resourceValues != nil ? SendableResourceValues(values: resourceValues) : nil
   }
 
   /// Creates a file metadata object from FileManager attributes
@@ -161,38 +161,8 @@ extension FileMetadataDTO: Equatable {
     }
 
     // For resourceValues, we can only do a basic comparison of keys
-    // since the values aren't necessarily Equatable
-    if let lhsRV=lhs.resourceValues, let rhsRV=rhs.resourceValues {
-      let lhsKeys=Set(lhsRV.keys)
-      let rhsKeys=Set(rhsRV.keys)
-      if lhsKeys != rhsKeys {
-        return false
-      }
-
-      // For values, we'll compare what we can and use string descriptions for the rest
-      for key in lhsKeys {
-        let lhsValue=lhsRV[key]
-        let rhsValue=rhsRV[key]
-
-        // Handle specific known types
-        if let lhsInt=lhsValue as? Int, let rhsInt=rhsValue as? Int {
-          if lhsInt != rhsInt { return false }
-        } else if let lhsString=lhsValue as? String, let rhsString=rhsValue as? String {
-          if lhsString != rhsString { return false }
-        } else if let lhsDate=lhsValue as? Date, let rhsDate=rhsValue as? Date {
-          if lhsDate != rhsDate { return false }
-        } else if let lhsBool=lhsValue as? Bool, let rhsBool=rhsValue as? Bool {
-          if lhsBool != rhsBool { return false }
-        } else if let lhsData=lhsValue as? Data, let rhsData=rhsValue as? Data {
-          if lhsData != rhsData { return false }
-        } else {
-          // For non-Equatable types, compare string descriptions
-          if String(describing: lhsValue) != String(describing: rhsValue) {
-            return false
-          }
-        }
-      }
-    } else if lhs.resourceValues != nil || rhs.resourceValues != nil {
+    // This is simplified now that we have a proper Equatable implementation
+    if lhs.resourceValues != rhs.resourceValues {
       return false
     }
 

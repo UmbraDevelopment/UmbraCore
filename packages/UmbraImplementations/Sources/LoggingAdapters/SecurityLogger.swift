@@ -511,6 +511,7 @@ private struct SecurityLogContext: LogContextDTO {
   let correlationID: String?
   let source: String?="SecurityService"
   let metadata: LogMetadataDTOCollection
+  let category: String
 
   // Additional security-specific properties
   let operation: String
@@ -525,7 +526,8 @@ private struct SecurityLogContext: LogContextDTO {
     status: String,
     error: Error?=nil,
     details: String?=nil,
-    correlationID: String?=LogIdentifier(value: UUID().uuidString).description
+    correlationID: String?=LogIdentifier(value: UUID().uuidString).description,
+    category: String="SecurityOperations"
   ) {
     self.operation=operation
     self.resource=resource
@@ -533,6 +535,7 @@ private struct SecurityLogContext: LogContextDTO {
     self.error=error
     self.details=details
     self.correlationID=correlationID
+    self.category=category
 
     // Build metadata collection
     var metadataBuilder=LogMetadataDTOCollection()
@@ -590,7 +593,8 @@ private struct SecurityLogContext: LogContextDTO {
       status: status,
       error: error,
       details: details,
-      correlationID: correlationID
+      correlationID: correlationID,
+      category: category
     )
   }
 
@@ -605,5 +609,28 @@ private struct SecurityLogContext: LogContextDTO {
 
   func toMetadata() -> LogMetadataDTOCollection {
     metadata
+  }
+
+  /**
+   Creates a new context with additional metadata following Alpha Dot Five's functional approach.
+   
+   - Parameter additionalMetadata: The additional metadata to include
+   - Returns: A new SecurityLogContext with the combined metadata
+   */
+  func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> SecurityLogContext {
+    var newMetadata = self.metadata
+    for entry in additionalMetadata.entries {
+      newMetadata = newMetadata.with(key: entry.key, value: entry.value, privacyLevel: entry.privacyLevel)
+    }
+    
+    return SecurityLogContext(
+      operation: self.operation,
+      resource: self.resource,
+      status: self.status,
+      error: self.error,
+      details: self.details,
+      correlationID: self.correlationID,
+      category: self.category
+    )
   }
 }

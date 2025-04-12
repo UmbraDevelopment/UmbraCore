@@ -856,21 +856,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
       // Convert FileAttributes to Foundation attributes if needed
       var foundationAttributes: [FileAttributeKey: Any]?
       if let attrs=attributes {
-        foundationAttributes=[:]
-        foundationAttributes?[.creationDate]=attrs.creationDate
-        foundationAttributes?[.modificationDate]=attrs.modificationDate
-        if let accessDate=attrs.accessDate {
-          foundationAttributes?[.modificationDate]=accessDate
-        }
-        if attrs.ownerID > 0 {
-          foundationAttributes?[.ownerAccountID]=NSNumber(value: attrs.ownerID)
-        }
-        if attrs.groupID > 0 {
-          foundationAttributes?[.groupOwnerAccountID]=NSNumber(value: attrs.groupID)
-        }
-        if attrs.permissions > 0 {
-          foundationAttributes?[.posixPermissions]=NSNumber(value: attrs.permissions)
-        }
+        foundationAttributes=attrs.toDictionary()
       }
 
       try Foundation.FileManager.default.createDirectory(
@@ -1485,7 +1471,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
       try FileManager.default.createDirectory(
         atPath: directoryPath,
         withIntermediateDirectories: true,
-        attributes: nil
+        attributes: options?.attributes?.toDictionary()
       )
     }
 
@@ -1494,7 +1480,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
       !FileManager.default.createFile(
         atPath: path,
         contents: nil,
-        attributes: options?.attributes
+        attributes: options?.attributes?.toDictionary()
       )
     {
       throw FileSystemInterfaces.FileSystemError.writeError(
@@ -1550,7 +1536,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
       try FileManager.default.createDirectory(
         atPath: path,
         withIntermediateDirectories: true, // Always create intermediate directories
-        attributes: options?.attributes
+        attributes: options?.attributes?.toDictionary()
       )
       return path
     } catch {
@@ -1653,7 +1639,7 @@ public actor FileSystemServiceSecure: FileSystemServiceProtocol {
    */
   public func setAttributes(_ attributes: FileAttributes, at path: String) async throws {
     // Try to convert to Foundation attributes
-    guard let foundationAttributes=attributes.foundationAttributes else {
+    guard let foundationAttributes=attributes.toDictionary() else {
       throw FileSystemInterfaces.FileSystemError.invalidArgument(
         name: "attributes",
         value: "Could not convert to Foundation attributes"

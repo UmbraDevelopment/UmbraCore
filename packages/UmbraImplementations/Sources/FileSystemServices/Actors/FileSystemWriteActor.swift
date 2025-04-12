@@ -123,7 +123,7 @@ public actor FileSystemWriteActor: FileWriteOperationsProtocol {
       let created=fileManager.createFile(
         atPath: validatedPath,
         contents: options?.initialContents,
-        attributes: options?.attributes
+        attributes: options?.attributes?.toDictionary()
       )
 
       if !created {
@@ -203,7 +203,7 @@ public actor FileSystemWriteActor: FileWriteOperationsProtocol {
 
       // Set attributes if provided
       if let attrs=options?.attributes, !attrs.isEmpty {
-        try fileManager.setAttributes(attrs, ofItemAtPath: validatedPath)
+        try fileManager.setAttributes(attrs.toDictionary(), ofItemAtPath: validatedPath)
       }
 
       // Log successful write
@@ -317,7 +317,7 @@ public actor FileSystemWriteActor: FileWriteOperationsProtocol {
       try fileManager.createDirectory(
         atPath: validatedPath,
         withIntermediateDirectories: createIntermediates,
-        attributes: options?.attributes
+        attributes: options?.attributes?.toDictionary()
       )
 
       // Log successful creation

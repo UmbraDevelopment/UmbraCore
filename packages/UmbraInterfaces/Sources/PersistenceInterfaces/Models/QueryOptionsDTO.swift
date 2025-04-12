@@ -3,12 +3,35 @@ import Foundation
 /**
  Enum defining query sorting directions.
  */
-public enum SortDirection: String, Codable {
+public enum SortDirection: String, Codable, Sendable {
     /// Sort in ascending order
     case ascending
     
     /// Sort in descending order
     case descending
+}
+
+/**
+ Represents a single sort option with field and direction.
+ */
+public struct SortOption: Codable, Equatable, Sendable {
+    /// The field to sort by
+    public let field: String
+    
+    /// The direction to sort in
+    public let direction: SortDirection
+    
+    /**
+     Initialises a new sort option.
+     
+     - Parameters:
+        - field: The field to sort by
+        - direction: The direction to sort in
+     */
+    public init(field: String, direction: SortDirection) {
+        self.field = field
+        self.direction = direction
+    }
 }
 
 /**
@@ -22,7 +45,7 @@ public struct QueryOptionsDTO {
     public let filter: [String: Any]?
     
     /// Optional sorting information as field-direction pairs
-    public let sort: [(field: String, direction: SortDirection)]?
+    public let sort: [SortOption]?
     
     /// Optional limit on the number of results
     public let limit: Int?
@@ -49,7 +72,7 @@ public struct QueryOptionsDTO {
      */
     public init(
         filter: [String: Any]? = nil,
-        sort: [(field: String, direction: SortDirection)]? = nil,
+        sort: [SortOption]? = nil,
         limit: Int? = nil,
         offset: Int? = nil,
         includeDeleted: Bool = false,
@@ -83,7 +106,7 @@ extension QueryOptionsDTO: Codable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         
-        sort = try container.decodeIfPresent([(String, SortDirection)].self, forKey: .sort)
+        sort = try container.decodeIfPresent([SortOption].self, forKey: .sort)
         limit = try container.decodeIfPresent(Int.self, forKey: .limit)
         offset = try container.decodeIfPresent(Int.self, forKey: .offset)
         includeDeleted = try container.decodeIfPresent(Bool.self, forKey: .includeDeleted) ?? false

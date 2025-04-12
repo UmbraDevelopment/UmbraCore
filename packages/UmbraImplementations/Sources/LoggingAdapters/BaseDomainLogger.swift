@@ -197,6 +197,8 @@ public actor BaseDomainLogger: DomainLoggerProtocol {
  */
 struct BasicLogContext: LogContextDTO {
   let domainName: String="Default"
+  let operation: String = "GenericOperation"
+  let category: String = "General"
   let correlationID: String?=LogIdentifier(value: UUID().uuidString).description
   let source: String?
   let metadata: LogMetadataDTOCollection = .init()
@@ -204,14 +206,25 @@ struct BasicLogContext: LogContextDTO {
   init(source: String?=nil) {
     self.source=source
   }
+  
+  func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> BasicLogContext {
+    var newMetadata = self.metadata
+    for entry in additionalMetadata.entries {
+      newMetadata = newMetadata.with(key: entry.key, value: entry.value, privacyLevel: entry.privacyLevel)
+    }
+    
+    // Create a new instance with the updated metadata
+    return BasicLogContext(source: self.source, metadata: newMetadata)
+  }
+
+  func withUpdatedMetadata(_ updatedMetadata: LogMetadataDTOCollection) -> Self {
+    // This method is redundant with withMetadata, but we need to keep it for compatibility
+    // Use the new withMetadata method for consistency
+    return withMetadata(updatedMetadata) as! Self // The forced cast is needed for protocol conformance
+  }
 
   func asLogMetadata() -> LogMetadata? {
     LogMetadata.from(["correlationId": correlationID ?? ""])
-  }
-
-  func withUpdatedMetadata(_: LogMetadataDTOCollection) -> Self {
-    // Return a new instance with the same source
-    BasicLogContext(source: source)
   }
 
   func toPrivacyMetadata() -> PrivacyMetadata {
@@ -224,5 +237,12 @@ struct BasicLogContext: LogContextDTO {
 
   func toMetadata() -> LogMetadataDTOCollection {
     metadata
+  }
+}
+
+extension BasicLogContext {
+  init(source: String? = nil, metadata: LogMetadataDTOCollection = .init()) {
+    self.source = source
+    self.metadata = metadata
   }
 }

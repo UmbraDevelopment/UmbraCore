@@ -157,15 +157,15 @@ public enum FileSystemError: Error, Equatable, Sendable {
     }
 
     // For NSError, try to create a more specific error based on the error code
-    if let nsError=error as? NSError {
-      switch nsError.domain {
-        case NSCocoaErrorDomain:
-          return mapCocoaError(nsError, operation: operation, path: path)
-        case NSPOSIXErrorDomain:
-          return mapPOSIXError(nsError, operation: operation, path: path)
-        default:
-          break
-      }
+    // Any Swift Error can be bridged to NSError, so no conditional cast is needed
+    let nsError = error as NSError
+    switch nsError.domain {
+      case NSCocoaErrorDomain:
+        return mapCocoaError(nsError, operation: operation, path: path)
+      case NSPOSIXErrorDomain:
+        return mapPOSIXError(nsError, operation: operation, path: path)
+      default:
+        break
     }
 
     // Default case: just wrap the error
@@ -475,8 +475,8 @@ extension FileSystemError: CustomStringConvertible {
         return "Metadata error for '\(path)': \(reason)"
       case let .accessDenied(path, reason):
         return "Access denied for path: '\(path)'. \(reason)"
-      case let .fileLocked(path):
-        return "File is locked or in use: '\(path)'"
+      case .fileLocked:
+        return "File is locked or in use by another process."
       case let .securityViolation(path, constraint):
         return "Security constraint violated for '\(path)': \(constraint)"
       case let .pathUnavailable(path, reason):

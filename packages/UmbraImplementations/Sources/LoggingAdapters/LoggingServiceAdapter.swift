@@ -40,6 +40,8 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
     // Create a LogContext object for context-based logging
     let context=BaseLogContextDTO(
       domainName: "LoggingService",
+      operation: "LogVerbose",
+      category: "Logging",
       source: actualSource,
       metadata: metadata ?? LogMetadataDTOCollection()
     )
@@ -58,6 +60,8 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
     // Create a LogContext object for context-based logging
     let context=BaseLogContextDTO(
       domainName: "LoggingService",
+      operation: "LogDebug",
+      category: "Logging",
       source: actualSource,
       metadata: metadata ?? LogMetadataDTOCollection()
     )
@@ -76,6 +80,8 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
     // Create a LogContext object for context-based logging
     let context=BaseLogContextDTO(
       domainName: "LoggingService",
+      operation: "LogInfo",
+      category: "Logging",
       source: actualSource,
       metadata: metadata ?? LogMetadataDTOCollection()
     )
@@ -98,6 +104,8 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
     // Create a LogContext object for context-based logging
     let context=BaseLogContextDTO(
       domainName: "LoggingService",
+      operation: "LogWarning",
+      category: "Logging",
       source: actualSource,
       metadata: metadata ?? LogMetadataDTOCollection()
     )
@@ -116,6 +124,8 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
     // Create a LogContext object for context-based logging
     let context=BaseLogContextDTO(
       domainName: "LoggingService",
+      operation: "LogError",
+      category: "Logging",
       source: actualSource,
       metadata: metadata ?? LogMetadataDTOCollection()
     )
@@ -138,6 +148,8 @@ public actor LoggingServiceAdapter: LoggingServiceProtocol {
     // Create a LogContext object for context-based logging
     let context=BaseLogContextDTO(
       domainName: "LoggingService",
+      operation: "LogCritical",
+      category: "Logging",
       source: actualSource,
       metadata: metadata ?? LogMetadataDTOCollection()
     )

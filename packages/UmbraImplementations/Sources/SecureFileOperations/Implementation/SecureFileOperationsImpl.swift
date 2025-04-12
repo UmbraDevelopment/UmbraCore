@@ -44,25 +44,6 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
   }
 
   /**
-   Creates a log context from a metadata dictionary.
-
-   - Parameter metadata: The metadata dictionary
-   - Returns: A BaseLogContextDTO
-   */
-  private func createLogContext(_ metadata: [String: String]) -> BaseLogContextDTO {
-    var collection=LogMetadataDTOCollection()
-    for (key, value) in metadata {
-      collection=collection.withPublic(key: key, value: value)
-    }
-
-    return BaseLogContextDTO(
-      domainName: "SecureFileOperations",
-      source: "SecureFileOperationsImpl",
-      metadata: collection
-    )
-  }
-
-  /**
    Creates a security bookmark for a file or directory.
 
    - Parameters:
@@ -705,9 +686,9 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
 
   /**
    Creates a log context with the given key-value pairs for secure file operations.
-
-   - Parameter keyValues: Key-value pairs for the log context
-   - Returns: A BaseLogContextDTO
+   
+   @param metadata Dictionary of metadata key-value pairs
+   @return A log context DTO with the metadata included as public fields
    */
   private func createSecureFileLogContext(_ keyValues: [String: String]) -> BaseLogContextDTO {
     let collection=keyValues.reduce(LogMetadataDTOCollection()) { collection, pair in
@@ -715,6 +696,8 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
     }
     return BaseLogContextDTO(
       domainName: "SecureFileOperations",
+      operation: "FileOperation",
+      category: "Security",
       source: "SecureFileOperationsImpl",
       metadata: collection
     )

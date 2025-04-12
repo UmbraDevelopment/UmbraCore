@@ -142,7 +142,7 @@ public actor FileSandboxingImpl: FileSandboxingProtocol {
       try FileManager.default.createDirectory(
         atPath: absolutePath,
         withIntermediateDirectories: true,
-        attributes: options?.attributes
+        attributes: options?.attributes?.toDictionary()
       )
 
       // Get directory attributes for the result
@@ -221,7 +221,7 @@ public actor FileSandboxingImpl: FileSandboxingProtocol {
       let success=FileManager.default.createFile(
         atPath: absolutePath,
         contents: nil,
-        attributes: options?.attributes
+        attributes: options?.attributes?.toDictionary()
       )
 
       if !success {
@@ -830,6 +830,8 @@ public actor FileSandboxingImpl: FileSandboxingProtocol {
 
     return BaseLogContextDTO(
       domainName: "FileSandboxing",
+      operation: "FileOperation",
+      category: "Sandboxing",
       source: "FileSandboxingImpl",
       metadata: collection
     )
@@ -887,6 +889,8 @@ private actor SandboxedFileOperations: CoreFileOperationsProtocol {
 
     return BaseLogContextDTO(
       domainName: "FileSandboxing",
+      operation: "FileOperation",
+      category: "Sandboxing",
       source: "SandboxedFileOperations",
       metadata: collection
     )

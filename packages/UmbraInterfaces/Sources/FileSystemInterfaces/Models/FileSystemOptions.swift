@@ -14,7 +14,7 @@ import Foundation
  */
 public struct FileCreationOptions: Sendable {
   /// File attributes to set when creating the file
-  public let attributes: [FileAttributeKey: Any]?
+  public let attributes: SendableFileAttributes?
 
   /// Whether to overwrite an existing file at the path
   public let shouldOverwrite: Bool
@@ -24,7 +24,7 @@ public struct FileCreationOptions: Sendable {
     attributes: [FileAttributeKey: Any]?=nil,
     shouldOverwrite: Bool=false
   ) {
-    self.attributes=attributes
+    self.attributes = attributes != nil ? SendableFileAttributes(attributes: attributes) : nil
     self.shouldOverwrite=shouldOverwrite
   }
 }
@@ -47,34 +47,7 @@ extension FileCreationOptions: Equatable {
     }
 
     // Compare attributes by keys and values where possible
-    let lhsKeys=Set(lhs.attributes!.keys)
-    let rhsKeys=Set(rhs.attributes!.keys)
-
-    guard lhsKeys == rhsKeys else { return false }
-
-    // Compare values for each key
-    for key in lhsKeys {
-      let lhsValue=lhs.attributes![key]
-      let rhsValue=rhs.attributes![key]
-
-      // Attempt to compare specific known types
-      if let lhsInt=lhsValue as? Int, let rhsInt=rhsValue as? Int {
-        if lhsInt != rhsInt { return false }
-      } else if let lhsString=lhsValue as? String, let rhsString=rhsValue as? String {
-        if lhsString != rhsString { return false }
-      } else if let lhsDate=lhsValue as? Date, let rhsDate=rhsValue as? Date {
-        if lhsDate != rhsDate { return false }
-      } else if let lhsBool=lhsValue as? Bool, let rhsBool=rhsValue as? Bool {
-        if lhsBool != rhsBool { return false }
-      } else if let lhsData=lhsValue as? Data, let rhsData=rhsValue as? Data {
-        if lhsData != rhsData { return false }
-      } else {
-        // For values that can't be directly compared, compare their descriptions
-        if String(describing: lhsValue) != String(describing: rhsValue) {
-          return false
-        }
-      }
-    }
+    guard lhs.attributes == rhs.attributes else { return false }
 
     return true
   }
@@ -103,7 +76,7 @@ public struct FileWriteOptions: Sendable {
   public let atomicWrite: Bool
 
   /// File attributes to set when writing the file
-  public let attributes: [FileAttributeKey: Any]?
+  public let attributes: SendableFileAttributes?
 
   /// Creates new file write options
   public init(
@@ -115,7 +88,7 @@ public struct FileWriteOptions: Sendable {
     self.createIntermediateDirectories=createIntermediateDirectories
     self.append=append
     self.atomicWrite=atomicWrite
-    self.attributes=attributes
+    self.attributes = attributes != nil ? SendableFileAttributes(attributes: attributes) : nil
   }
 }
 
@@ -143,34 +116,7 @@ extension FileWriteOptions: Equatable {
     }
 
     // Compare attributes by keys and values where possible
-    let lhsKeys=Set(lhs.attributes!.keys)
-    let rhsKeys=Set(rhs.attributes!.keys)
-
-    guard lhsKeys == rhsKeys else { return false }
-
-    // Compare values for each key
-    for key in lhsKeys {
-      let lhsValue=lhs.attributes![key]
-      let rhsValue=rhs.attributes![key]
-
-      // Attempt to compare specific known types
-      if let lhsInt=lhsValue as? Int, let rhsInt=rhsValue as? Int {
-        if lhsInt != rhsInt { return false }
-      } else if let lhsString=lhsValue as? String, let rhsString=rhsValue as? String {
-        if lhsString != rhsString { return false }
-      } else if let lhsDate=lhsValue as? Date, let rhsDate=rhsValue as? Date {
-        if lhsDate != rhsDate { return false }
-      } else if let lhsBool=lhsValue as? Bool, let rhsBool=rhsValue as? Bool {
-        if lhsBool != rhsBool { return false }
-      } else if let lhsData=lhsValue as? Data, let rhsData=rhsValue as? Data {
-        if lhsData != rhsData { return false }
-      } else {
-        // For values that can't be directly compared, compare their descriptions
-        if String(describing: lhsValue) != String(describing: rhsValue) {
-          return false
-        }
-      }
-    }
+    guard lhs.attributes == rhs.attributes else { return false }
 
     return true
   }
@@ -199,7 +145,7 @@ public struct DirectoryCreationOptions: Sendable {
   public let groupOwnerAccountID: Int?
 
   /// Directory attributes to set when creating the directory
-  public let attributes: [FileAttributeKey: Any]?
+  public let attributes: SendableFileAttributes?
 
   /// Creates new directory creation options
   public init(
@@ -211,7 +157,7 @@ public struct DirectoryCreationOptions: Sendable {
     self.posixPermissions=posixPermissions
     self.ownerAccountID=ownerAccountID
     self.groupOwnerAccountID=groupOwnerAccountID
-    self.attributes=attributes
+    self.attributes = attributes != nil ? SendableFileAttributes(attributes: attributes) : nil
   }
 }
 
@@ -239,34 +185,7 @@ extension DirectoryCreationOptions: Equatable {
     }
 
     // Compare attributes by keys and values where possible
-    let lhsKeys=Set(lhs.attributes!.keys)
-    let rhsKeys=Set(rhs.attributes!.keys)
-
-    guard lhsKeys == rhsKeys else { return false }
-
-    // Compare values for each key
-    for key in lhsKeys {
-      let lhsValue=lhs.attributes![key]
-      let rhsValue=rhs.attributes![key]
-
-      // Attempt to compare specific known types
-      if let lhsInt=lhsValue as? Int, let rhsInt=rhsValue as? Int {
-        if lhsInt != rhsInt { return false }
-      } else if let lhsString=lhsValue as? String, let rhsString=rhsValue as? String {
-        if lhsString != rhsString { return false }
-      } else if let lhsDate=lhsValue as? Date, let rhsDate=rhsValue as? Date {
-        if lhsDate != rhsDate { return false }
-      } else if let lhsBool=lhsValue as? Bool, let rhsBool=rhsValue as? Bool {
-        if lhsBool != rhsBool { return false }
-      } else if let lhsData=lhsValue as? Data, let rhsData=rhsValue as? Data {
-        if lhsData != rhsData { return false }
-      } else {
-        // For values that can't be directly compared, compare their descriptions
-        if String(describing: lhsValue) != String(describing: rhsValue) {
-          return false
-        }
-      }
-    }
+    guard lhs.attributes == rhs.attributes else { return false }
 
     return true
   }
