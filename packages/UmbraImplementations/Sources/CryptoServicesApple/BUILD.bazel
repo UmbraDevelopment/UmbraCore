@@ -8,7 +8,7 @@ umbra_swift_library(
         "**/*Tests.swift",
     ]),
     visibility = ["//visibility:public"],
-    copts = [
+    swiftc_opts = [
         "-DCRYPTO_IMPLEMENTATION_APPLE",
     ],
     deps = [

@@ -1,5 +1,6 @@
 import CryptoInterfaces
 import CryptoServicesCore
+import CryptoServicesCore.Interfaces
 import SecurityInterfaces
 import LoggingInterfaces
 import BuildConfig
@@ -42,7 +43,7 @@ public actor CrossPlatformCryptoService: CryptoServiceProtocol {
     // MARK: - Properties
     
     /// The secure storage to use
-    private let secureStorage: SecureStorageProtocol
+    public let secureStorage: SecureStorageProtocol
     
     /// Optional logger for operation tracking with privacy controls
     private let logger: LoggingProtocol?
@@ -145,15 +146,29 @@ public actor CrossPlatformCryptoService: CryptoServiceProtocol {
      secure random number generator. In a real implementation, this would call
      into the actual Ring FFI.
      
-     - Parameter length: The number of random bytes to generate
-     - Returns: A random byte array of the specified length
+     - Parameter algorithm: The encryption algorithm to generate random bytes for
+     - Returns: A random byte array of the appropriate length
      */
-    private func ringGenerateRandomBytes(length: Int) -> [UInt8] {
+    private func ringGenerateRandomBytes(for algorithm: StandardEncryptionAlgorithm) -> [UInt8] {
         // In a real implementation, this would call into Ring FFI
         // For now, we'll use SecRandomCopyBytes as a fallback
+        let length = algorithm == .chacha20Poly1305 ? 32 : algorithm.keySizeBytes
         var bytes = [UInt8](repeating: 0, count: length)
         _ = SecRandomCopyBytes(kSecRandomDefault, length, &bytes)
         return bytes
+    }
+    
+    /**
+     Generates a random nonce for the specified algorithm.
+     
+     - Parameter algorithm: The encryption algorithm to generate a nonce for
+     - Returns: A random nonce of the appropriate length
+     */
+    private func ringGenerateNonce(for algorithm: StandardEncryptionAlgorithm) -> [UInt8] {
+        let nonceSize = algorithm == .chacha20Poly1305 ? 12 : algorithm.nonceSize
+        var nonce = [UInt8](repeating: 0, count: nonceSize)
+        _ = SecRandomCopyBytes(kSecRandomDefault, nonceSize, &nonce)
+        return nonce
     }
     
     /**
@@ -171,15 +186,25 @@ public actor CrossPlatformCryptoService: CryptoServiceProtocol {
      - Returns: The encrypted data with authentication tag
      */
     private func ringChaCha20Poly1305Encrypt(data: Data, key: Data, nonce: Data, aad: Data?) -> Data? {
+        // Validate key size for ChaCha20-Poly1305 (should be 32 bytes)
+        if key.count != 32 {
+            return nil
+        }
+        
+        // Validate nonce size for ChaCha20-Poly1305 (should be 12 bytes)
+        if nonce.count != 12 {
+            return nil
+        }
+        
         // In a real implementation, this would call into Ring FFI
         // For demonstration purposes, we'll simulate the encryption by appending
         // a fake authentication tag
         let simulatedCiphertext = data
-        let simulatedTag = ringGenerateRandomBytes(length: 16) // 16-byte authentication tag
+        let simulatedTag = Data(ringGenerateRandomBytes(for: .chacha20Poly1305).prefix(16))
         
         var result = Data()
         result.append(simulatedCiphertext)
-        result.append(Data(simulatedTag))
+        result.append(simulatedTag)
         
         return result
     }
@@ -199,62 +224,99 @@ public actor CrossPlatformCryptoService: CryptoServiceProtocol {
      - Returns: The decrypted data or nil if authentication fails
      */
     private func ringChaCha20Poly1305Decrypt(data: Data, key: Data, nonce: Data, aad: Data?) -> Data? {
+        // Validate key size for ChaCha20-Poly1305 (should be 32 bytes)
+        if key.count != 32 {
+            return nil
+        }
+        
+        // Validate nonce size for ChaCha20-Poly1305 (should be 12 bytes)
+        if nonce.count != 12 {
+            return nil
+        }
+        
         // In a real implementation, this would call into Ring FFI
-        // For demonstration purposes, we'll simply extract the ciphertext portion
-        // (ignoring the tag, which in a real implementation would be verified)
+        // For demonstration purposes, we'll simulate the decryption by removing
+        // the fake authentication tag
         if data.count < 16 {
             // Data is too short to contain a valid tag
             return nil
         }
         
-        return data.dropLast(16) // Remove the 16-byte authentication tag
+        return data.dropLast(16)
     }
     
     /**
-     Performs Argon2id key derivation.
+     Performs a hash operation using the specified algorithm.
      
      This simulates what would be a call to the Ring cryptography library's
-     Argon2id implementation. In a real implementation, this would call
-     into the actual Ring FFI.
-     
-     - Parameters:
-       - password: The password to derive the key from
-       - salt: The salt for key derivation
-       - iterations: The number of iterations to use
-       - memory: The amount of memory to use in KiB
-       - parallelism: The degree of parallelism to use
-       - outputLength: The desired output length in bytes
-     - Returns: The derived key
-     */
-    private func ringArgon2id(
-        password: Data,
-        salt: Data,
-        iterations: UInt32,
-        memory: UInt32,
-        parallelism: UInt32,
-        outputLength: Int
-    ) -> Data? {
-        // In a real implementation, this would call into Ring FFI
-        // For demonstration purposes, we'll generate random bytes of the desired length
-        return Data(ringGenerateRandomBytes(length: outputLength))
-    }
-    
-    /**
-     Computes a BLAKE3 hash of the given data.
-     
-     This simulates what would be a call to the Ring cryptography library's
-     BLAKE3 implementation. In a real implementation, this would call
-     into the actual Ring FFI.
+     hashing functions. In a real implementation, this would call into the actual Ring FFI.
      
      - Parameters:
        - data: The data to hash
-       - outputLength: The desired output length in bytes
+       - algorithm: The hashing algorithm to use
+     - Returns: The computed hash or nil if the algorithm is not supported
+     */
+    private func ringHash(data: Data, algorithm: StandardHashAlgorithm) -> Data? {
+        switch algorithm {
+        case .sha256:
+            return ringHashSHA256(data: data)
+        case .sha512:
+            return ringHashSHA512(data: data)
+        case .sha384:
+            // Simulate SHA-384 hashing
+            var hashBytes = [UInt8](repeating: 0, count: 48) // SHA-384 produces a 48-byte hash
+            data.withUnsafeBytes { buffer in
+                if let baseAddress = buffer.baseAddress {
+                    let seedData = Data([UInt8](buffer))
+                    var seed: UInt64 = 0
+                    for byte in seedData.prefix(8) {
+                        seed = (seed << 8) | UInt64(byte)
+                    }
+                    
+                    // Generate pseudo-random bytes based on the data
+                    for i in 0..<48 {
+                        seed = (seed &* 6364136223846793005) &+ 1442695040888963407
+                        hashBytes[i] = UInt8((seed >> 32) & 0xFF)
+                    }
+                }
+            }
+            return Data(hashBytes)
+        case .hmacSHA256:
+            // Would call into Ring FFI for HMAC-SHA256
+            return nil
+        }
+    }
+    
+    /**
+     Simulates computing a SHA-256 hash using Ring.
+     
+     - Parameter data: The data to hash
      - Returns: The computed hash
      */
-    private func ringBLAKE3(data: Data, outputLength: Int) -> Data? {
+    private func ringHashSHA256(data: Data) -> Data {
         // In a real implementation, this would call into Ring FFI
-        // For demonstration purposes, we'll generate random bytes of the desired length
-        return Data(ringGenerateRandomBytes(length: outputLength))
+        // For now, we'll use CommonCrypto as a fallback
+        var hashBytes = [UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
+        data.withUnsafeBytes { buffer in
+            _ = CC_SHA256(buffer.baseAddress, CC_LONG(data.count), &hashBytes)
+        }
+        return Data(hashBytes)
+    }
+    
+    /**
+     Simulates computing a SHA-512 hash using Ring.
+     
+     - Parameter data: The data to hash
+     - Returns: The computed hash
+     */
+    private func ringHashSHA512(data: Data) -> Data {
+        // In a real implementation, this would call into Ring FFI
+        // For now, we'll use CommonCrypto as a fallback
+        var hashBytes = [UInt8](repeating: 0, count: Int(CC_SHA512_DIGEST_LENGTH))
+        data.withUnsafeBytes { buffer in
+            _ = CC_SHA512(buffer.baseAddress, CC_LONG(data.count), &hashBytes)
+        }
+        return Data(hashBytes)
     }
     
     // MARK: - CryptoServiceProtocol Implementation
@@ -273,10 +335,23 @@ public actor CrossPlatformCryptoService: CryptoServiceProtocol {
         keyIdentifier: String,
         options: EncryptionOptions? = nil
     ) async -> Result<String, SecurityStorageError> {
+        // Parse standard encryption parameters
+        let algorithmString = options?.algorithm ?? StandardEncryptionAlgorithm.chacha20Poly1305.rawValue
+        
+        // Ring implementation primarily supports ChaCha20-Poly1305
+        guard let algorithm = StandardEncryptionAlgorithm(rawValue: algorithmString) else {
+            return .failure(.storageError("Unsupported encryption algorithm: \(algorithmString)"))
+        }
+        
+        // Ensure algorithm is supported by Ring
+        guard algorithm == .chacha20Poly1305 else {
+            return .failure(.storageError("Ring implementation only supports ChaCha20-Poly1305"))
+        }
+        
         // Create a log context with proper privacy classification
         let context = CryptoLogContext(
             operation: "encrypt",
-            algorithm: "ChaCha20-Poly1305", // Ring implementation uses ChaCha20-Poly1305
+            algorithm: algorithm.rawValue,
             correlationID: UUID().uuidString
         ).withMetadata(
             LogMetadataDTOCollection()
@@ -285,46 +360,70 @@ public actor CrossPlatformCryptoService: CryptoServiceProtocol {
                 .withPublic(key: "provider", value: "Ring")
         )
         
-        await logDebug("Starting Ring-based encryption operation", context: context)
+        await logDebug("Starting Ring encryption operation", context: context)
+        
+        // Validate inputs
+        let dataValidation = CryptoErrorHandling.validate(
+            !dataIdentifier.isEmpty,
+            code: .invalidInput,
+            message: "Data identifier cannot be empty"
+        )
+        
+        if case .failure(let error) = dataValidation {
+            await logError("Input validation failed: \(error.message)", context: context)
+            return .failure(.storageError(error.message))
+        }
+        
+        let keyValidation = CryptoErrorHandling.validate(
+            !keyIdentifier.isEmpty,
+            code: .invalidInput,
+            message: "Key identifier cannot be empty"
+        )
+        
+        if case .failure(let error) = keyValidation {
+            await logError("Input validation failed: \(error.message)", context: context)
+            return .failure(.storageError(error.message))
+        }
         
         // Retrieve the data to encrypt
-        let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
+        let dataResult = await secureStorage.retrieve(identifier: dataIdentifier)
         
         switch dataResult {
         case let .success(dataToEncrypt):
             await logDebug("Retrieved data for encryption, size: \(dataToEncrypt.count) bytes", context: context)
             
             // Retrieve the encryption key
-            let keyResult = await secureStorage.retrieveData(withIdentifier: keyIdentifier)
+            let keyResult = await secureStorage.retrieve(identifier: keyIdentifier)
             
             switch keyResult {
             case let .success(keyData):
-                if keyData.count != 32 { // ChaCha20-Poly1305 uses 32-byte keys
-                    let errorContext = context.withMetadata(
-                        LogMetadataDTOCollection()
-                            .withPublic(key: "expected_key_size", value: String(32))
-                            .withPublic(key: "actual_key_size", value: String(keyData.count))
-                    )
-                    await logError("Invalid key size for Ring encryption", context: errorContext)
-                    return .failure(.invalidKeySize)
+                // Validate key size for ChaCha20-Poly1305 (should be 32 bytes)
+                let keyValidation = CryptoErrorHandling.validateKey(keyData, algorithm: algorithm)
+                
+                if case .failure(let error) = keyValidation {
+                    await logError("Key validation failed: \(error.message)", context: context)
+                    return .failure(.storageError(error.message))
                 }
                 
                 // Generate a random nonce (12 bytes for ChaCha20-Poly1305)
-                let nonce = Data(ringGenerateRandomBytes(length: 12))
+                let nonce = Data(ringGenerateNonce(for: algorithm))
                 
-                // Additional authenticated data (optional)
-                // In a real implementation, this could include metadata about the encryption
-                let aad = dataIdentifier.data(using: .utf8)
+                // Get additional authenticated data if provided
+                let aadData: Data? = options?.additionalAuthenticatedData
                 
                 // Encrypt the data using ChaCha20-Poly1305
                 guard let encryptedData = ringChaCha20Poly1305Encrypt(
                     data: dataToEncrypt,
                     key: keyData,
                     nonce: nonce,
-                    aad: aad
+                    aad: aadData
                 ) else {
-                    await logError("Ring encryption operation failed", context: context)
-                    return .failure(.encryptionFailed)
+                    let error = CryptoErrorMapper.operationalError(
+                        code: .encryptionFailed,
+                        message: "Ring encryption operation failed"
+                    )
+                    await logError(error.message, context: context)
+                    return .failure(.storageError(error.message))
                 }
                 
                 // Create the final encrypted data format: [Nonce][Encrypted Data with Tag][Key ID Length][Key ID]
@@ -342,7 +441,7 @@ public actor CrossPlatformCryptoService: CryptoServiceProtocol {
                 let encryptedDataIdentifier = "ring_enc_\(UUID().uuidString)"
                 
                 // Store the encrypted data
-                let storeResult = await secureStorage.storeData(encryptedBytes, withIdentifier: encryptedDataIdentifier)
+                let storeResult = await secureStorage.store(encryptedBytes, withIdentifier: encryptedDataIdentifier)
                 
                 switch storeResult {
                 case .success:
@@ -399,7 +498,7 @@ public actor CrossPlatformCryptoService: CryptoServiceProtocol {
         // Create a log context with proper privacy classification
         let context = CryptoLogContext(
             operation: "decrypt",
-            algorithm: "ChaCha20-Poly1305", // Ring implementation uses ChaCha20-Poly1305
+            algorithm: StandardEncryptionAlgorithm.chacha20Poly1305.rawValue,
             correlationID: UUID().uuidString
         ).withMetadata(
             LogMetadataDTOCollection()
@@ -411,7 +510,7 @@ public actor CrossPlatformCryptoService: CryptoServiceProtocol {
         await logDebug("Starting Ring-based decryption operation", context: context)
         
         // Retrieve the encrypted data
-        let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
+        let dataResult = await secureStorage.retrieve(identifier: dataIdentifier)
         
         switch dataResult {
         case let .success(encryptedDataBytes):
@@ -452,7 +551,7 @@ public actor CrossPlatformCryptoService: CryptoServiceProtocol {
             }
             
             // Retrieve the decryption key
-            let keyResult = await secureStorage.retrieveData(withIdentifier: keyIdentifier)
+            let keyResult = await secureStorage.retrieve(identifier: keyIdentifier)
             
             switch keyResult {
             case let .success(keyData):
@@ -485,7 +584,7 @@ public actor CrossPlatformCryptoService: CryptoServiceProtocol {
                 let decryptedDataIdentifier = "ring_dec_\(UUID().uuidString)"
                 
                 // Store the decrypted data
-                let storeResult = await secureStorage.storeData(decryptedData, withIdentifier: decryptedDataIdentifier)
+                let storeResult = await secureStorage.store(decryptedData, withIdentifier: decryptedDataIdentifier)
                 
                 switch storeResult {
                 case .success:
@@ -558,18 +657,18 @@ public actor CrossPlatformCryptoService: CryptoServiceProtocol {
         await logDebug("Starting Ring-based hash verification", context: context)
         
         // Retrieve the data to verify
-        let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
+        let dataResult = await secureStorage.retrieve(identifier: dataIdentifier)
         
         switch dataResult {
         case let .success(dataToVerify):
             // Retrieve the stored hash
-            let hashResult = await secureStorage.retrieveData(withIdentifier: hashIdentifier)
+            let hashResult = await secureStorage.retrieve(identifier: hashIdentifier)
             
             switch hashResult {
             case let .success(storedHash):
                 // Compute the hash of the data using BLAKE3
                 let outputLength = storedHash.count // Match the stored hash length
-                guard let computedHash = ringBLAKE3(data: dataToVerify, outputLength: outputLength) else {
+                guard let computedHash = ringHash(data: dataToVerify, algorithm: .blake3) else {
                     await logError("Failed to compute Ring BLAKE3 hash", context: context)
                     return .failure(.hashingFailed)
                 }
@@ -660,7 +759,7 @@ public actor CrossPlatformCryptoService: CryptoServiceProtocol {
             let passwordData = passwordString.data(using: .utf8) ?? Data()
             
             // Generate a random salt
-            let salt = Data(ringGenerateRandomBytes(length: 16))
+            let salt = Data(ringGenerateRandomBytes(for: .chacha20Poly1305).prefix(16))
             
             // Argon2id parameters
             let iterations: UInt32 = 3
@@ -681,7 +780,7 @@ public actor CrossPlatformCryptoService: CryptoServiceProtocol {
             }
             
             // Store the key
-            let storeResult = await secureStorage.storeData(keyData, withIdentifier: identifier)
+            let storeResult = await secureStorage.store(keyData, withIdentifier: identifier)
             
             switch storeResult {
             case .success:
@@ -703,10 +802,10 @@ public actor CrossPlatformCryptoService: CryptoServiceProtocol {
             }
         } else {
             // Generate random key bytes using Ring's secure random number generator
-            let keyData = Data(ringGenerateRandomBytes(length: byteLength))
+            let keyData = Data(ringGenerateRandomBytes(for: .chacha20Poly1305).prefix(byteLength))
             
             // Store the key
-            let storeResult = await secureStorage.storeData(keyData, withIdentifier: identifier)
+            let storeResult = await secureStorage.store(keyData, withIdentifier: identifier)
             
             switch storeResult {
             case .success:
@@ -737,7 +836,7 @@ public actor CrossPlatformCryptoService: CryptoServiceProtocol {
     public func retrieveData(
         identifier: String
     ) async -> Result<Data, SecurityStorageError> {
-        return await secureStorage.retrieveData(withIdentifier: identifier)
+        return await secureStorage.retrieve(identifier: identifier)
     }
     
     /**
@@ -752,6 +851,6 @@ public actor CrossPlatformCryptoService: CryptoServiceProtocol {
         _ data: Data,
         identifier: String
     ) async -> Result<Bool, SecurityStorageError> {
-        return await secureStorage.storeData(data, withIdentifier: identifier)
+        return await secureStorage.store(data, withIdentifier: identifier)
     }
 }
