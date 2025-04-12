@@ -66,29 +66,18 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     options: CoreSecurityTypes.EncryptionOptions?=nil
   ) async -> Result<String, SecurityStorageError> {
     // Create an enhanced log context with proper privacy tags
-    let context=EnhancedLogContext(
-      domainName: "CryptoService",
-      operationName: "encrypt",
-      source: "EnhancedLoggingCryptoServiceImpl.encrypt",
-      metadata: LogMetadataDTOCollection()
-        .withPublic(key: "dataIdentifier", value: dataIdentifier)
-        .withPrivate(key: "keyIdentifier", value: keyIdentifier)
+    let context=createLogContext(
+      operation: "encrypt",
+      algorithm: options?.algorithm,
+      correlationID: nil,
+      additionalMetadata: [
+        ("dataIdentifier", (value: dataIdentifier, privacyLevel: .public)),
+        ("keyIdentifier", (value: keyIdentifier, privacyLevel: .private))
+      ],
+      category: "Security"
     )
 
-    // Add algorithm information if available
-    let contextWithAlgorithm: EnhancedLogContext=if let algorithm=options?.algorithm {
-      EnhancedLogContext(
-        domainName: context.domainName,
-        operationName: context.operationName,
-        source: context.source,
-        correlationID: context.correlationID,
-        metadata: context.metadata.withPublic(key: "algorithm", value: "\(algorithm)")
-      )
-    } else {
-      context
-    }
-
-    await logger.log(.debug, "Encrypt operation started", context: contextWithAlgorithm)
+    await logger.log(.debug, "Encrypt operation started", context: context)
 
     // Perform the operation
     let result=await wrapped.encrypt(
@@ -101,28 +90,30 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     switch result {
       case let .success(encryptedIdentifier):
         // Add public metadata for the successful operation
-        let successContext=EnhancedLogContext(
-          domainName: context.domainName,
-          operationName: "encrypt",
-          source: context.source,
-          correlationID: context.correlationID,
-          metadata: context.metadata.withPublic(
-            key: "encryptedIdentifier",
-            value: encryptedIdentifier
-          )
+        let successContext=createLogContext(
+          operation: "encrypt",
+          algorithm: options?.algorithm,
+          correlationID: nil,
+          additionalMetadata: [
+            ("dataIdentifier", (value: dataIdentifier, privacyLevel: .public)),
+            ("keyIdentifier", (value: keyIdentifier, privacyLevel: .private)),
+            ("encryptedIdentifier", (value: encryptedIdentifier, privacyLevel: .public))
+          ],
+          category: "Security"
         )
         // Log with the new context
         await logger.log(.info, "Encrypt operation successful", context: successContext)
       case let .failure(error):
-        let errorContext=EnhancedLogContext(
-          domainName: context.domainName,
-          operationName: "encrypt",
-          source: context.source,
-          correlationID: context.correlationID,
-          metadata: context.metadata.withPublic(
-            key: "errorDescription",
-            value: error.localizedDescription
-          )
+        let errorContext=createLogContext(
+          operation: "encrypt",
+          algorithm: options?.algorithm,
+          correlationID: nil,
+          additionalMetadata: [
+            ("dataIdentifier", (value: dataIdentifier, privacyLevel: .public)),
+            ("keyIdentifier", (value: keyIdentifier, privacyLevel: .private)),
+            ("errorDescription", (value: error.localizedDescription, privacyLevel: .public))
+          ],
+          category: "Security"
         )
         await logger.error("Encrypt operation failed", context: errorContext)
     }
@@ -144,29 +135,18 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     keyIdentifier: String,
     options: CoreSecurityTypes.EncryptionOptions?=nil
   ) async -> Result<String, SecurityStorageError> {
-    let context=EnhancedLogContext(
-      domainName: "CryptoService",
-      operationName: "decrypt",
-      source: "EnhancedLoggingCryptoServiceImpl.decrypt",
-      metadata: LogMetadataDTOCollection()
-        .withPublic(key: "encryptedDataIdentifier", value: encryptedDataIdentifier)
-        .withPrivate(key: "keyIdentifier", value: keyIdentifier)
+    let context=createLogContext(
+      operation: "decrypt",
+      algorithm: options?.algorithm,
+      correlationID: nil,
+      additionalMetadata: [
+        ("encryptedDataIdentifier", (value: encryptedDataIdentifier, privacyLevel: .public)),
+        ("keyIdentifier", (value: keyIdentifier, privacyLevel: .private))
+      ],
+      category: "Security"
     )
 
-    // Add algorithm information if available
-    let contextWithAlgorithm: EnhancedLogContext=if let algorithm=options?.algorithm {
-      EnhancedLogContext(
-        domainName: context.domainName,
-        operationName: context.operationName,
-        source: context.source,
-        correlationID: context.correlationID,
-        metadata: context.metadata.withPublic(key: "algorithm", value: "\(algorithm)")
-      )
-    } else {
-      context
-    }
-
-    await logger.log(.debug, "Decrypt operation started", context: contextWithAlgorithm)
+    await logger.log(.debug, "Decrypt operation started", context: context)
 
     // Perform the operation
     let result=await wrapped.decrypt(
@@ -178,27 +158,29 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     // Log the result
     switch result {
       case let .success(decryptedIdentifier):
-        let successContext=EnhancedLogContext(
-          domainName: context.domainName,
-          operationName: "decrypt",
-          source: context.source,
-          correlationID: context.correlationID,
-          metadata: context.metadata.withPublic(
-            key: "decryptedIdentifier",
-            value: decryptedIdentifier
-          )
+        let successContext=createLogContext(
+          operation: "decrypt",
+          algorithm: options?.algorithm,
+          correlationID: nil,
+          additionalMetadata: [
+            ("encryptedDataIdentifier", (value: encryptedDataIdentifier, privacyLevel: .public)),
+            ("keyIdentifier", (value: keyIdentifier, privacyLevel: .private)),
+            ("decryptedIdentifier", (value: decryptedIdentifier, privacyLevel: .public))
+          ],
+          category: "Security"
         )
         await logger.log(.info, "Decrypt operation successful", context: successContext)
       case let .failure(error):
-        let errorContext=EnhancedLogContext(
-          domainName: context.domainName,
-          operationName: "decrypt",
-          source: context.source,
-          correlationID: context.correlationID,
-          metadata: context.metadata.withPublic(
-            key: "errorDescription",
-            value: error.localizedDescription
-          )
+        let errorContext=createLogContext(
+          operation: "decrypt",
+          algorithm: options?.algorithm,
+          correlationID: nil,
+          additionalMetadata: [
+            ("encryptedDataIdentifier", (value: encryptedDataIdentifier, privacyLevel: .public)),
+            ("keyIdentifier", (value: keyIdentifier, privacyLevel: .private)),
+            ("errorDescription", (value: error.localizedDescription, privacyLevel: .public))
+          ],
+          category: "Security"
         )
         await logger.error("Decrypt operation failed", context: errorContext)
     }
@@ -219,13 +201,15 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     options: CoreSecurityTypes.HashingOptions?=nil
   ) async -> Result<String, SecurityStorageError> {
     let algorithm=options?.algorithm ?? .sha256
-    let context=EnhancedLogContext(
-      domainName: "CryptoService",
-      operationName: "hash",
-      source: "EnhancedLoggingCryptoServiceImpl.hash",
-      metadata: LogMetadataDTOCollection()
-        .withPublic(key: "dataIdentifier", value: dataIdentifier)
-        .withPublic(key: "algorithm", value: "\(algorithm)")
+    let context=createLogContext(
+      operation: "hash",
+      algorithm: "\(algorithm)",
+      correlationID: nil,
+      additionalMetadata: [
+        ("dataIdentifier", (value: dataIdentifier, privacyLevel: .public)),
+        ("algorithm", (value: "\(algorithm)", privacyLevel: .public))
+      ],
+      category: "Security"
     )
     await logger.log(.debug, "Hash operation started", context: context)
 
@@ -238,27 +222,29 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     // Log the result
     switch result {
       case let .success(hashIdentifier):
-        let successContext=EnhancedLogContext(
-          domainName: context.domainName,
-          operationName: "hash",
-          source: context.source,
-          correlationID: context.correlationID,
-          metadata: context.metadata.withPublic(
-            key: "hashIdentifier",
-            value: hashIdentifier
-          )
+        let successContext=createLogContext(
+          operation: "hash",
+          algorithm: "\(algorithm)",
+          correlationID: nil,
+          additionalMetadata: [
+            ("dataIdentifier", (value: dataIdentifier, privacyLevel: .public)),
+            ("algorithm", (value: "\(algorithm)", privacyLevel: .public)),
+            ("hashIdentifier", (value: hashIdentifier, privacyLevel: .public))
+          ],
+          category: "Security"
         )
         await logger.log(.info, "Hash operation successful", context: successContext)
       case let .failure(error):
-        let errorContext=EnhancedLogContext(
-          domainName: context.domainName,
-          operationName: "hash",
-          source: context.source,
-          correlationID: context.correlationID,
-          metadata: context.metadata.withPublic(
-            key: "errorDescription",
-            value: error.localizedDescription
-          )
+        let errorContext=createLogContext(
+          operation: "hash",
+          algorithm: "\(algorithm)",
+          correlationID: nil,
+          additionalMetadata: [
+            ("dataIdentifier", (value: dataIdentifier, privacyLevel: .public)),
+            ("algorithm", (value: "\(algorithm)", privacyLevel: .public)),
+            ("errorDescription", (value: error.localizedDescription, privacyLevel: .public))
+          ],
+          category: "Security"
         )
         await logger.error("Hash operation failed", context: errorContext)
     }
@@ -281,14 +267,16 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     options: CoreSecurityTypes.HashingOptions?=nil
   ) async -> Result<Bool, SecurityStorageError> {
     let algorithm=options?.algorithm ?? .sha256
-    let context=EnhancedLogContext(
-      domainName: "CryptoService",
-      operationName: "verifyHash",
-      source: "EnhancedLoggingCryptoServiceImpl.verifyHash",
-      metadata: LogMetadataDTOCollection()
-        .withPublic(key: "dataIdentifier", value: dataIdentifier)
-        .withPublic(key: "hashIdentifier", value: hashIdentifier)
-        .withPublic(key: "algorithm", value: "\(algorithm)")
+    let context=createLogContext(
+      operation: "verifyHash",
+      algorithm: "\(algorithm)",
+      correlationID: nil,
+      additionalMetadata: [
+        ("dataIdentifier", (value: dataIdentifier, privacyLevel: .public)),
+        ("hashIdentifier", (value: hashIdentifier, privacyLevel: .public)),
+        ("algorithm", (value: "\(algorithm)", privacyLevel: .public))
+      ],
+      category: "Security"
     )
     await logger.log(.debug, "Verify hash operation started", context: context)
 
@@ -302,27 +290,31 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     // Log the result
     switch result {
       case let .success(matches):
-        let successContext=EnhancedLogContext(
-          domainName: context.domainName,
-          operationName: "verifyHash",
-          source: context.source,
-          correlationID: context.correlationID,
-          metadata: context.metadata.withPublic(
-            key: "matches",
-            value: "\(matches)"
-          )
+        let successContext=createLogContext(
+          operation: "verifyHash",
+          algorithm: "\(algorithm)",
+          correlationID: nil,
+          additionalMetadata: [
+            ("dataIdentifier", (value: dataIdentifier, privacyLevel: .public)),
+            ("hashIdentifier", (value: hashIdentifier, privacyLevel: .public)),
+            ("algorithm", (value: "\(algorithm)", privacyLevel: .public)),
+            ("matches", (value: "\(matches)", privacyLevel: .public))
+          ],
+          category: "Security"
         )
         await logger.log(.info, "Verify hash operation successful", context: successContext)
       case let .failure(error):
-        let errorContext=EnhancedLogContext(
-          domainName: context.domainName,
-          operationName: "verifyHash",
-          source: context.source,
-          correlationID: context.correlationID,
-          metadata: context.metadata.withPublic(
-            key: "errorDescription",
-            value: error.localizedDescription
-          )
+        let errorContext=createLogContext(
+          operation: "verifyHash",
+          algorithm: "\(algorithm)",
+          correlationID: nil,
+          additionalMetadata: [
+            ("dataIdentifier", (value: dataIdentifier, privacyLevel: .public)),
+            ("hashIdentifier", (value: hashIdentifier, privacyLevel: .public)),
+            ("algorithm", (value: "\(algorithm)", privacyLevel: .public)),
+            ("errorDescription", (value: error.localizedDescription, privacyLevel: .public))
+          ],
+          category: "Security"
         )
         await logger.error("Verify hash operation failed", context: errorContext)
     }
@@ -342,13 +334,14 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     data: Data,
     identifier: String
   ) async -> Result<Void, SecurityStorageError> {
-    let context=EnhancedLogContext(
-      domainName: "CryptoService",
-      operationName: "storeData",
-      source: "EnhancedLoggingCryptoServiceImpl.storeData",
-      metadata: LogMetadataDTOCollection()
-        .withPublic(key: "dataIdentifier", value: identifier)
-        .withPublic(key: "dataSize", value: "\(data.count)")
+    let context=createLogContext(
+      operation: "storeData",
+      correlationID: nil,
+      additionalMetadata: [
+        ("dataIdentifier", (value: identifier, privacyLevel: .public)),
+        ("dataSize", (value: "\(data.count)", privacyLevel: .public))
+      ],
+      category: "Security"
     )
 
     await logger.log(.debug, "Store data operation started", context: context)
@@ -362,24 +355,26 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     // Log the result
     switch result {
       case .success:
-        let successContext=EnhancedLogContext(
-          domainName: context.domainName,
-          operationName: "storeData",
-          source: context.source,
-          correlationID: context.correlationID,
-          metadata: context.metadata
+        let successContext=createLogContext(
+          operation: "storeData",
+          correlationID: nil,
+          additionalMetadata: [
+            ("dataIdentifier", (value: identifier, privacyLevel: .public)),
+            ("dataSize", (value: "\(data.count)", privacyLevel: .public))
+          ],
+          category: "Security"
         )
         await logger.log(.info, "Store data operation successful", context: successContext)
       case let .failure(error):
-        let errorContext=EnhancedLogContext(
-          domainName: context.domainName,
-          operationName: "storeData",
-          source: context.source,
-          correlationID: context.correlationID,
-          metadata: context.metadata.withPublic(
-            key: "errorDescription",
-            value: error.localizedDescription
-          )
+        let errorContext=createLogContext(
+          operation: "storeData",
+          correlationID: nil,
+          additionalMetadata: [
+            ("dataIdentifier", (value: identifier, privacyLevel: .public)),
+            ("dataSize", (value: "\(data.count)", privacyLevel: .public)),
+            ("errorDescription", (value: error.localizedDescription, privacyLevel: .public))
+          ],
+          category: "Security"
         )
         await logger.error("Store data operation failed", context: errorContext)
     }
@@ -396,12 +391,13 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
   public func retrieveData(
     identifier: String
   ) async -> Result<Data, SecurityStorageError> {
-    let context=EnhancedLogContext(
-      domainName: "CryptoService",
-      operationName: "retrieveData",
-      source: "EnhancedLoggingCryptoServiceImpl.retrieveData",
-      metadata: LogMetadataDTOCollection()
-        .withPublic(key: "dataIdentifier", value: identifier)
+    let context=createLogContext(
+      operation: "retrieveData",
+      correlationID: nil,
+      additionalMetadata: [
+        ("dataIdentifier", (value: identifier, privacyLevel: .public))
+      ],
+      category: "Security"
     )
 
     await logger.log(.debug, "Retrieve data operation started", context: context)
@@ -414,27 +410,25 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     // Log the result
     switch result {
       case let .success(data):
-        let successContext=EnhancedLogContext(
-          domainName: context.domainName,
-          operationName: "retrieveData",
-          source: context.source,
-          correlationID: context.correlationID,
-          metadata: context.metadata.withPublic(
-            key: "dataSize",
-            value: "\(data.count)"
-          )
+        let successContext=createLogContext(
+          operation: "retrieveData",
+          correlationID: nil,
+          additionalMetadata: [
+            ("dataIdentifier", (value: identifier, privacyLevel: .public)),
+            ("dataSize", (value: "\(data.count)", privacyLevel: .public))
+          ],
+          category: "Security"
         )
         await logger.log(.info, "Retrieve data operation successful", context: successContext)
       case let .failure(error):
-        let errorContext=EnhancedLogContext(
-          domainName: context.domainName,
-          operationName: "retrieveData",
-          source: context.source,
-          correlationID: context.correlationID,
-          metadata: context.metadata.withPublic(
-            key: "errorDescription",
-            value: error.localizedDescription
-          )
+        let errorContext=createLogContext(
+          operation: "retrieveData",
+          correlationID: nil,
+          additionalMetadata: [
+            ("dataIdentifier", (value: identifier, privacyLevel: .public)),
+            ("errorDescription", (value: error.localizedDescription, privacyLevel: .public))
+          ],
+          category: "Security"
         )
         await logger.error("Retrieve data operation failed", context: errorContext)
     }
@@ -455,25 +449,29 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     customIdentifier: String?
   ) async -> Result<String, SecurityStorageError> {
     // Create an enhanced log context with proper privacy tags
-    let context=EnhancedLogContext(
-      domainName: "CryptoService",
-      operationName: "importData",
-      source: "EnhancedLoggingCryptoServiceImpl.importData",
-      metadata: LogMetadataDTOCollection()
-        .withPublic(key: "dataSize", value: "\(data.count)")
+    let context=createLogContext(
+      operation: "importData",
+      correlationID: nil,
+      additionalMetadata: [
+        ("dataSize", (value: "\(data.count)", privacyLevel: .public))
+      ],
+      category: "Security"
     )
 
     // Add custom identifier if provided
-    let contextWithID: EnhancedLogContext=if let customIdentifier {
-      EnhancedLogContext(
-        domainName: context.domainName,
-        operationName: context.operationName,
-        source: context.source,
-        correlationID: context.correlationID,
-        metadata: context.metadata.withPublic(key: "customIdentifier", value: customIdentifier)
+    let contextWithID: EnhancedLogContext
+    if let customIdentifier {
+      contextWithID=createLogContext(
+        operation: "importData",
+        correlationID: nil,
+        additionalMetadata: [
+          ("dataSize", (value: "\(data.count)", privacyLevel: .public)),
+          ("customIdentifier", (value: customIdentifier, privacyLevel: .public))
+        ],
+        category: "Security"
       )
     } else {
-      context
+      contextWithID=context
     }
 
     await logger.log(.debug, "Import data operation started", context: contextWithID)
@@ -487,27 +485,25 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     // Log the result
     switch result {
       case let .success(identifier):
-        let successContext=EnhancedLogContext(
-          domainName: context.domainName,
-          operationName: "importData",
-          source: context.source,
-          correlationID: context.correlationID,
-          metadata: context.metadata.withPrivate(
-            key: "identifier",
-            value: identifier
-          )
+        let successContext=createLogContext(
+          operation: "importData",
+          correlationID: nil,
+          additionalMetadata: [
+            ("dataSize", (value: "\(data.count)", privacyLevel: .public)),
+            ("identifier", (value: identifier, privacyLevel: .sensitive))
+          ],
+          category: "Security"
         )
         await logger.log(.info, "Import data operation successful", context: successContext)
       case let .failure(error):
-        let errorContext=EnhancedLogContext(
-          domainName: context.domainName,
-          operationName: "importData",
-          source: context.source,
-          correlationID: context.correlationID,
-          metadata: context.metadata.withPublic(
-            key: "errorDescription",
-            value: error.localizedDescription
-          )
+        let errorContext=createLogContext(
+          operation: "importData",
+          correlationID: nil,
+          additionalMetadata: [
+            ("dataSize", (value: "\(data.count)", privacyLevel: .public)),
+            ("errorDescription", (value: error.localizedDescription, privacyLevel: .public))
+          ],
+          category: "Security"
         )
         await logger.error("Import data operation failed", context: errorContext)
     }
@@ -528,13 +524,14 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     customIdentifier: String
   ) async -> Result<String, SecurityStorageError> {
     // Create an enhanced log context with proper privacy tags
-    let context=EnhancedLogContext(
-      domainName: "CryptoService",
-      operationName: "importData",
-      source: "EnhancedLoggingCryptoServiceImpl.importData",
-      metadata: LogMetadataDTOCollection()
-        .withPublic(key: "dataSize", value: "\(data.count)")
-        .withPublic(key: "customIdentifier", value: customIdentifier)
+    let context=createLogContext(
+      operation: "importData",
+      correlationID: nil,
+      additionalMetadata: [
+        ("dataSize", (value: "\(data.count)", privacyLevel: .public)),
+        ("customIdentifier", (value: customIdentifier, privacyLevel: .public))
+      ],
+      category: "Security"
     )
 
     await logger.log(.debug, "Import data operation started", context: context)
@@ -548,27 +545,27 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     // Log the result
     switch result {
       case let .success(identifier):
-        let successContext=EnhancedLogContext(
-          domainName: context.domainName,
-          operationName: "importData",
-          source: context.source,
-          correlationID: context.correlationID,
-          metadata: context.metadata.withPrivate(
-            key: "identifier",
-            value: identifier
-          )
+        let successContext=createLogContext(
+          operation: "importData",
+          correlationID: nil,
+          additionalMetadata: [
+            ("dataSize", (value: "\(data.count)", privacyLevel: .public)),
+            ("customIdentifier", (value: customIdentifier, privacyLevel: .public)),
+            ("identifier", (value: identifier, privacyLevel: .sensitive))
+          ],
+          category: "Security"
         )
         await logger.log(.info, "Import data operation successful", context: successContext)
       case let .failure(error):
-        let errorContext=EnhancedLogContext(
-          domainName: context.domainName,
-          operationName: "importData",
-          source: context.source,
-          correlationID: context.correlationID,
-          metadata: context.metadata.withPublic(
-            key: "errorDescription",
-            value: error.localizedDescription
-          )
+        let errorContext=createLogContext(
+          operation: "importData",
+          correlationID: nil,
+          additionalMetadata: [
+            ("dataSize", (value: "\(data.count)", privacyLevel: .public)),
+            ("customIdentifier", (value: customIdentifier, privacyLevel: .public)),
+            ("errorDescription", (value: error.localizedDescription, privacyLevel: .public))
+          ],
+          category: "Security"
         )
         await logger.error("Import data operation failed", context: errorContext)
     }
@@ -596,6 +593,8 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
        domainName: "CryptoService",
        operationName: "signData",
        source: "EnhancedLoggingCryptoServiceImpl.signData",
+       correlationID: nil,
+       category: "Security",
        metadata: LogMetadataDTOCollection()
          .withPublic(key: "dataIdentifier", value: dataIdentifier)
          .withPrivate(key: "keyIdentifier", value: keyIdentifier)
@@ -609,6 +608,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
          operationName: context.operationName,
          source: context.source,
          correlationID: context.correlationID,
+         category: context.category,
          metadata: context.metadata.withPublic(key: "algorithm", value: "\(algorithm)")
        )
      } else {
@@ -632,6 +632,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
            operationName: "signData",
            source: context.source,
            correlationID: context.correlationID,
+           category: context.category,
            metadata: context.metadata.withPublic(
              key: "signatureIdentifier",
              value: signatureIdentifier
@@ -644,6 +645,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
            operationName: "signData",
            source: context.source,
            correlationID: context.correlationID,
+           category: context.category,
            metadata: context.metadata.withPublic(
              key: "errorDescription",
              value: error.localizedDescription
@@ -678,6 +680,8 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
        domainName: "CryptoService",
        operationName: "verifySignature",
        source: "EnhancedLoggingCryptoServiceImpl.verifySignature",
+       correlationID: nil,
+       category: "Security",
        metadata: LogMetadataDTOCollection()
          .withPublic(key: "dataIdentifier", value: dataIdentifier)
          .withPublic(key: "signatureIdentifier", value: signatureIdentifier)
@@ -692,6 +696,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
          operationName: context.operationName,
          source: context.source,
          correlationID: context.correlationID,
+         category: context.category,
          metadata: context.metadata.withPublic(key: "algorithm", value: "\(algorithm)")
        )
      } else {
@@ -716,6 +721,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
            operationName: "verifySignature",
            source: context.source,
            correlationID: context.correlationID,
+           category: context.category,
            metadata: context.metadata.withPublic(
              key: "isValid",
              value: "\(isValid)"
@@ -728,6 +734,7 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
            operationName: "verifySignature",
            source: context.source,
            correlationID: context.correlationID,
+           category: context.category,
            metadata: context.metadata.withPublic(
              key: "errorDescription",
              value: error.localizedDescription
@@ -753,23 +760,26 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     options: CoreSecurityTypes.KeyGenerationOptions?=nil
   ) async -> Result<String, SecurityStorageError> {
     // Create context for logging
-    let context=EnhancedLogContext(
-      domainName: "CryptoService",
-      operationName: "generateKey",
-      source: "EnhancedLoggingCryptoServiceImpl.generateKey",
-      metadata: LogMetadataDTOCollection()
-        .withPublic(key: "keyLength", value: "\(length)")
+    let context=createLogContext(
+      operation: "generateKey",
+      correlationID: nil,
+      additionalMetadata: [
+        ("keyLength", (value: "\(length)", privacyLevel: .public))
+      ],
+      category: "Security"
     )
 
     // Add key type and algorithm information if available
     var contextWithOptions=context
     if let keyType=options?.keyType {
-      contextWithOptions=EnhancedLogContext(
-        domainName: context.domainName,
-        operationName: context.operationName,
-        source: context.source,
-        correlationID: context.correlationID,
-        metadata: context.metadata.withPublic(key: "keyType", value: "\(keyType)")
+      contextWithOptions=createLogContext(
+        operation: "generateKey",
+        correlationID: nil,
+        additionalMetadata: [
+          ("keyLength", (value: "\(length)", privacyLevel: .public)),
+          ("keyType", (value: "\(keyType)", privacyLevel: .public))
+        ],
+        category: "Security"
       )
     }
 
@@ -781,27 +791,25 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     // Log the result
     switch result {
       case let .success(keyIdentifier):
-        let successContext=EnhancedLogContext(
-          domainName: context.domainName,
-          operationName: "generateKey",
-          source: context.source,
-          correlationID: context.correlationID,
-          metadata: context.metadata.withSensitive(
-            key: "keyIdentifier",
-            value: keyIdentifier
-          )
+        let successContext=createLogContext(
+          operation: "generateKey",
+          correlationID: nil,
+          additionalMetadata: [
+            ("keyLength", (value: "\(length)", privacyLevel: .public)),
+            ("keyIdentifier", (value: keyIdentifier, privacyLevel: .sensitive))
+          ],
+          category: "Security"
         )
         await logger.log(.info, "Generate key operation successful", context: successContext)
       case let .failure(error):
-        let errorContext=EnhancedLogContext(
-          domainName: context.domainName,
-          operationName: "generateKey",
-          source: context.source,
-          correlationID: context.correlationID,
-          metadata: context.metadata.withPublic(
-            key: "errorDescription",
-            value: error.localizedDescription
-          )
+        let errorContext=createLogContext(
+          operation: "generateKey",
+          correlationID: nil,
+          additionalMetadata: [
+            ("keyLength", (value: "\(length)", privacyLevel: .public)),
+            ("errorDescription", (value: error.localizedDescription, privacyLevel: .public))
+          ],
+          category: "Security"
         )
         await logger.error("Generate key operation failed", context: errorContext)
     }
@@ -819,12 +827,13 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     identifier: String
   ) async -> Result<[UInt8], SecurityStorageError> {
     // Create context for logging
-    let context=EnhancedLogContext(
-      domainName: "CryptoService",
-      operationName: "exportData",
-      source: "EnhancedLoggingCryptoServiceImpl.exportData",
-      metadata: LogMetadataDTOCollection()
-        .withPublic(key: "dataIdentifier", value: identifier)
+    let context=createLogContext(
+      operation: "exportData",
+      correlationID: nil,
+      additionalMetadata: [
+        ("dataIdentifier", (value: identifier, privacyLevel: .public))
+      ],
+      category: "Security"
     )
 
     await logger.log(.debug, "Exporting data with identifier \(identifier)", context: context)
@@ -835,15 +844,14 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     // Log the result
     switch result {
       case let .success(data):
-        let successContext=EnhancedLogContext(
-          domainName: context.domainName,
-          operationName: "exportData",
-          source: context.source,
-          correlationID: context.correlationID,
-          metadata: context.metadata.withPublic(
-            key: "dataSize",
-            value: "\(data.count)"
-          )
+        let successContext=createLogContext(
+          operation: "exportData",
+          correlationID: nil,
+          additionalMetadata: [
+            ("dataIdentifier", (value: identifier, privacyLevel: .public)),
+            ("dataSize", (value: "\(data.count)", privacyLevel: .public))
+          ],
+          category: "Security"
         )
         await logger.log(
           .info,
@@ -851,15 +859,14 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
           context: successContext
         )
       case let .failure(error):
-        let errorContext=EnhancedLogContext(
-          domainName: context.domainName,
-          operationName: "exportData",
-          source: context.source,
-          correlationID: context.correlationID,
-          metadata: context.metadata.withPublic(
-            key: "errorDescription",
-            value: error.localizedDescription
-          )
+        let errorContext=createLogContext(
+          operation: "exportData",
+          correlationID: nil,
+          additionalMetadata: [
+            ("dataIdentifier", (value: identifier, privacyLevel: .public)),
+            ("errorDescription", (value: error.localizedDescription, privacyLevel: .public))
+          ],
+          category: "Security"
         )
         await logger.error("Data export failed", context: errorContext)
     }
@@ -893,12 +900,13 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     identifier: String
   ) async -> Result<Void, SecurityStorageError> {
     // Create context for logging
-    let context=EnhancedLogContext(
-      domainName: "CryptoService",
-      operationName: "deleteData",
-      source: "EnhancedLoggingCryptoServiceImpl.deleteData",
-      metadata: LogMetadataDTOCollection()
-        .withPublic(key: "dataIdentifier", value: identifier)
+    let context=createLogContext(
+      operation: "deleteData",
+      correlationID: nil,
+      additionalMetadata: [
+        ("dataIdentifier", (value: identifier, privacyLevel: .public))
+      ],
+      category: "Security"
     )
 
     await logger.log(.debug, "Deleting data with identifier \(identifier)", context: context)
@@ -909,28 +917,81 @@ public actor EnhancedLoggingCryptoServiceImpl: CryptoServiceProtocol {
     // Log the result
     switch result {
       case .success:
-        let successContext=EnhancedLogContext(
-          domainName: context.domainName,
-          operationName: "deleteData",
-          source: context.source,
-          correlationID: context.correlationID,
-          metadata: context.metadata
+        let successContext=createLogContext(
+          operation: "deleteData",
+          correlationID: nil,
+          additionalMetadata: [
+            ("dataIdentifier", (value: identifier, privacyLevel: .public))
+          ],
+          category: "Security"
         )
         await logger.log(.info, "Data deletion successful", context: successContext)
       case let .failure(error):
-        let errorContext=EnhancedLogContext(
-          domainName: context.domainName,
-          operationName: "deleteData",
-          source: context.source,
-          correlationID: context.correlationID,
-          metadata: context.metadata.withPublic(
-            key: "errorDescription",
-            value: error.localizedDescription
-          )
+        let errorContext=createLogContext(
+          operation: "deleteData",
+          correlationID: nil,
+          additionalMetadata: [
+            ("dataIdentifier", (value: identifier, privacyLevel: .public)),
+            ("errorDescription", (value: error.localizedDescription, privacyLevel: .public))
+          ],
+          category: "Security"
         )
         await logger.error("Data deletion failed", context: errorContext)
     }
 
     return result
+  }
+
+  /**
+   Creates a log context for crypto operations.
+   
+   - Parameters:
+     - operation: Name of the operation being performed
+     - algorithm: The cryptographic algorithm in use (optional)
+     - correlationID: Optional correlation ID for request tracing
+     - additionalMetadata: Additional metadata tuples to include with the context
+     - category: Category for the log context
+   - Returns: A configured log context
+   */
+  private func createLogContext(
+    operation: String,
+    algorithm: String?=nil,
+    correlationID: String?=nil,
+    additionalMetadata: [(String, (value: String, privacyLevel: PrivacyLevel))]=[],
+    category: String="Security"
+  ) -> EnhancedLogContext {
+    var metadata=LogMetadataDTOCollection()
+    
+    // Add algorithm information if available
+    if let algorithm=algorithm {
+      metadata=metadata.withPublic(key: "algorithm", value: algorithm)
+    }
+    
+    // Add additional metadata with proper privacy levels
+    for (key, valueInfo) in additionalMetadata {
+      switch valueInfo.privacyLevel {
+        case .public:
+          metadata=metadata.withPublic(key: key, value: valueInfo.value)
+        case .private:
+          metadata=metadata.withPrivate(key: key, value: valueInfo.value)
+        case .sensitive:
+          metadata=metadata.withSensitive(key: key, value: valueInfo.value)
+        case .hash:
+          metadata=metadata.withHashed(key: key, value: valueInfo.value)
+        default:
+          // Default to private for any other privacy level
+          metadata=metadata.withPrivate(key: key, value: valueInfo.value)
+      }
+    }
+    
+    // Create and return the context with all parameters
+    return EnhancedLogContext(
+      domainName: "CryptoServices",
+      operationName: operation,
+      source: "EnhancedLoggingCryptoService",
+      correlationID: correlationID,
+      category: category,
+      metadata: metadata
+    )
   }
 }

@@ -4,6 +4,7 @@ import Foundation
 import LoggingInterfaces
 import LoggingTypes
 import SecurityCoreInterfaces
+import BuildConfig
 
 /// Helper function to create LogMetadataDTOCollection from dictionary
 private func createMetadataCollection(_ dict: [String: String]) -> LogMetadataDTOCollection {
@@ -514,7 +515,7 @@ final class SignatureService: SecurityServiceBase {
   }
 }
 
-// Extension to convert between [UInt8] and SendableCryptoMaterial
+// Extension to convert between SendableCryptoMaterial and Data
 extension SendableCryptoMaterial {
   // Convert to Data
   fileprivate func asData() -> Data {
@@ -523,11 +524,13 @@ extension SendableCryptoMaterial {
 }
 
 // Extension to convert [UInt8] to SendableCryptoMaterial
+#if !UMBRA_EXTENSIONS_DEFINED_SIGNATURE_SERVICE
 extension [UInt8] {
   fileprivate func toSendableCryptoMaterial() -> SendableCryptoMaterial {
     SendableCryptoMaterial(bytes: self)
   }
 }
+#endif
 
 // Define the SignatureError enum
 enum SignatureError: Error {

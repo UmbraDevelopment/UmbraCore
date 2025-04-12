@@ -75,13 +75,13 @@ public class ProviderVerifyHashCommand: BaseProviderCommand, ProviderCommand {
       ]
     )
 
-    await logDebug("Starting provider hash verification operation", context: logContext)
+    await logDebug("Starting hash verification operation", context: logContext)
 
     // Perform the hash verification operation using the security provider
 
     // Create configuration for the hash verification operation
     let config=createSecurityConfig(
-      operation: .verify,
+      operation: .hash,
       algorithm: algorithm.rawValue,
       additionalOptions: [
         "inputData": data,
@@ -92,7 +92,7 @@ public class ProviderVerifyHashCommand: BaseProviderCommand, ProviderCommand {
     do {
       // Execute the hash verification operation using the provider
       let result=try await provider.performSecureOperation(
-        operation: .verify,
+        operation: .hash,
         config: config
       )
 

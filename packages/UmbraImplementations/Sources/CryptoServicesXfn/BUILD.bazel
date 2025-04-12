@@ -1,0 +1,22 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+umbra_swift_library(
+    name = "CryptoServicesXfn",
+    srcs = glob([
+        "**/*.swift",
+    ], exclude = [
+        "**/*Tests.swift",
+    ]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//packages/UmbraImplementations/Sources/CryptoServicesCore",
+        "//packages/UmbraCoreTypes/Sources/CoreSecurityTypes",
+        "//packages/UmbraInterfaces/Sources/CryptoInterfaces",
+        "//packages/UmbraInterfaces/Sources/SecurityInterfaces",
+        "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
+        "//packages/UmbraCoreTypes/Sources/LoggingTypes",
+        "//packages/UmbraImplementations/Sources/SecurityProviders",
+        "//packages/UmbraCoreTypes/Sources/BuildConfig",
+        # Add Ring FFI specific dependencies here
+    ],
+)

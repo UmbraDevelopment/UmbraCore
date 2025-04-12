@@ -70,7 +70,7 @@ public class ImportDataCommand: BaseCryptoCommand, CryptoCommand {
     let dataIdentifier=identifier ?? UUID().uuidString
 
     // Store the data in secure storage
-    let storeResult=await secureStorage.storeSecureData(data, identifier: dataIdentifier)
+    let storeResult=await secureStorage.storeData(data, withIdentifier: dataIdentifier)
 
     switch storeResult {
       case .success:

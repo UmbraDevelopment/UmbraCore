@@ -2,6 +2,7 @@ import CoreDTOs
 import Foundation
 import Services
 import ServicesDTOAdapter
+import BuildConfig
 
 /// Example demonstrating the use of ServicesDTOAdapter
 public struct ServicesDTOExample {
@@ -294,12 +295,14 @@ public struct ServicesDTOExample {
 
 // MARK: - Data Extensions
 
+#if !UMBRA_EXTENSIONS_DEFINED_EXAMPLES
 extension Data {
   /// Convert Data to array of bytes
   var bytes: [UInt8] {
     [UInt8](self)
   }
 }
+#endif
 
 // MARK: - Main Entry Point
 

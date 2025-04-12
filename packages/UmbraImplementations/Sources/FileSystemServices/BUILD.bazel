@@ -34,5 +34,7 @@ umbra_swift_library(
         # Additional dependencies
         "//packages/UmbraCoreTypes/Sources/CoreDTOs",
         "//packages/UmbraCoreTypes/Sources/FileSystemCommonTypes",
+        "//packages/UmbraCoreTypes/Sources/BuildConfig",
+        "//packages/UmbraImplementations/Sources/LoggingServices",
     ],
 )

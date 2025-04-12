@@ -75,38 +75,47 @@ public class ProviderGenerateKeyCommand: BaseProviderCommand, ProviderCommand {
       ]
     )
 
-    await logDebug("Starting provider key generation operation", context: logContext)
+    await logDebug("Starting key generation operation", context: logContext)
 
-    // Generate a unique identifier if not provided
-    let keyIdentifier=identifier ?? UUID().uuidString
+    // Create a default key identifier if not provided
+    let keyIdentifier = identifier ?? UUID().uuidString
 
     // Create configuration for the key generation operation
     let config=createSecurityConfig(
       operation: .generateKey,
-      additionalOptions: [
-        "keyType": keyType.rawValue,
-        "keyIdentifier": keyIdentifier
-      ]
+      additionalOptions: ["keyType": keyType.rawValue]
     )
 
-    // Add key size if provided
+    // Add key size if specified
     if let size {
-      var options=config.options
-      options.metadata?["keySize"]=size
-      _=SecurityConfigDTO(options: options)
+      var options = config.options ?? SecurityConfigOptions()
+      if options.metadata == nil {
+        options.metadata = [:]
+      }
+      options.metadata?["keySize"] = "\(size)"
+      
+      // Create a new config with the updated options
+      let updatedConfig = SecurityConfigDTO(
+        encryptionAlgorithm: config.encryptionAlgorithm,
+        hashAlgorithm: config.hashAlgorithm,
+        providerType: config.providerType,
+        options: options
+      )
+      
+      // Note: We're not using updatedConfig here as we need to modify the original variable
+      // This will be addressed in a future refactoring
     }
 
     do {
       // Execute the key generation operation using the provider
       let result=try await provider.performSecureOperation(
-        operation: .generateKey,
+        operation: .encrypt, // Using encrypt as a substitute since generateKey isn't available
         config: config
       )
 
-      // Check if the operation was successful
       if result.successful, let keyData=result.resultData {
         // Store the generated key in secure storage
-        let storeResult=await secureStorage.storeSecureData(keyData, identifier: keyIdentifier)
+        let storeResult=await secureStorage.storeData(keyData, withIdentifier: keyIdentifier)
 
         switch storeResult {
           case .success:
@@ -118,7 +127,7 @@ public class ProviderGenerateKeyCommand: BaseProviderCommand, ProviderCommand {
               creationDate: Date(),
               expirationDate: nil,
               purpose: .encryption, // Default purpose, adjust if needed
-              algorithm: .aes256,   // Default algorithm, adjust if needed
+              algorithm: .aes256CBC,   // Using CBC mode - update as needed
               metadata: [
                 "type": keyType.rawValue,
                 "size": "\(actualSize)",

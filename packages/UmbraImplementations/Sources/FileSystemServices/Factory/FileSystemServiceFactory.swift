@@ -5,6 +5,8 @@ import FileSystemInterfaces
 import Foundation
 import LoggingInterfaces
 import SecureFileOperations
+import BuildConfig
+import LoggingServices
 
 /**
  # File System Service Factory
@@ -13,15 +15,87 @@ import SecureFileOperations
  This provides a centralised way to create file system services with consistent options
  using a domain-driven design approach.
 
+ ## Environment and Backend Strategy Support
+ 
+ This factory supports different environment configurations:
+ - Debug/Development: Enhanced logging with developer-friendly features
+ - Alpha/Beta: Testing environments with balanced logging and performance
+ - Production: Optimised performance with appropriate security controls
+ 
+ It also supports different backend strategies:
+ - Restic: Default integration with Restic's file system approach
+ - RingFFI: Ring-based cryptography for secure file operations
+ - AppleCK: Apple CryptoKit for sandboxed environments
+
  ## Alpha Dot Five Architecture
 
  This factory creates actor-based file system services in accordance with
  Alpha Dot Five architecture principles. The actor-based services provide enhanced thread
  safety, better modularisation, and improved error handling.
  */
-public enum FileSystemServiceFactory {
+public struct FileSystemServiceFactory: Sendable {
+  
+  // MARK: - Singleton Instance
+  
+  /// Shared instance for singleton access pattern
+  public static let shared = FileSystemServiceFactory()
 
   // MARK: - Factory Methods
+  
+  /**
+   Creates a file system service configured for the specified environment and backend strategy.
+   
+   This is the primary factory method that other specialised methods delegate to.
+   
+   - Parameters:
+      - environment: The environment to configure for
+      - backendStrategy: The backend strategy to use
+      - logger: Optional logger for operation tracking
+   - Returns: An implementation of CompositeFileSystemServiceProtocol
+   */
+  public func createFileSystemService(
+    environment: UmbraEnvironment? = nil,
+    backendStrategy: BackendStrategy? = nil,
+    logger: (any LoggingProtocol)? = nil
+  ) async -> any CompositeFileSystemServiceProtocol {
+    // Use the provided values or fallback to BuildConfig defaults
+    let effectiveEnvironment = environment ?? BuildConfig.activeEnvironment
+    let effectiveBackend = backendStrategy ?? BuildConfig.activeBackendStrategy
+    
+    // Select the appropriate configuration based on environment and backend
+    switch (effectiveEnvironment, effectiveBackend) {
+      case (_, .appleCK):
+        // Always use sandbox-compatible service for Apple CryptoKit
+        return await createSandboxedService(
+          logger: logger,
+          environment: effectiveEnvironment
+        )
+        
+      case (.production, _), (.beta, _):
+        // Use secure service for production and beta environments
+        return await createSecureService(
+          logger: logger,
+          environment: effectiveEnvironment,
+          backendStrategy: effectiveBackend
+        )
+        
+      case (.alpha, _):
+        // Use performance-optimised service for alpha testing
+        return await createPerformanceOptimisedService(
+          logger: logger,
+          environment: effectiveEnvironment,
+          backendStrategy: effectiveBackend
+        )
+        
+      case (.debug, _), (.development, _):
+        // Use standard service for development environments
+        return await createStandardService(
+          logger: logger,
+          environment: effectiveEnvironment,
+          backendStrategy: effectiveBackend
+        )
+    }
+  }
 
   /**
    Creates a standard composite file system service.
@@ -31,19 +105,66 @@ public enum FileSystemServiceFactory {
 
    - Parameters:
       - logger: Optional logger for operation tracking
+      - environment: Optional environment override
+      - backendStrategy: Optional backend strategy override
    - Returns: An implementation of CompositeFileSystemServiceProtocol
    */
   public static func createStandardService(
-    logger: (any LoggingProtocol)?=nil
+    logger: (any LoggingProtocol)? = nil,
+    environment: UmbraEnvironment? = nil,
+    backendStrategy: BackendStrategy? = nil
   ) async -> any CompositeFileSystemServiceProtocol {
+    return await shared.createStandardService(
+      logger: logger,
+      environment: environment,
+      backendStrategy: backendStrategy
+    )
+  }
+  
+  /**
+   Creates a standard composite file system service.
+   
+   Instance method implementation that provides the actual service creation logic.
+
+   - Parameters:
+      - logger: Optional logger for operation tracking
+      - environment: Optional environment override
+      - backendStrategy: Optional backend strategy override
+   - Returns: An implementation of CompositeFileSystemServiceProtocol
+   */
+  public func createStandardService(
+    logger: (any LoggingProtocol)? = nil,
+    environment: UmbraEnvironment? = nil,
+    backendStrategy: BackendStrategy? = nil
+  ) async -> any CompositeFileSystemServiceProtocol {
+    // Use the provided values or fallback to BuildConfig defaults
+    let effectiveEnvironment = environment ?? BuildConfig.activeEnvironment
+    
+    // Configure logging based on environment
+    let effectiveLogger: any LoggingProtocol
+    if let logger = logger {
+      effectiveLogger = logger
+    } else {
+      effectiveLogger = await createEnvironmentAppropriateLogger(
+        environment: effectiveEnvironment,
+        category: "StandardFileSystem"
+      )
+    }
+    
     // Create subdomain implementations
-    let coreOperations=CoreFileOperationsFactory.createStandardOperations(logger: logger)
-    let metadataOperations=FileMetadataOperationsFactory.createStandardOperations(logger: logger)
-    let secureOperations=SecureFileOperationsFactory.createStandardOperations(logger: logger)
+    let coreOperations = CoreFileOperationsFactory.createStandardOperations(
+      logger: effectiveLogger
+    )
+    let metadataOperations = FileMetadataOperationsFactory.createStandardOperations(
+      logger: effectiveLogger
+    )
+    let secureOperations = SecureFileOperationsFactory.createStandardOperations(
+      logger: effectiveLogger
+    )
 
     // Create a temporary sandbox in the user's home directory
-    let homeDirectory=FileManager.default.homeDirectoryForCurrentUser.path
-    let sandboxDirectory="\(homeDirectory)/.umbra_sandbox"
+    let homeDirectory = FileManager.default.homeDirectoryForCurrentUser.path
+    let sandboxDirectory = "\(homeDirectory)/.umbra_sandbox"
 
     // Create the sandbox directory if it doesn't exist
     if !FileManager.default.fileExists(atPath: sandboxDirectory) {
@@ -54,9 +175,9 @@ public enum FileSystemServiceFactory {
       )
     }
 
-    let sandboxing=FileSandboxingFactory.createStandardSandbox(
+    let sandboxing = FileSandboxingFactory.createStandardSandbox(
       rootDirectory: sandboxDirectory,
-      logger: logger
+      logger: effectiveLogger
     )
 
     // Create the composite service
@@ -65,7 +186,7 @@ public enum FileSystemServiceFactory {
       metadataOperations: metadataOperations,
       secureOperations: secureOperations,
       sandboxing: sandboxing,
-      logger: logger
+      logger: effectiveLogger
     )
   }
 
@@ -78,38 +199,87 @@ public enum FileSystemServiceFactory {
 
    - Parameters:
       - logger: Optional logger for operation tracking
+      - environment: Optional environment override
+      - backendStrategy: Optional backend strategy override
    - Returns: An implementation of CompositeFileSystemServiceProtocol
    */
   public static func createSecureService(
-    logger: (any LoggingProtocol)?=nil
+    logger: (any LoggingProtocol)? = nil,
+    environment: UmbraEnvironment? = nil,
+    backendStrategy: BackendStrategy? = nil
   ) async -> any CompositeFileSystemServiceProtocol {
-    // Create subdomain implementations
-    let coreOperations=CoreFileOperationsFactory.createStandardOperations(logger: logger)
-    let metadataOperations=FileMetadataOperationsFactory.createStandardOperations(logger: logger)
-    let secureOperations=SecureFileOperationsFactory.createStandardOperations(logger: logger)
+    return await shared.createSecureService(
+      logger: logger,
+      environment: environment,
+      backendStrategy: backendStrategy
+    )
+  }
+  
+  /**
+   Creates a secure composite file system service.
+   
+   Instance method implementation that provides the actual service creation logic.
+
+   - Parameters:
+      - logger: Optional logger for operation tracking
+      - environment: Optional environment override
+      - backendStrategy: Optional backend strategy override
+   - Returns: An implementation of CompositeFileSystemServiceProtocol
+   */
+  public func createSecureService(
+    logger: (any LoggingProtocol)? = nil,
+    environment: UmbraEnvironment? = nil,
+    backendStrategy: BackendStrategy? = nil
+  ) async -> any CompositeFileSystemServiceProtocol {
+    // Use the provided values or fallback to BuildConfig defaults
+    let effectiveEnvironment = environment ?? BuildConfig.activeEnvironment
+    
+    // Configure logging based on environment
+    let effectiveLogger: any LoggingProtocol
+    if let logger = logger {
+      effectiveLogger = logger
+    } else {
+      effectiveLogger = await createEnvironmentAppropriateLogger(
+        environment: effectiveEnvironment,
+        category: "SecureFileSystem"
+      )
+    }
+    
+    // Create subdomain implementations with proper security configuration
+    let coreOperations = CoreFileOperationsFactory.createStandardOperations(
+      logger: effectiveLogger
+    )
+    let metadataOperations = FileMetadataOperationsFactory.createStandardOperations(
+      logger: effectiveLogger
+    )
+    let secureOperations = SecureFileOperationsFactory.createStandardOperations(
+      logger: effectiveLogger
+    )
 
     // Create a secure sandbox in the user's application support directory
-    let appSupportDirectory=try? FileManager.default.url(
+    let appSupportDirectory = try? FileManager.default.url(
       for: .applicationSupportDirectory,
       in: .userDomainMask,
       appropriateFor: nil,
       create: true
     ).path
 
-    let sandboxDirectory="\(appSupportDirectory ?? FileManager.default.temporaryDirectory.path)/umbra_secure_sandbox"
+    let sandboxDirectory = "\(appSupportDirectory ?? FileManager.default.temporaryDirectory.path)/umbra_secure_sandbox"
 
     // Create the sandbox directory with secure permissions if it doesn't exist
     if !FileManager.default.fileExists(atPath: sandboxDirectory) {
       try? FileManager.default.createDirectory(
         atPath: sandboxDirectory,
         withIntermediateDirectories: true,
-        attributes: [FileAttributeKey.posixPermissions: 0o700] // Owner read/write/execute only
+        attributes: [
+          FileAttributeKey.posixPermissions: 0o700 // Owner read/write/execute only
+        ]
       )
     }
 
-    let sandboxing=FileSandboxingFactory.createStandardSandbox(
+    let sandboxing = FileSandboxingFactory.createStandardSandbox(
       rootDirectory: sandboxDirectory,
-      logger: logger
+      logger: effectiveLogger
     )
 
     // Create the composite service
@@ -118,92 +288,155 @@ public enum FileSystemServiceFactory {
       metadataOperations: metadataOperations,
       secureOperations: secureOperations,
       sandboxing: sandboxing,
-      logger: logger
+      logger: effectiveLogger
     )
   }
-
+  
   /**
-   Creates a sandboxed composite file system service.
-
-   This service restricts all file operations to the specified directory,
-   providing an additional layer of security and isolation.
-
+   Creates a sandboxed file system service suitable for restricted environments.
+   
+   This service provides file operations that comply with sandbox restrictions
+   present in environments like macOS App Store apps or iOS applications.
+   
    - Parameters:
-      - rootDirectory: The directory to restrict operations to
       - logger: Optional logger for operation tracking
+      - environment: Optional environment override
    - Returns: An implementation of CompositeFileSystemServiceProtocol
    */
-  public static func createSandboxedService(
-    rootDirectory: String,
-    logger: (any LoggingProtocol)?=nil
+  public func createSandboxedService(
+    logger: (any LoggingProtocol)? = nil,
+    environment: UmbraEnvironment? = nil
   ) async -> any CompositeFileSystemServiceProtocol {
-    // Create subdomain implementations
-    let coreOperations=CoreFileOperationsFactory.createStandardOperations(logger: logger)
-    let metadataOperations=FileMetadataOperationsFactory.createStandardOperations(logger: logger)
-    let secureOperations=SecureFileOperationsFactory.createStandardOperations(logger: logger)
-
-    // Create the sandbox
-    let sandboxing=FileSandboxingFactory.createStandardSandbox(
-      rootDirectory: rootDirectory,
-      logger: logger
+    // Use the provided values or fallback to BuildConfig defaults
+    let effectiveEnvironment = environment ?? BuildConfig.activeEnvironment
+    
+    // Configure logging based on environment
+    let effectiveLogger: any LoggingProtocol
+    if let logger = logger {
+      effectiveLogger = logger
+    } else {
+      effectiveLogger = await createEnvironmentAppropriateLogger(
+        environment: effectiveEnvironment,
+        category: "SandboxedFileSystem"
+      )
+    }
+    
+    // Create the appropriate operations for a sandboxed environment
+    let coreOperations = CoreFileOperationsFactory.createStandardOperations(
+      logger: effectiveLogger
     )
-
-    // Create the composite service
+    let metadataOperations = FileMetadataOperationsFactory.createStandardOperations(
+      logger: effectiveLogger
+    )
+    let secureOperations = SecureFileOperationsFactory.createStandardOperations(
+      logger: effectiveLogger
+    )
+    
+    // Use application container directory for sandbox
+    let containerDirectory = try? FileManager.default.url(
+      for: .applicationSupportDirectory,
+      in: .userDomainMask,
+      appropriateFor: nil,
+      create: true
+    ).appendingPathComponent("UmbraSandbox").path
+    
+    let sandboxing = FileSandboxingFactory.createStandardSandbox(
+      rootDirectory: containerDirectory ?? FileManager.default.temporaryDirectory.path,
+      logger: effectiveLogger
+    )
+    
+    // Create the composite service with sandbox restrictions
     return CompositeFileSystemServiceImpl(
       coreOperations: coreOperations,
       metadataOperations: metadataOperations,
       secureOperations: secureOperations,
       sandboxing: sandboxing,
-      logger: logger
+      logger: effectiveLogger
     )
   }
-
+  
   /**
-   Creates a test implementation of the composite file system service.
-
-   This service is specifically designed for unit testing, with mocked
-   dependencies and predefined behaviors for test scenarios.
-
+   Creates a performance-optimised file system service for high-throughput operations.
+   
+   This service prioritises performance over advanced security features, making it
+   suitable for operations like bulk file processing or high-throughput data pipelines.
+   
    - Parameters:
-      - testRootDirectory: The test directory to use
-      - logger: The test logger to use
-   - Returns: An implementation of CompositeFileSystemServiceProtocol for testing
+      - logger: Optional logger for operation tracking
+      - environment: Optional environment override
+      - backendStrategy: Optional backend strategy override
+   - Returns: An implementation of CompositeFileSystemServiceProtocol
    */
-  public static func createTestService(
-    testRootDirectory: String,
-    logger: any LoggingProtocol
+  public func createPerformanceOptimisedService(
+    logger: (any LoggingProtocol)? = nil,
+    environment: UmbraEnvironment? = nil,
+    backendStrategy: BackendStrategy? = nil
   ) async -> any CompositeFileSystemServiceProtocol {
-    // Create mocked test file manager
-    let fileManager=FileManager()
-
-    // Create test subdomain implementations
-    let coreOperations=CoreFileOperationsFactory.createTestOperations(
-      fileManager: fileManager,
-      logger: logger
+    // Use the provided values or fallback to BuildConfig defaults
+    let effectiveEnvironment = environment ?? BuildConfig.activeEnvironment
+    
+    // Configure logging based on environment but with minimal logging for performance
+    let effectiveLogger: any LoggingProtocol
+    if let logger = logger {
+      effectiveLogger = logger
+    } else {
+      effectiveLogger = await createEnvironmentAppropriateLogger(
+        environment: effectiveEnvironment,
+        category: "PerformanceFileSystem"
+      )
+    }
+    
+    // Create performance-optimised operations
+    let coreOperations = CoreFileOperationsFactory.createStandardOperations(
+      logger: effectiveLogger
     )
-
-    let metadataOperations=FileMetadataOperationsFactory.createTestOperations(
-      fileManager: fileManager,
-      logger: logger
+    let metadataOperations = FileMetadataOperationsFactory.createStandardOperations(
+      logger: effectiveLogger
     )
-
-    let secureOperations=SecureFileOperationsFactory.createTestOperations(
-      fileManager: fileManager,
-      logger: logger
+    let secureOperations = SecureFileOperationsFactory.createStandardOperations(
+      logger: effectiveLogger
     )
-
-    let sandboxing=FileSandboxingFactory.createTestSandbox(
-      testRootDirectory: testRootDirectory,
-      logger: logger
+    
+    // Use temp directory for maximum performance
+    let tempDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(
+      "UmbraPerformance"
+    ).path
+    
+    // Create minimal sandbox for performance
+    let sandboxing = FileSandboxingFactory.createStandardSandbox(
+      rootDirectory: tempDirectory,
+      logger: effectiveLogger
     )
-
-    // Create the test composite service
+    
+    // Return performance-optimised implementation
     return CompositeFileSystemServiceImpl(
       coreOperations: coreOperations,
       metadataOperations: metadataOperations,
       secureOperations: secureOperations,
       sandboxing: sandboxing,
-      logger: logger
+      logger: effectiveLogger
+    )
+  }
+  
+  // MARK: - Helper Methods
+  
+  /**
+   Creates an appropriate logger for the specified environment.
+   
+   - Parameters:
+      - environment: The environment to create a logger for
+      - category: The logging category
+   - Returns: A logging protocol implementation
+   */
+  private func createEnvironmentAppropriateLogger(
+    environment: UmbraEnvironment,
+    category: String
+  ) async -> any LoggingProtocol {
+    let factory = LoggingServiceFactory.shared
+    
+    // Use privacy-aware logger for enhanced data protection
+    return await factory.createPrivacyAwareLogger(
+      category: category
     )
   }
 }

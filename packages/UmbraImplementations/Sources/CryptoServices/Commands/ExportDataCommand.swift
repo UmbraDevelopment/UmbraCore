@@ -4,6 +4,7 @@ import DomainSecurityTypes
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
+import SecurityCoreInterfaces
 
 /**
  Command for exporting data from secure storage.
@@ -60,16 +61,17 @@ public class ExportDataCommand: BaseCryptoCommand, CryptoCommand {
     await logDebug("Starting data export operation", context: logContext)
 
     // Retrieve the data from secure storage
-    let retrieveResult=await secureStorage.retrieveSecureData(identifier: identifier)
+    let retrieveResult=await secureStorage.retrieveData(withIdentifier: identifier)
 
     switch retrieveResult {
       case let .success(data):
         await logInfo(
           "Successfully exported \(data.count) bytes of data",
-          context: logContext.adding(
-            key: "dataSize",
-            value: "\(data.count)",
-            privacyLevel: .public
+          context: logContext.withMetadata(
+            LogMetadataDTOCollection().withPublic(
+              key: "dataSize",
+              value: "\(data.count)"
+            )
           )
         )
 

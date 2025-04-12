@@ -3,7 +3,7 @@ import LoggingTypes
 
 /**
  # Restic Log Context
-
+ 
  A structured context object for privacy-aware logging of Restic operations.
  This follows the Alpha Dot Five architecture principles for privacy-enhanced
  logging with appropriate data classification.
@@ -11,7 +11,7 @@ import LoggingTypes
  The context uses builder pattern methods that return a new instance,
  allowing for immutable context objects and thread safety.
  */
-public struct ResticLogContext: LogContextDTO {
+public struct ResticLogContext: LogContextDTO, Sendable {
   /// The domain name for this context
   public let domainName: String="ResticServices"
 
@@ -21,27 +21,36 @@ public struct ResticLogContext: LogContextDTO {
   /// The category for the log entry (required by protocol)
   public let category: String
 
+  /// Optional source information (class, file, etc.)
+  public let source: String?
+
   /// Correlation identifier for tracing related logs
   public let correlationID: String?
-
-  /// Source information for logging
-  public let source: String?
 
   /// Privacy-aware metadata for this log context
   public let metadata: LogMetadataDTOCollection
 
-  /// Initialises a Restic log context
+  /**
+   Creates a new Restic log context.
+   
+   - Parameters:
+     - operation: The operation being performed
+     - category: The category for grouping logs
+     - source: Optional source information
+     - correlationID: Optional correlation ID
+     - metadata: Optional initial metadata
+   */
   public init(
     operation: String,
-    category: String = "ResticBackup",
-    metadata: LogMetadataDTOCollection = LogMetadataDTOCollection(),
+    category: String,
+    source: String? = nil,
     correlationID: String? = nil,
-    source: String? = nil
+    metadata: LogMetadataDTOCollection = LogMetadataDTOCollection()
   ) {
     self.operation = operation
     self.category = category
-    self.correlationID = correlationID
     self.source = source
+    self.correlationID = correlationID
     self.metadata = metadata
   }
 
@@ -73,9 +82,9 @@ public struct ResticLogContext: LogContextDTO {
     return ResticLogContext(
       operation: self.operation,
       category: self.category,
-      metadata: metadata,
+      source: self.source,
       correlationID: self.correlationID,
-      source: self.source
+      metadata: metadata
     )
   }
 
@@ -89,9 +98,9 @@ public struct ResticLogContext: LogContextDTO {
     return ResticLogContext(
       operation: self.operation,
       category: self.category,
-      metadata: updatedMetadata,
+      source: self.source,
       correlationID: self.correlationID,
-      source: self.source
+      metadata: updatedMetadata
     )
   }
 
@@ -105,9 +114,9 @@ public struct ResticLogContext: LogContextDTO {
     return ResticLogContext(
       operation: self.operation,
       category: self.category,
-      metadata: updatedMetadata,
+      source: self.source,
       correlationID: self.correlationID,
-      source: self.source
+      metadata: updatedMetadata
     )
   }
 
@@ -121,9 +130,9 @@ public struct ResticLogContext: LogContextDTO {
     return ResticLogContext(
       operation: self.operation,
       category: self.category,
-      metadata: updatedMetadata,
+      source: self.source,
       correlationID: self.correlationID,
-      source: self.source
+      metadata: updatedMetadata
     )
   }
 
@@ -136,9 +145,9 @@ public struct ResticLogContext: LogContextDTO {
     return ResticLogContext(
       operation: self.operation,
       category: self.category,
-      metadata: mergedMetadata,
+      source: self.source,
       correlationID: self.correlationID,
-      source: self.source
+      metadata: mergedMetadata
     )
   }
 
@@ -152,19 +161,27 @@ public struct ResticLogContext: LogContextDTO {
     var newMetadata = self.metadata
     
     for entry in additionalMetadata.entries {
-      newMetadata = newMetadata.with(
-        key: entry.key,
-        value: entry.value,
-        privacyLevel: entry.privacyLevel
-      )
+      switch entry.privacyLevel {
+      case .public:
+        newMetadata = newMetadata.withPublic(key: entry.key, value: entry.value)
+      case .private:
+        newMetadata = newMetadata.withPrivate(key: entry.key, value: entry.value)
+      case .sensitive:
+        newMetadata = newMetadata.withSensitive(key: entry.key, value: entry.value)
+      case .hash:
+        newMetadata = newMetadata.withHashed(key: entry.key, value: entry.value)
+      default:
+        // Default to private for any other privacy level
+        newMetadata = newMetadata.withPrivate(key: entry.key, value: entry.value)
+      }
     }
     
     return ResticLogContext(
       operation: self.operation,
       category: self.category,
-      metadata: newMetadata,
+      source: self.source,
       correlationID: self.correlationID,
-      source: self.source
+      metadata: newMetadata
     )
   }
 }

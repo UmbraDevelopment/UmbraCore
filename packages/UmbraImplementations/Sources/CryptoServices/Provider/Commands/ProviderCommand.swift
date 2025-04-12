@@ -96,11 +96,12 @@ public class BaseProviderCommand {
     // Add additional metadata with specified privacy levels
     for item in additionalMetadata {
       switch item.value.privacyLevel {
-        case PrivacyLevel.public:
+        case .public:
           metadata=metadata.withPublic(key: item.key, value: item.value.value)
-        case .protected:
-          metadata=metadata.withProtected(key: item.key, value: item.value.value)
-        case PrivacyLevel.private:
+        case .private:
+          metadata=metadata.withPrivate(key: item.key, value: item.value.value)
+        case .sensitive, .hash, .never, .protected, .auto:
+          // For all other privacy levels, use private as a fallback
           metadata=metadata.withPrivate(key: item.key, value: item.value.value)
       }
     }
@@ -215,27 +216,16 @@ public class BaseProviderCommand {
    - Returns: An appropriate SecurityStorageError
    */
   internal func createError(from result: SecurityResultDTO) -> SecurityStorageError {
-    // Check if there's a specific error message
-    if let errorMessage = result.message, !errorMessage.isEmpty {
-      return SecurityStorageError.operationFailed(errorMessage)
+    // Check if there's a specific error information
+    if let errorCode = result.errorCode, errorCode != 0 {
+      return SecurityStorageError.operationFailed("Error code: \(errorCode)")
     }
     
-    // If no specific message, return a generic error based on the operation
-    if let operation = result.operation {
-      switch operation {
-      case "encrypt":
-        return SecurityStorageError.encryptionFailed
-      case "decrypt":
-        return SecurityStorageError.decryptionFailed
-      case "hash":
-        return SecurityStorageError.hashingFailed
-      case "verify":
-        return SecurityStorageError.hashVerificationFailed
-      case "generateKey":
-        return SecurityStorageError.keyGenerationFailed
-      default:
-        return SecurityStorageError.operationFailed("Security operation failed")
-      }
+    // If no specific message, return a generic error based on the result status
+    if !result.successful {
+      // Use result data or a default message
+      let errorMessage = result.resultData?.description ?? "Operation failed with unknown reason"
+      return SecurityStorageError.operationFailed(errorMessage)
     }
     
     // Default generic error

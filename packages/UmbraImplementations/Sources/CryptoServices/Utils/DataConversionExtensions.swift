@@ -1,9 +1,12 @@
 import Foundation
 import SecurityCoreInterfaces
 import UmbraErrors
+import BuildConfig
 
-// Only define these extensions if they don't already exist elsewhere
-#if !EXTENSIONS_DEFINED
+// UMBRA_EXTENSIONS_DEFINED should be defined in BuildConfig
+// to prevent duplicate extensions
+
+#if !UMBRA_EXTENSIONS_DEFINED
   /// Extensions to help with conversion between Data and [UInt8]
   extension Data {
     /// Convert Data to [UInt8] array
@@ -19,9 +22,35 @@ import UmbraErrors
 
   /// Extensions to help with conversion between [UInt8] and Data
   extension [UInt8] {
-    /// Convert [UInt8] array to Data
+    /// Convert [UInt8] to Data
     public var data: Data {
       Data(self)
+    }
+    
+    /// Convert to a hexadecimal string representation
+    public var hexString: String {
+      map { String(format: "%02x", $0) }.joined()
+    }
+  }
+  
+  /// Extensions for common error handling
+  extension SecurityStorageError {
+    /// Creates an error from an optional error or result value
+    public static func from(
+      error: Error?,
+      result: Any? = nil,
+      file: String = #file,
+      line: Int = #line
+    ) -> SecurityStorageError {
+      if let specificError = error as? SecurityStorageError {
+        return specificError
+      }
+      
+      // Use the appropriate error factory method instead of direct initialisation
+      return SecurityStorageError.operationFailed(
+        error?.localizedDescription ?? "Unknown error",
+        underlyingError: error
+      )
     }
   }
 #endif

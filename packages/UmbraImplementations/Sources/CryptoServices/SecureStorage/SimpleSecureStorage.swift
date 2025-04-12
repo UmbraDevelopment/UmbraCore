@@ -191,7 +191,7 @@ private struct SimpleLogContext: LogContextDTO {
       domainName: self.domainName,
       operation: self.operation,
       category: self.category,
-      source: self.source,
+      source: self.source ?? "storage",
       correlationID: self.correlationID,
       metadata: newMetadata
     )

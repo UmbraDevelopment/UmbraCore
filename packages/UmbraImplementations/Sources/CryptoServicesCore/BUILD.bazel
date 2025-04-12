@@ -1,0 +1,20 @@
+load("//bazel:swift_rules.bzl", "umbra_swift_library")
+
+umbra_swift_library(
+    name = "CryptoServicesCore",
+    srcs = glob([
+        "**/*.swift",
+    ], exclude = [
+        "**/*Tests.swift",
+    ]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//packages/UmbraCoreTypes/Sources/CoreSecurityTypes",
+        "//packages/UmbraCoreTypes/Sources/CryptoTypes",
+        "//packages/UmbraInterfaces/Sources/CryptoInterfaces",
+        "//packages/UmbraInterfaces/Sources/SecurityInterfaces",
+        "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
+        "//packages/UmbraCoreTypes/Sources/LoggingTypes",
+        "//packages/UmbraCoreTypes/Sources/BuildConfig",
+    ],
+)

@@ -1,11 +1,12 @@
 import CommonCrypto
 import CoreSecurityTypes
 import CryptoInterfaces
+import CryptoTypes
 import DomainSecurityTypes
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
-import Security
+import SecurityCoreInterfaces
 
 /**
  Command for deriving cryptographic keys from existing keys.
@@ -34,28 +35,30 @@ public class DeriveKeyCommand: BaseCryptoCommand, CryptoCommand {
   private let targetIdentifier: String?
 
   /**
-   Initialises a new derive key command.
-
+   Create a new key derivation command.
+   
    - Parameters:
-      - sourceKeyIdentifier: The identifier of the source key
-      - salt: Optional salt for key derivation
-      - info: Optional context information for key derivation
-      - keyType: The type of key to derive
-      - targetIdentifier: Optional identifier for the derived key
-      - secureStorage: Secure storage for cryptographic materials
-      - logger: Optional logger for operation tracking and auditing
+     - sourceKeyIdentifier: Identifier of the source key to derive from
+     - saltData: Optional salt data to use in the derivation
+     - info: Optional info data to use in the derivation
+     - iterationCount: Iteration count for PBKDF2 (ignored for HKDF)
+     - keyType: The type of key to derive
+     - targetIdentifier: Optional identifier for the derived key
+     - secureStorage: Secure storage instance to use
+     - logger: Logger to use
    */
   public init(
     sourceKeyIdentifier: String,
-    salt: [UInt8]?=nil,
+    saltData: [UInt8]?=nil,
     info: [UInt8]?=nil,
+    iterationCount: Int=10000,
     keyType: KeyType,
     targetIdentifier: String?=nil,
     secureStorage: SecureStorageProtocol,
     logger: LoggingProtocol?=nil
   ) {
     self.sourceKeyIdentifier=sourceKeyIdentifier
-    self.salt=salt
+    self.salt=saltData
     self.info=info
     self.keyType=keyType
     self.targetIdentifier=targetIdentifier
@@ -63,12 +66,12 @@ public class DeriveKeyCommand: BaseCryptoCommand, CryptoCommand {
   }
 
   /**
-   Executes the key derivation operation.
-
+   Execute the key derivation command.
+   
    - Parameters:
-      - context: Logging context for the operation
-      - operationID: Unique identifier for this operation instance
-   - Returns: The derived cryptographic key
+     - context: Logging context
+     - operationID: Operation ID for tracking
+   - Returns: The derived key or an error
    */
   public func execute(
     context _: LogContextDTO,
@@ -79,99 +82,104 @@ public class DeriveKeyCommand: BaseCryptoCommand, CryptoCommand {
       operation: "deriveKey",
       correlationID: operationID,
       additionalMetadata: [
-        "sourceKeyIdentifier": (value: sourceKeyIdentifier, privacyLevel: .private),
-        "keyType": (value: keyType.rawValue, privacyLevel: .public),
-        "saltProvided": (value: salt != nil ? "true" : "false", privacyLevel: .public),
-        "infoProvided": (value: info != nil ? "true" : "false", privacyLevel: .public)
+        ("sourceKeyIdentifier", (value: sourceKeyIdentifier, privacyLevel: .private)),
+        ("keyType", (value: keyType.rawValue, privacyLevel: .public)),
+        ("saltProvided", (value: salt != nil ? "true" : "false", privacyLevel: .public)),
+        ("infoProvided", (value: info != nil ? "true" : "false", privacyLevel: .public))
       ]
     )
 
     await logDebug("Starting key derivation operation", context: logContext)
 
     // Retrieve the source key
-    let keyResult=await secureStorage.retrieveSecureData(identifier: sourceKeyIdentifier)
+    let keyResult=await secureStorage.retrieveData(withIdentifier: sourceKeyIdentifier)
 
     switch keyResult {
       case let .success(sourceKeyData):
+        // Generate a unique identifier if not provided
+        let keyIdentifier=targetIdentifier ?? UUID().uuidString
+        
+        // Default salt if not provided
+        let saltData=salt ?? (try? generateRandomBytes(count: 16)) ?? Array(repeating: 0, count: 16)
+        
         do {
-          // Perform the key derivation based on the key type
+          // Derive a new key based on the key type
           let derivedKeyData: [UInt8]
-          var actualSalt=salt
-
-          // Generate salt if not provided
-          if actualSalt == nil {
-            actualSalt=try generateRandomBytes(count: 16)
-          }
-
+          
           switch keyType {
-            case .aes128, .aes256:
+            case .aes:
               // Determine the key size based on key type
-              let keySize: Int=keyType == .aes256 ? 32 : 16
-
+              let keySize: Int = 32 // Default to 256-bit (32 bytes)
+              
               // Derive the key using PBKDF2 or HKDF
-              derivedKeyData=try deriveKeyUsingPBKDF2(
-                sourceKey: sourceKeyData,
-                salt: actualSalt!,
-                keySize: keySize
+              derivedKeyData=try pbkdf2(
+                password: sourceKeyData,
+                salt: saltData,
+                keySize: keySize,
+                iterations: 10000
               )
-
-            case .hmacSHA256, .hmacSHA512:
+              
+            case .hmac:
               // Determine the key size based on key type
-              let keySize: Int=keyType == .hmacSHA512 ? 64 : 32
-
+              let keySize: Int = 32 // Default to 256-bit (32 bytes)
+              
               // Derive the key using HKDF
-              derivedKeyData=try deriveKeyUsingHKDF(
-                sourceKey: sourceKeyData,
-                salt: actualSalt!,
-                info: info,
+              derivedKeyData=try hkdf(
+                secret: sourceKeyData,
+                salt: saltData,
+                info: info ?? [],
                 keySize: keySize
               )
-
-            case .ecdsaP256, .ecdsaP384, .ecdsaP521, .rsaEncryption, .rsaSignature:
+              
+            case .ec, .rsa:
               // Asymmetric keys cannot be derived using simple KDFs
               throw SecurityStorageError.operationFailed(
                 "Key derivation not supported for asymmetric key types"
               )
           }
-
-          // Generate a unique identifier if not provided
-          let keyIdentifier=targetIdentifier ?? UUID().uuidString
-
+          
           // Store the derived key in secure storage
-          let storeResult=await secureStorage.storeSecureData(
+          let storeResult=await secureStorage.storeData(
             derivedKeyData,
-            identifier: keyIdentifier
+            withIdentifier: keyIdentifier
           )
-
+          
           switch storeResult {
             case .success:
               // Create the key object
               let key=CryptoKey(
-                identifier: keyIdentifier,
-                type: keyType,
-                size: derivedKeyData.count * 8, // Convert bytes to bits
-                creationDate: Date()
+                id: keyIdentifier,
+                keyData: Data(derivedKeyData),
+                creationDate: Date(),
+                expirationDate: nil,
+                purpose: .encryption,
+                algorithm: .aes256CBC,
+                metadata: [
+                  "type": keyType.rawValue,
+                  "derived": "true",
+                  "sourceKey": sourceKeyIdentifier
+                ]
               )
-
+              
               await logInfo(
                 "Successfully derived \(keyType.rawValue) key",
-                context: logContext.adding(
-                  key: "keyIdentifier",
-                  value: keyIdentifier,
-                  privacyLevel: .private
+                context: logContext.withMetadata(
+                  LogMetadataDTOCollection().withPrivate(
+                    key: "keyIdentifier",
+                    value: keyIdentifier
+                  )
                 )
               )
-
+              
               return .success(key)
-
+              
             case let .failure(error):
               await logError(
-                "Failed to store derived key: \(error)",
+                "Failed to store derived key: \(error.localizedDescription)",
                 context: logContext
               )
               return .failure(error)
           }
-
         } catch {
           await logError(
             "Key derivation failed: \(error.localizedDescription)",
@@ -180,15 +188,13 @@ public class DeriveKeyCommand: BaseCryptoCommand, CryptoCommand {
           if let securityError=error as? SecurityStorageError {
             return .failure(securityError)
           } else {
-            return .failure(
-              .operationFailed("Key derivation failed: \(error.localizedDescription)")
-            )
+            return .failure(.operationFailed("Key derivation failed: \(error.localizedDescription)"))
           }
         }
-
+        
       case let .failure(error):
         await logError(
-          "Failed to retrieve source key: \(error)",
+          "Failed to retrieve source key: \(error.localizedDescription)",
           context: logContext
         )
         return .failure(error)
@@ -196,114 +202,123 @@ public class DeriveKeyCommand: BaseCryptoCommand, CryptoCommand {
   }
 
   /**
-   Generates cryptographically secure random bytes.
-
+   Generate random bytes.
+   
    - Parameter count: Number of bytes to generate
-   - Returns: Array of random bytes
-   - Throws: Error if generation fails
+   - Returns: Random bytes
+   - Throws: SecurityStorageError if the operation fails
    */
   private func generateRandomBytes(count: Int) throws -> [UInt8] {
     var randomBytes=[UInt8](repeating: 0, count: count)
     let result=SecRandomCopyBytes(kSecRandomDefault, count, &randomBytes)
-
+    
     guard result == errSecSuccess else {
       throw SecurityStorageError.operationFailed("Failed to generate secure random bytes")
     }
-
+    
     return randomBytes
   }
 
   /**
-   Derives a key using PBKDF2 (Password-Based Key Derivation Function 2).
-
+   Derive a key using PBKDF2.
+   
    - Parameters:
-      - sourceKey: The source key material
-      - salt: Salt for the derivation
-      - keySize: The size of the derived key in bytes
-   - Returns: The derived key bytes
-   - Throws: Error if derivation fails
+     - password: The password or key to derive from
+     - salt: Salt data
+     - keySize: Size of the derived key in bytes
+     - iterations: Number of iterations
+   - Returns: Derived key
+   - Throws: SecurityStorageError if the operation fails
    */
-  private func deriveKeyUsingPBKDF2(
-    sourceKey: [UInt8],
+  private func pbkdf2(
+    password: [UInt8],
     salt: [UInt8],
-    keySize: Int
+    keySize: Int,
+    iterations: Int
   ) throws -> [UInt8] {
-    // Set up derivation parameters
-    let iterations=10000 // Minimum recommended for PBKDF2
-    var derivedKeyData=[UInt8](repeating: 0, count: keySize)
-
-    // Derive the key using PBKDF2
+    var derivedKey=[UInt8](repeating: 0, count: keySize)
+    
     let status=CCKeyDerivationPBKDF(
       CCPBKDFAlgorithm(kCCPBKDF2),
-      sourceKey,
-      sourceKey.count,
+      password,
+      password.count,
       salt,
       salt.count,
       CCPseudoRandomAlgorithm(kCCPRFHmacAlgSHA256),
       UInt32(iterations),
-      &derivedKeyData,
+      &derivedKey,
       keySize
     )
-
+    
     guard status == kCCSuccess else {
       throw SecurityStorageError
         .operationFailed("PBKDF2 key derivation failed with status \(status)")
     }
-
-    return derivedKeyData
+    
+    return derivedKey
   }
 
   /**
-   Derives a key using HKDF (HMAC-based Key Derivation Function).
-
+   Derive a key using HKDF.
+   
    - Parameters:
-      - sourceKey: The source key material
-      - salt: Salt for the derivation
-      - info: Optional context information
-      - keySize: The size of the derived key in bytes
-   - Returns: The derived key bytes
-   - Throws: Error if derivation fails
+     - secret: The secret key to derive from
+     - salt: Salt data
+     - info: Optional context and application specific information
+     - keySize: Size of the derived key in bytes
+   - Returns: Derived key
+   - Throws: SecurityStorageError if the operation fails
    */
-  private func deriveKeyUsingHKDF(
-    sourceKey: [UInt8],
+  private func hkdf(
+    secret: [UInt8],
     salt: [UInt8],
-    info: [UInt8]?,
+    info: [UInt8],
     keySize: Int
   ) throws -> [UInt8] {
-    // HKDF implementation using CommonCrypto
-    // This is a simplified implementation of HKDF
-
-    // Step 1: HMAC-Extract - Extract a pseudorandom key from the input
-    var hmacContext=CCHmacContext()
-    CCHmacInit(&hmacContext, CCHmacAlgorithm(kCCHmacAlgSHA256), salt, salt.count)
-    CCHmacUpdate(&hmacContext, sourceKey, sourceKey.count)
-    var prk=[UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
-    CCHmacFinal(&hmacContext, &prk)
-
-    // Step 2: HMAC-Expand - Expand the pseudorandom key to the desired output length
-    var derivedKeyData=[UInt8]()
-    let hashLength=Int(CC_SHA256_DIGEST_LENGTH)
-    let iterations=(keySize + hashLength - 1) / hashLength
-
+    // For now, we'll use a simple implementation of HKDF
+    // Extract phase - create a pseudorandom key using HMAC-SHA256
+    let prk=hmacSHA256(key: salt, data: secret)
+    
+    // Expand phase - expand the pseudorandom key to the desired length
+    var derivedKey=[UInt8]()
     var lastBlock=[UInt8]()
-    for i in 1...iterations {
-      var hmacContext=CCHmacContext()
-      CCHmacInit(&hmacContext, CCHmacAlgorithm(kCCHmacAlgSHA256), prk, prk.count)
-      CCHmacUpdate(&hmacContext, lastBlock, lastBlock.count)
-      if let infoData=info {
-        CCHmacUpdate(&hmacContext, infoData, infoData.count)
-      }
-      let counter=UInt8(i)
-      CCHmacUpdate(&hmacContext, [counter], 1)
-
-      var block=[UInt8](repeating: 0, count: hashLength)
-      CCHmacFinal(&hmacContext, &block)
-
-      lastBlock=block
-      derivedKeyData.append(contentsOf: block)
+    var counter: UInt8=1
+    
+    while derivedKey.count < keySize {
+      var input=lastBlock
+      input.append(contentsOf: info)
+      input.append(counter)
+      
+      lastBlock=hmacSHA256(key: prk, data: input)
+      derivedKey.append(contentsOf: lastBlock)
+      
+      counter+=1
     }
+    
+    // Truncate to the desired key size
+    return Array(derivedKey.prefix(keySize))
+  }
 
-    // Truncate to the requested key size
-    return [UInt8](derivedKeyData[0..<keySize])
+  /**
+   Compute HMAC-SHA256.
+   
+   - Parameters:
+     - key: The key for HMAC
+     - data: The data to authenticate
+   - Returns: HMAC result
+   */
+  private func hmacSHA256(key: [UInt8], data: [UInt8]) -> [UInt8] {
+    var digest=[UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
+    
+    CCHmac(
+      CCHmacAlgorithm(kCCHmacAlgSHA256),
+      key,
+      key.count,
+      data,
+      data.count,
+      &digest
+    )
+    
+    return digest
   }
 }

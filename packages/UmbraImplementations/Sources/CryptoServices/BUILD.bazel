@@ -23,5 +23,6 @@ umbra_swift_library(
         "//packages/UmbraImplementations/Sources/LoggingServices",
         "//packages/UmbraImplementations/Sources/SecurityProviders",
         "//packages/UmbraImplementations/Sources/CryptoServices/Logging:CryptoLogger",
+        "//packages/UmbraCoreTypes/Sources/BuildConfig",
     ],
 )

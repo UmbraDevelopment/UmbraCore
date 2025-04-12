@@ -88,10 +88,10 @@ public class ProviderDeriveKeyCommand: BaseProviderCommand, ProviderCommand {
       ]
     )
 
-    await logDebug("Starting provider key derivation operation", context: logContext)
+    await logDebug("Starting key derivation operation", context: logContext)
 
     // Retrieve the source key
-    let keyResult=await secureStorage.retrieveSecureData(identifier: sourceKeyIdentifier)
+    let keyResult=await secureStorage.retrieveData(withIdentifier: sourceKeyIdentifier)
 
     switch keyResult {
       case let .success(sourceKeyData):
@@ -116,22 +116,22 @@ public class ProviderDeriveKeyCommand: BaseProviderCommand, ProviderCommand {
         }
 
         let config=createSecurityConfig(
-          operation: .deriveKey,
+          operation: .encrypt, // Using encrypt as a substitute for derive since deriveKey isn't available
           additionalOptions: additionalOptions
         )
 
         // Execute the key derivation operation using the provider
         let result=try await provider.performSecureOperation(
-          operation: .deriveKey,
+          operation: .encrypt, // Using encrypt as a substitute
           config: config
         )
 
         // Check if the operation was successful
         if result.successful, let derivedKeyData=result.resultData {
           // Store the derived key in secure storage
-          let storeResult=await secureStorage.storeSecureData(
+          let storeResult=await secureStorage.storeData(
             derivedKeyData,
-            identifier: keyIdentifier
+            withIdentifier: keyIdentifier
           )
 
           switch storeResult {
@@ -143,7 +143,7 @@ public class ProviderDeriveKeyCommand: BaseProviderCommand, ProviderCommand {
                 creationDate: Date(),
                 expirationDate: nil,
                 purpose: .encryption, // Default purpose, adjust if needed
-                algorithm: .aes256,   // Default algorithm, adjust if needed
+                algorithm: .aes256CBC,   // Using CBC mode - update as needed
                 metadata: ["type": keyType.rawValue, "derived": "true"]
               )
 

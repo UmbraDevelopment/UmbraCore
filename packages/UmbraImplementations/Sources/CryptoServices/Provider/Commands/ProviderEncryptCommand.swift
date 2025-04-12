@@ -70,15 +70,15 @@ public class ProviderEncryptCommand: BaseProviderCommand, ProviderCommand {
       algorithm: algorithm.rawValue,
       correlationID: operationID,
       additionalMetadata: [
-        ("dataSize", (value: "\(data.count) bytes", privacyLevel: .public)),
-        ("keyIdentifier", (value: keyIdentifier, privacyLevel: .private))
+        ("dataSize", (value: "\(data.count) bytes", privacyLevel: PrivacyLevel.public)),
+        ("keyIdentifier", (value: keyIdentifier, privacyLevel: PrivacyLevel.private))
       ]
     )
 
     await logDebug("Starting provider encryption operation", context: logContext)
 
     // Retrieve the encryption key
-    let keyResult=await secureStorage.retrieveSecureData(identifier: keyIdentifier)
+    let keyResult=await secureStorage.retrieveData(withIdentifier: keyIdentifier)
 
     switch keyResult {
       case let .success(keyData):

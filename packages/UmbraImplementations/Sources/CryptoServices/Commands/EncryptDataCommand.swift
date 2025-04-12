@@ -1,11 +1,13 @@
 import CommonCrypto
 import CoreSecurityTypes
 import CryptoInterfaces
+import CryptoTypes
 import DomainSecurityTypes
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
 import Security
+import SecurityCoreInterfaces
 
 /**
  Command for encrypting data with a given key.
@@ -74,15 +76,15 @@ public class EncryptDataCommand: BaseCryptoCommand, CryptoCommand {
       algorithm: algorithm.rawValue,
       correlationID: operationID,
       additionalMetadata: [
-        "dataSize": (value: "\(data.count)", privacyLevel: .public),
-        "keyIdentifier": (value: keyIdentifier, privacyLevel: .private)
+        ("dataSize", (value: "\(data.count)", privacyLevel: .public)),
+        ("keyIdentifier", (value: keyIdentifier, privacyLevel: .private))
       ]
     )
 
     await logDebug("Starting encryption operation", context: logContext)
 
     // Retrieve the encryption key
-    let keyResult=await secureStorage.retrieveSecureData(identifier: keyIdentifier)
+    let keyResult=await secureStorage.retrieveData(withIdentifier: keyIdentifier)
 
     switch keyResult {
       case let .success(keyData):
@@ -149,30 +151,23 @@ public class EncryptDataCommand: BaseCryptoCommand, CryptoCommand {
           let resultIdentifier=UUID().uuidString
 
           // Store the encrypted data
-          let storeResult=await secureStorage.storeSecureData(
-            finalData,
-            identifier: resultIdentifier
-          )
+          let storeResult=await secureStorage.storeData(finalData, withIdentifier: resultIdentifier)
 
           switch storeResult {
             case .success:
               await logInfo(
                 "Successfully encrypted \(data.count) bytes of data",
-                context: logContext.adding(
-                  key: "resultIdentifier",
-                  value: resultIdentifier,
-                  privacyLevel: .private
-                ).adding(
-                  key: "resultSize",
-                  value: "\(finalData.count)",
-                  privacyLevel: .public
+                context: logContext.withMetadata(
+                  LogMetadataDTOCollection()
+                    .withPrivate(key: "resultIdentifier", value: resultIdentifier)
+                    .withPublic(key: "resultSize", value: "\(finalData.count)")
                 )
               )
               return .success(resultIdentifier)
 
             case let .failure(error):
               await logError(
-                "Failed to store encrypted data: \(error)",
+                "Failed to store encrypted data: \(error.localizedDescription)",
                 context: logContext
               )
               return .failure(error)

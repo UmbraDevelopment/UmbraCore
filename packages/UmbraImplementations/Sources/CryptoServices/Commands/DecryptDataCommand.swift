@@ -1,11 +1,13 @@
 import CommonCrypto
 import CoreSecurityTypes
 import CryptoInterfaces
+import CryptoTypes
 import DomainSecurityTypes
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
 import Security
+import SecurityCoreInterfaces
 
 /**
  Command for decrypting data using a specified key.
@@ -59,24 +61,24 @@ public class DecryptDataCommand: BaseCryptoCommand, CryptoCommand {
     // Create a log context with proper privacy classification
     let logContext=createLogContext(
       operation: "decrypt",
-      algorithm: algorithm.rawValue,
       correlationID: operationID,
       additionalMetadata: [
-        "dataIdentifier": (value: encryptedDataIdentifier, privacyLevel: .private)
+        ("encryptedDataIdentifier", (value: encryptedDataIdentifier, privacyLevel: .public)),
+        ("algorithm", (value: algorithm.rawValue, privacyLevel: .public))
       ]
     )
 
-    await logDebug("Starting decryption operation", context: logContext)
+    await logDebug("Starting data decryption operation", context: logContext)
 
     // Retrieve the encrypted data
-    let dataResult=await secureStorage.retrieveSecureData(identifier: encryptedDataIdentifier)
+    let dataResult=await secureStorage.retrieveData(withIdentifier: encryptedDataIdentifier)
 
     switch dataResult {
-      case let .success(encryptedDataBytes):
+      case let .success(encryptedData):
         // Verify the encrypted data has the minimum required size
         // [IV (16 bytes)][Encrypted Data (at least 1 byte)][Key ID Length (1 byte)][Key ID (at
         // least 1 byte)]
-        guard encryptedDataBytes.count > 18 else {
+        guard encryptedData.count > 18 else {
           await logError(
             "Invalid encrypted data format: insufficient data length",
             context: logContext
@@ -85,10 +87,10 @@ public class DecryptDataCommand: BaseCryptoCommand, CryptoCommand {
         }
 
         // Extract the IV (first 16 bytes)
-        let iv=[UInt8](encryptedDataBytes[0..<16])
+        let iv=[UInt8](encryptedData[0..<16])
 
         // Extract the Key ID length (1 byte at the end minus the key ID itself)
-        let keyIDLengthIndex=encryptedDataBytes.count - 1
+        let keyIDLengthIndex=encryptedData.count - 1
         guard keyIDLengthIndex >= 16 else {
           await logError(
             "Invalid encrypted data format: cannot extract key ID length",
@@ -97,10 +99,10 @@ public class DecryptDataCommand: BaseCryptoCommand, CryptoCommand {
           return .failure(.operationFailed("Invalid encrypted data format"))
         }
 
-        let keyIDLength=Int(encryptedDataBytes[encryptedDataBytes.count - 1])
+        let keyIDLength=Int(encryptedData[encryptedData.count - 1])
 
         // Validate the key ID length is within acceptable range and the data has enough bytes
-        guard keyIDLength > 0, encryptedDataBytes.count >= (17 + keyIDLength) else {
+        guard keyIDLength > 0, encryptedData.count >= (17 + keyIDLength) else {
           await logError(
             "Invalid encrypted data format: invalid key ID length",
             context: logContext
@@ -109,8 +111,8 @@ public class DecryptDataCommand: BaseCryptoCommand, CryptoCommand {
         }
 
         // Extract the key ID
-        let keyIDStartIndex=encryptedDataBytes.count - 1 - keyIDLength
-        let keyIDBytes=[UInt8](encryptedDataBytes[keyIDStartIndex..<(encryptedDataBytes.count - 1)])
+        let keyIDStartIndex=encryptedData.count - 1 - keyIDLength
+        let keyIDBytes=[UInt8](encryptedData[keyIDStartIndex..<(encryptedData.count - 1)])
 
         guard let keyIdentifier=String(bytes: keyIDBytes, encoding: .utf8) else {
           await logError(
@@ -122,73 +124,38 @@ public class DecryptDataCommand: BaseCryptoCommand, CryptoCommand {
 
         // Extract the actual encrypted data (between IV and Key ID)
         let encryptedContentEndIndex=keyIDStartIndex
-        let encryptedContent=[UInt8](encryptedDataBytes[16..<encryptedContentEndIndex])
+        let encryptedContent=[UInt8](encryptedData[16..<encryptedContentEndIndex])
 
         // Update log context with key identifier
-        let updatedContext=logContext.adding(
-          key: "keyIdentifier",
-          value: keyIdentifier,
-          privacyLevel: .private
-        ).adding(
-          key: "dataSize",
-          value: "\(encryptedContent.count)",
-          privacyLevel: .public
+        let updatedContext=logContext.withMetadata(
+          LogMetadataDTOCollection().withPrivate(
+            key: "keyIdentifier",
+            value: keyIdentifier
+          ).withPublic(
+            key: "dataSize",
+            value: "\(encryptedContent.count)"
+          )
         )
 
         // Retrieve the key using the extracted key identifier
-        let keyResult=await secureStorage.retrieveSecureData(identifier: keyIdentifier)
+        let keyResult=await secureStorage.retrieveData(withIdentifier: keyIdentifier)
 
         switch keyResult {
           case let .success(keyData):
             do {
-              // Decrypt the data based on the algorithm
-              let decryptedData: [UInt8]
-
-              switch algorithm {
-                case .aes256GCM:
-                  guard keyData.count == 32 else { // 256 bits = 32 bytes
-                    await logError(
-                      "Invalid key size for AES-256-GCM",
-                      context: updatedContext
-                    )
-                    return .failure(.operationFailed("Key size mismatch for AES-256-GCM"))
-                  }
-
-                  decryptedData=try aesGCMDecrypt(data: encryptedContent, key: keyData, iv: iv)
-
-                case .aes256CBC:
-                  guard keyData.count == 32 else { // 256 bits = 32 bytes
-                    await logError(
-                      "Invalid key size for AES-256-CBC",
-                      context: updatedContext
-                    )
-                    return .failure(.operationFailed("Key size mismatch for AES-256-CBC"))
-                  }
-
-                  decryptedData=try aesCBCDecrypt(data: encryptedContent, key: keyData, iv: iv)
-
-                case .chacha20Poly1305:
-                  guard keyData.count == 32 else { // 256 bits = 32 bytes
-                    await logError(
-                      "Invalid key size for ChaCha20-Poly1305",
-                      context: updatedContext
-                    )
-                    return .failure(.operationFailed("Key size mismatch for ChaCha20-Poly1305"))
-                  }
-
-                  decryptedData=try chacha20Poly1305Decrypt(
-                    data: encryptedContent,
-                    key: keyData,
-                    iv: iv
-                  )
-              }
+              let decryptedData=try decryptData(
+                data: encryptedContent,
+                key: keyData,
+                algorithm: algorithm
+              )
 
               await logInfo(
                 "Successfully decrypted \(encryptedContent.count) bytes of data",
-                context: updatedContext.adding(
-                  key: "resultSize",
-                  value: "\(decryptedData.count)",
-                  privacyLevel: .public
+                context: updatedContext.withMetadata(
+                  LogMetadataDTOCollection().withPublic(
+                    key: "resultSize",
+                    value: "\(decryptedData.count)"
+                  )
                 )
               )
 
@@ -196,15 +163,19 @@ public class DecryptDataCommand: BaseCryptoCommand, CryptoCommand {
 
             } catch {
               await logError(
-                "Decryption operation failed: \(error.localizedDescription)",
+                "Data decryption failed: \(error.localizedDescription)",
                 context: updatedContext
               )
-              return .failure(.operationFailed("Decryption failed: \(error.localizedDescription)"))
+              if let securityError=error as? SecurityStorageError {
+                return .failure(securityError)
+              } else {
+                return .failure(.operationFailed("Decryption failed: \(error.localizedDescription)"))
+              }
             }
 
           case let .failure(error):
             await logError(
-              "Failed to retrieve decryption key: \(error)",
+              "Failed to retrieve key: \(error.localizedDescription)",
               context: updatedContext
             )
             return .failure(error)
@@ -212,7 +183,7 @@ public class DecryptDataCommand: BaseCryptoCommand, CryptoCommand {
 
       case let .failure(error):
         await logError(
-          "Failed to retrieve encrypted data: \(error)",
+          "Failed to retrieve encrypted data: \(error.localizedDescription)",
           context: logContext
         )
         return .failure(error)
@@ -222,36 +193,51 @@ public class DecryptDataCommand: BaseCryptoCommand, CryptoCommand {
   // MARK: - Decryption Implementations
 
   /**
-   Decrypts data using AES-GCM.
+   Decrypts data using the specified algorithm.
 
    - Parameters:
       - data: The encrypted data
       - key: The decryption key
-      - iv: The initialisation vector
+      - algorithm: The encryption algorithm used
    - Returns: The decrypted data
    - Throws: Error if decryption fails
    */
-  private func aesGCMDecrypt(data _: [UInt8], key _: [UInt8], iv _: [UInt8]) throws -> [UInt8] {
-    // AES-GCM would typically be implemented with CryptoKit or CommonCrypto
-    // This is a simplified placeholder for the implementation
+  private func decryptData(data: [UInt8], key: [UInt8], algorithm: EncryptionAlgorithm) throws -> [UInt8] {
+    switch algorithm {
+      case .aes256GCM:
+        return try aesGCMDecrypt(data: data, key: key, iv: [UInt8]())
 
-    // In a real implementation, this would:
-    // 1. Set up the AES-GCM cipher for decryption
-    // 2. Verify the authentication tag
-    // 3. Decrypt the data if authenticated
+      case .aes256CBC:
+        return try aesCBCDecrypt(data: data, key: key, iv: [UInt8]())
 
+      case .chacha20Poly1305:
+        return try chaCha20Poly1305Decrypt(data: data, key: key, nonce: [UInt8]())
+    }
+  }
+
+  /**
+   Decrypts data using AES-GCM algorithm.
+   
+   - Parameters:
+     - data: Encrypted data
+     - key: Decryption key
+     - iv: Initialization vector
+   - Returns: Decrypted data
+   - Throws: Error if decryption fails
+   */
+  private func aesGCMDecrypt(data: [UInt8], key: [UInt8], iv: [UInt8]) throws -> [UInt8] {
     // For now, we'll throw an error to indicate this needs implementation
     throw SecurityStorageError.operationFailed("AES-GCM decryption not implemented")
   }
 
   /**
-   Decrypts data using AES-CBC.
-
+   Decrypts data using AES-CBC algorithm.
+   
    - Parameters:
-      - data: The encrypted data
-      - key: The decryption key
-      - iv: The initialisation vector
-   - Returns: The decrypted data
+     - data: Encrypted data
+     - key: Decryption key
+     - iv: Initialization vector
+   - Returns: Decrypted data
    - Throws: Error if decryption fails
    */
   private func aesCBCDecrypt(data: [UInt8], key: [UInt8], iv: [UInt8]) throws -> [UInt8] {
@@ -259,54 +245,45 @@ public class DecryptDataCommand: BaseCryptoCommand, CryptoCommand {
       throw SecurityStorageError.operationFailed("Invalid IV size for AES-CBC")
     }
 
-    // Create output buffer with enough space for the decrypted data
-    let outputLength=data.count
-    var outputBuffer=[UInt8](repeating: 0, count: outputLength)
-    var resultLength=0
+    // Set up decryption parameters
+    let dataLength=data.count
+    let bufferSize=dataLength + kCCBlockSizeAES128
+    var outputBuffer=[UInt8](repeating: 0, count: bufferSize)
+    var outputLength=0
 
-    // Perform decryption
+    // Perform AES-CBC decryption
     let status=CCCrypt(
       CCOperation(kCCDecrypt),
       CCAlgorithm(kCCAlgorithmAES),
       CCOptions(kCCOptionPKCS7Padding),
-      key, key.count,
+      key,
+      min(key.count, kCCKeySizeAES256),
       iv,
-      data, data.count,
-      &outputBuffer, outputLength,
-      &resultLength
+      data,
+      dataLength,
+      &outputBuffer,
+      bufferSize,
+      &outputLength
     )
 
     guard status == kCCSuccess else {
       throw SecurityStorageError.operationFailed("AES-CBC decryption failed with status \(status)")
     }
 
-    // Return only the actual decrypted bytes
-    return [UInt8](outputBuffer[0..<resultLength])
+    return Array(outputBuffer.prefix(outputLength))
   }
 
   /**
-   Decrypts data using ChaCha20-Poly1305.
-
+   Decrypts data using ChaCha20-Poly1305 algorithm.
+   
    - Parameters:
-      - data: The encrypted data
-      - key: The decryption key
-      - iv: The initialisation vector
-   - Returns: The decrypted data
+     - data: Encrypted data
+     - key: Decryption key
+     - nonce: Nonce for the operation
+   - Returns: Decrypted data
    - Throws: Error if decryption fails
    */
-  private func chacha20Poly1305Decrypt(
-    data _: [UInt8],
-    key _: [UInt8],
-    iv _: [UInt8]
-  ) throws -> [UInt8] {
-    // ChaCha20-Poly1305 would typically be implemented with CryptoKit or CommonCrypto
-    // This is a simplified placeholder for the implementation
-
-    // In a real implementation, this would:
-    // 1. Set up the ChaCha20-Poly1305 cipher for decryption
-    // 2. Verify the authentication tag
-    // 3. Decrypt the data if authenticated
-
+  private func chaCha20Poly1305Decrypt(data: [UInt8], key: [UInt8], nonce: [UInt8]) throws -> [UInt8] {
     // For now, we'll throw an error to indicate this needs implementation
     throw SecurityStorageError.operationFailed("ChaCha20-Poly1305 decryption not implemented")
   }
