@@ -11,6 +11,9 @@
 7. [Implementation Status](#implementation-status)
 8. [Best Practices](#best-practices)
 9. [Next Steps](#next-steps)
+10. [Standardised Interfaces](#standardised-interfaces)
+11. [Error Handling Standards](#error-handling-standards)
+12. [Testing Support](#testing-support)
 
 ## Overview
 
@@ -247,7 +250,6 @@ func testWithApplePlatformImpl() async {
     )
     // Run tests...
 }
-```
 
 ## Implementation Status
 
@@ -341,6 +343,252 @@ With the core implementation complete and the codebase consolidated, the followi
    - Set up CI pipelines for testing across implementations
    - Ensure build configurations correctly select implementations
    - Create validation tests for each platform
+
+## Standardised Interfaces
+
+As part of the Alpha Dot Five architecture, we have standardised interfaces across all cryptographic implementations to ensure consistency, type safety, and better developer experience.
+
+### Parameter Standards
+
+All implementations now use standardised parameter types defined in `ParameterStandards.swift`. These replace string literals with type-safe enumerations:
+
+#### Encryption Algorithms
+
+```swift
+// Use standardised enum instead of string literals
+let options = EncryptionOptions.standard(
+    algorithm: .aes256GCM, // Type-safe enum
+    mode: .gcm,           // Type-safe enum
+    padding: .pkcs7       // Type-safe enum
+)
+
+// Instead of string literals
+let options = EncryptionOptions(
+    algorithm: "AES-256-GCM", // Error-prone string literal
+    mode: "GCM",             // Error-prone string literal
+    padding: "PKCS7"         // Error-prone string literal
+)
+```
+
+#### Available Standardised Types
+
+| Type | Description | Available Values |
+|------|-------------|-----------------|
+| `StandardEncryptionAlgorithm` | Encryption algorithms | `.aes128CBC`, `.aes256CBC`, `.aes256GCM`, `.chacha20Poly1305` |
+| `StandardHashAlgorithm` | Hash algorithms | `.sha256`, `.sha384`, `.sha512`, `.hmacSHA256` |
+| `StandardEncryptionMode` | Encryption modes | `.cbc`, `.gcm`, `.cfb`, `.ctr` |
+| `StandardPaddingType` | Padding types | `.none`, `.pkcs7` |
+
+#### Helper Extension Methods
+
+The framework provides extension methods to easily create options with standardised parameters:
+
+```swift
+// Create standard options with default values
+let options = EncryptionOptions.standard()  
+
+// Create options with specific algorithm
+let options = EncryptionOptions.standard(algorithm: .aes256GCM)  
+
+// Create options with custom IV
+let options = EncryptionOptions.standard(
+    algorithm: .aes256GCM,
+    iv: myCustomIV
+)
+```
+
+### Interface Consistency
+
+All cryptographic service implementations now follow consistent interface patterns:
+
+1. **Actor-Based Implementation**: All services are implemented as Swift actors for thread safety
+2. **Async Functions**: All operations are async functions for proper concurrency
+3. **Result Type Return Values**: All operations return `Result<Success, Error>` types
+4. **Standardised Parameter Types**: All options use standard parameter types
+5. **Public SecureStorage Property**: All implementations expose their secure storage for testing
+
+## Error Handling Standards
+
+The new error handling system provides consistent, informative errors across all implementations.
+
+### Error Types
+
+All implementations now use standardised error types from `ErrorStandards.swift`:
+
+```swift
+// Standard operational error
+let error = CryptoErrorMapper.operationalError(
+    code: .encryptionFailed,
+    message: "Encryption operation failed",
+    underlyingError: originalError // Optional
+)
+
+// Standard validation error
+let result = CryptoErrorHandling.validate(
+    keyData.count == expectedKeySize,
+    code: .invalidKeySize,
+    message: "Key must be \(expectedKeySize) bytes"
+)
+```
+
+### Error Codes
+
+Standardised error codes provide consistent error reporting across implementations:
+
+| Error Code | Description |
+|------------|-------------|
+| `.invalidInput` | Invalid input parameters |
+| `.invalidKeySize` | Key size doesn't match algorithm requirements |
+| `.invalidIVSize` | IV size doesn't match algorithm requirements |
+| `.encryptionFailed` | General encryption failure |
+| `.decryptionFailed` | General decryption failure |
+| `.hashingFailed` | Hashing operation failed |
+| `.keyGenerationFailed` | Key generation failed |
+| `.randomGenerationFailed` | Secure random generation failed |
+| `.invalidDataFormat` | Data format doesn't match expectations |
+| `.unsupportedAlgorithm` | Algorithm not supported by implementation |
+| `.storageError` | Secure storage operation failed |
+
+### Validation Helpers
+
+The framework provides helper functions for common validation operations:
+
+```swift
+// Validate general conditions
+let result = CryptoErrorHandling.validate(
+    !identifier.isEmpty,
+    code: .invalidInput,
+    message: "Identifier cannot be empty"
+)
+
+// Validate key parameters
+let result = CryptoErrorHandling.validateKey(
+    keyData,
+    algorithm: .aes256GCM
+)
+
+// Validate IV parameters
+let result = CryptoErrorHandling.validateIV(
+    ivData,
+    algorithm: .aes256GCM
+)
+```
+
+### Error Mapping
+
+Standardised error mapping utilities help convert between different error types:
+
+```swift
+// Map storage errors to crypto errors
+let cryptoError = CryptoErrorMapper.map(
+    storageError: storageError
+)
+
+// Map crypto errors to domain-specific errors
+let domainError = CryptoErrorMapper.map(
+    cryptoError: cryptoError,
+    toDomain: .authentication
+)
+```
+
+## Testing Support
+
+The new architecture includes standardised testing utilities and mock implementations.
+
+### Mock Implementations
+
+The `CryptoServicesCore/Testing` module provides standardised mock implementations:
+
+```swift
+// Create a mock crypto service with configurable behaviour
+let mockCryptoService = MockCryptoService(
+    secureStorage: MockSecureStorage(),
+    mockBehaviour: .init(
+        shouldSucceed: true,
+        shouldGenerateRandomKeys: true,
+        logOperations: true
+    )
+)
+
+// Configure for failure testing
+let failingMockService = MockCryptoService(
+    secureStorage: MockSecureStorage(),
+    mockBehaviour: .init(
+        shouldSucceed: false,
+        errorToReturn: .encryptionFailed
+    )
+)
+```
+
+### Testing Utilities
+
+The module includes utilities for generating test keys, IVs, and other test data:
+
+```swift
+// Generate test keys
+let testKey = CryptoTestUtilities.generateTestKey(
+    algorithm: .aes256GCM
+)
+
+// Generate test IVs
+let testIV = CryptoTestUtilities.generateTestIV(
+    algorithm: .aes256GCM
+)
+
+// Generate test data with specified size
+let testData = CryptoTestUtilities.generateTestData(size: 1024)
+```
+
+## Migration Guide
+
+### Migrating from String Literals to Standardised Types
+
+```swift
+// Before
+let options = EncryptionOptions(
+    algorithm: "AES-256-GCM",
+    mode: "GCM",
+    padding: "PKCS7"
+)
+
+// After
+let options = EncryptionOptions.standard(
+    algorithm: .aes256GCM,
+    mode: .gcm,
+    padding: .pkcs7
+)
+```
+
+### Migrating to Standardised Error Handling
+
+```swift
+// Before
+if keyData.count != kCCKeySizeAES256 {
+    return .failure(.invalidKeySize)
+}
+
+// After
+let keyValidation = CryptoErrorHandling.validateKey(keyData, algorithm: algorithm)
+if case .failure(let error) = keyValidation {
+    return .failure(.storageError(error.message))
+}
+```
+
+### Migrating to Mock Implementations for Testing
+
+```swift
+// Before
+let mockService = MockCryptoService(shouldSucceed: true)
+
+// After
+let mockService = MockCryptoService(
+    secureStorage: MockSecureStorage(),
+    mockBehaviour: .init(
+        shouldSucceed: true,
+        shouldGenerateRandomKeys: true
+    )
+)
+```
 
 ## Conclusion
 

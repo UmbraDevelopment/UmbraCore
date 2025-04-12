@@ -1,5 +1,6 @@
 import CryptoInterfaces
 import CryptoServicesCore
+import CryptoServicesCore.Interfaces
 import SecurityInterfaces
 import LoggingInterfaces
 import BuildConfig
@@ -44,7 +45,7 @@ public actor ApplePlatformCryptoService: CryptoServiceProtocol {
     // MARK: - Properties
     
     /// The secure storage to use
-    private let secureStorage: SecureStorageProtocol
+    public let secureStorage: SecureStorageProtocol
     
     /// Optional logger for operation tracking with privacy controls
     private let logger: LoggingProtocol?
@@ -142,16 +143,17 @@ public actor ApplePlatformCryptoService: CryptoServiceProtocol {
     /**
      Generates a random nonce using CryptoKit.
      
-     - Parameter size: The size of the nonce in bytes
+     - Parameter algorithm: The encryption algorithm to generate a nonce for
      - Returns: The generated nonce as Data
      */
-    private func cryptoKitGenerateRandomBytes(size: Int) -> Data {
+    private func cryptoKitGenerateRandomBytes(for algorithm: StandardEncryptionAlgorithm) -> Data {
         // In a real implementation, this would use:
         // return Data(CryptoKit.generateRandomBytes(count: size))
         
         // For now, we'll simulate with SecRandomCopyBytes
-        var bytes = [UInt8](repeating: 0, count: size)
-        _ = SecRandomCopyBytes(kSecRandomDefault, size, &bytes)
+        let nonceSize = algorithm.nonceSize
+        var bytes = [UInt8](repeating: 0, count: nonceSize)
+        _ = SecRandomCopyBytes(kSecRandomDefault, nonceSize, &bytes)
         return Data(bytes)
     }
     
@@ -162,15 +164,31 @@ public actor ApplePlatformCryptoService: CryptoServiceProtocol {
        - data: The data to encrypt
        - key: The encryption key
        - nonce: The nonce for encryption
+       - authData: Additional authenticated data (optional)
      - Returns: The encrypted data with authentication tag
      */
-    private func cryptoKitAESGCMEncrypt(data: Data, key: Data, nonce: Data) -> Data? {
+    private func cryptoKitAESGCMEncrypt(
+        data: Data,
+        key: Data,
+        nonce: Data,
+        authData: Data? = nil
+    ) -> Data? {
         // In a real implementation, this would use CryptoKit.AES.GCM
         // For demonstration purposes, we'll simulate the encryption
         
+        // Validate key size for AES-256-GCM
+        if key.count != 32 {
+            return nil
+        }
+        
+        // Validate nonce size for AES-GCM (should be 12 bytes)
+        if nonce.count != 12 {
+            return nil
+        }
+        
         // Simulate ciphertext and authentication tag
         let simulatedCiphertext = data
-        let simulatedTag = cryptoKitGenerateRandomBytes(size: 16)
+        let simulatedTag = cryptoKitGenerateRandomBytes(for: .aes256GCM).prefix(16)
         
         var result = Data()
         result.append(simulatedCiphertext)
@@ -186,11 +204,27 @@ public actor ApplePlatformCryptoService: CryptoServiceProtocol {
        - data: The encrypted data with authentication tag
        - key: The decryption key
        - nonce: The nonce used for encryption
+       - authData: Additional authenticated data (optional)
      - Returns: The decrypted data or nil if authentication fails
      */
-    private func cryptoKitAESGCMDecrypt(data: Data, key: Data, nonce: Data) -> Data? {
+    private func cryptoKitAESGCMDecrypt(
+        data: Data,
+        key: Data,
+        nonce: Data,
+        authData: Data? = nil
+    ) -> Data? {
         // In a real implementation, this would use CryptoKit.AES.GCM
         // For demonstration purposes, we'll simulate the decryption
+        
+        // Validate key size for AES-256-GCM
+        if key.count != 32 {
+            return nil
+        }
+        
+        // Validate nonce size for AES-GCM (should be 12 bytes)
+        if nonce.count != 12 {
+            return nil
+        }
         
         if data.count < 16 {
             // Data is too short to contain a valid tag
@@ -199,6 +233,46 @@ public actor ApplePlatformCryptoService: CryptoServiceProtocol {
         
         // Remove the simulated authentication tag
         return data.dropLast(16)
+    }
+    
+    /**
+     Performs a hash operation using the specified algorithm.
+     
+     - Parameters:
+       - data: The data to hash
+       - algorithm: The hashing algorithm to use
+     - Returns: The computed hash or nil if the algorithm is not supported
+     */
+    private func cryptoKitHashData(data: Data, using algorithm: StandardHashAlgorithm) -> Data? {
+        switch algorithm {
+        case .sha256:
+            return cryptoKitSHA256(data: data)
+        case .sha512:
+            return cryptoKitSHA512(data: data)
+        case .sha384:
+            // Simulate SHA-384 hashing (would use CryptoKit in real implementation)
+            var hashBytes = [UInt8](repeating: 0, count: 48) // SHA-384 produces a 48-byte hash
+            data.withUnsafeBytes { buffer in
+                // This is a simulation - in reality would use actual SHA-384
+                if let baseAddress = buffer.baseAddress {
+                    let seedData = Data([UInt8](buffer))
+                    var seed: UInt64 = 0
+                    for byte in seedData.prefix(8) {
+                        seed = (seed << 8) | UInt64(byte)
+                    }
+                    
+                    // Generate pseudo-random bytes based on the data
+                    for i in 0..<48 {
+                        seed = (seed &* 6364136223846793005) &+ 1442695040888963407
+                        hashBytes[i] = UInt8((seed >> 32) & 0xFF)
+                    }
+                }
+            }
+            return Data(hashBytes)
+        case .hmacSHA256:
+            // Would implement proper HMAC-SHA256 in actual implementation
+            return nil
+        }
     }
     
     /**
@@ -249,44 +323,80 @@ public actor ApplePlatformCryptoService: CryptoServiceProtocol {
         keyIdentifier: String,
         options: EncryptionOptions? = nil
     ) async -> Result<String, SecurityStorageError> {
+        // Parse standard encryption parameters
+        let algorithmString = options?.algorithm ?? StandardEncryptionAlgorithm.aes256GCM.rawValue
+        let modeString = options?.mode ?? StandardEncryptionMode.gcm.rawValue
+        
+        // Apple CryptoKit implementation primarily supports AES-GCM
+        guard let algorithm = StandardEncryptionAlgorithm(rawValue: algorithmString) else {
+            return .failure(.storageError("Unsupported encryption algorithm: \(algorithmString)"))
+        }
+        
+        // Ensure algorithm is supported by CryptoKit
+        guard algorithm == .aes256GCM else {
+            return .failure(.storageError("CryptoKit implementation only supports AES-256-GCM"))
+        }
+        
         // Create a log context with proper privacy classification
         let context = CryptoLogContext(
             operation: "encrypt",
-            algorithm: "AES-GCM", // CryptoKit uses AES-GCM
+            algorithm: algorithm.rawValue,
             correlationID: UUID().uuidString
         ).withMetadata(
             LogMetadataDTOCollection()
                 .withPublic(key: "dataIdentifier", value: dataIdentifier)
                 .withPrivate(key: "keyIdentifier", value: keyIdentifier)
                 .withPublic(key: "provider", value: "CryptoKit")
+                .withPublic(key: "mode", value: modeString)
         )
         
         await logDebug("Starting CryptoKit encryption operation", context: context)
         
+        // Validate inputs
+        let dataValidation = CryptoErrorHandling.validate(
+            !dataIdentifier.isEmpty,
+            code: .invalidInput,
+            message: "Data identifier cannot be empty"
+        )
+        
+        if case .failure(let error) = dataValidation {
+            await logError("Input validation failed: \(error.message)", context: context)
+            return .failure(.storageError(error.message))
+        }
+        
+        let keyValidation = CryptoErrorHandling.validate(
+            !keyIdentifier.isEmpty,
+            code: .invalidInput,
+            message: "Key identifier cannot be empty"
+        )
+        
+        if case .failure(let error) = keyValidation {
+            await logError("Input validation failed: \(error.message)", context: context)
+            return .failure(.storageError(error.message))
+        }
+        
         // Retrieve the data to encrypt
-        let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
+        let dataResult = await secureStorage.retrieve(identifier: dataIdentifier)
         
         switch dataResult {
         case let .success(dataToEncrypt):
             await logDebug("Retrieved data for encryption, size: \(dataToEncrypt.count) bytes", context: context)
             
             // Retrieve the encryption key
-            let keyResult = await secureStorage.retrieveData(withIdentifier: keyIdentifier)
+            let keyResult = await secureStorage.retrieve(identifier: keyIdentifier)
             
             switch keyResult {
             case let .success(keyData):
-                if keyData.count != 32 { // AES-256 uses 32-byte keys
-                    let errorContext = context.withMetadata(
-                        LogMetadataDTOCollection()
-                            .withPublic(key: "expected_key_size", value: String(32))
-                            .withPublic(key: "actual_key_size", value: String(keyData.count))
-                    )
-                    await logError("Invalid key size for CryptoKit encryption", context: errorContext)
-                    return .failure(.invalidKeySize)
+                // Validate key size for AES-256-GCM (should be 32 bytes)
+                let keyValidation = CryptoErrorHandling.validateKey(keyData, algorithm: algorithm)
+                
+                if case .failure(let error) = keyValidation {
+                    await logError("Key validation failed: \(error.message)", context: context)
+                    return .failure(.storageError(error.message))
                 }
                 
-                // Generate a random nonce (12 bytes for AES-GCM)
-                let nonce = cryptoKitGenerateRandomBytes(size: 12)
+                // Generate a random nonce for AES-GCM
+                let nonce = cryptoKitGenerateRandomBytes(for: algorithm)
                 
                 // Encrypt the data using AES-GCM
                 guard let encryptedData = cryptoKitAESGCMEncrypt(
@@ -294,8 +404,12 @@ public actor ApplePlatformCryptoService: CryptoServiceProtocol {
                     key: keyData,
                     nonce: nonce
                 ) else {
-                    await logError("CryptoKit encryption operation failed", context: context)
-                    return .failure(.encryptionFailed)
+                    let error = CryptoErrorMapper.operationalError(
+                        code: .encryptionFailed,
+                        message: "CryptoKit encryption operation failed"
+                    )
+                    await logError(error.message, context: context)
+                    return .failure(.storageError(error.message))
                 }
                 
                 // Create the final encrypted data format: [Nonce][Encrypted Data with Tag][Key ID Length][Key ID]
@@ -313,7 +427,7 @@ public actor ApplePlatformCryptoService: CryptoServiceProtocol {
                 let encryptedDataIdentifier = "ck_enc_\(UUID().uuidString)"
                 
                 // Store the encrypted data
-                let storeResult = await secureStorage.storeData(encryptedBytes, withIdentifier: encryptedDataIdentifier)
+                let storeResult = await secureStorage.store(encryptedBytes, withIdentifier: encryptedDataIdentifier)
                 
                 switch storeResult {
                 case .success:
@@ -382,7 +496,7 @@ public actor ApplePlatformCryptoService: CryptoServiceProtocol {
         await logDebug("Starting CryptoKit decryption operation", context: context)
         
         // Retrieve the encrypted data
-        let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
+        let dataResult = await secureStorage.retrieve(identifier: dataIdentifier)
         
         switch dataResult {
         case let .success(encryptedDataBytes):
@@ -423,7 +537,7 @@ public actor ApplePlatformCryptoService: CryptoServiceProtocol {
             }
             
             // Retrieve the decryption key
-            let keyResult = await secureStorage.retrieveData(withIdentifier: keyIdentifier)
+            let keyResult = await secureStorage.retrieve(identifier: keyIdentifier)
             
             switch keyResult {
             case let .success(keyData):
@@ -451,7 +565,7 @@ public actor ApplePlatformCryptoService: CryptoServiceProtocol {
                 let decryptedDataIdentifier = "ck_dec_\(UUID().uuidString)"
                 
                 // Store the decrypted data
-                let storeResult = await secureStorage.storeData(decryptedData, withIdentifier: decryptedDataIdentifier)
+                let storeResult = await secureStorage.store(decryptedData, withIdentifier: decryptedDataIdentifier)
                 
                 switch storeResult {
                 case .success:
@@ -523,12 +637,12 @@ public actor ApplePlatformCryptoService: CryptoServiceProtocol {
         await logDebug("Starting CryptoKit hash verification", context: context)
         
         // Retrieve the data to verify
-        let dataResult = await secureStorage.retrieveData(withIdentifier: dataIdentifier)
+        let dataResult = await secureStorage.retrieve(identifier: dataIdentifier)
         
         switch dataResult {
         case let .success(dataToVerify):
             // Retrieve the stored hash
-            let hashResult = await secureStorage.retrieveData(withIdentifier: hashIdentifier)
+            let hashResult = await secureStorage.retrieve(identifier: hashIdentifier)
             
             switch hashResult {
             case let .success(storedHash):
@@ -627,10 +741,10 @@ public actor ApplePlatformCryptoService: CryptoServiceProtocol {
         // For demonstration purposes, we'll simulate using SecRandomCopyBytes
         
         // Generate random key bytes
-        let keyData = cryptoKitGenerateRandomBytes(size: byteLength)
+        let keyData = cryptoKitGenerateRandomBytes(for: .aes256GCM)
         
         // Store the key
-        let storeResult = await secureStorage.storeData(keyData, withIdentifier: identifier)
+        let storeResult = await secureStorage.store(keyData, withIdentifier: identifier)
         
         switch storeResult {
         case .success:
@@ -664,7 +778,7 @@ public actor ApplePlatformCryptoService: CryptoServiceProtocol {
     public func retrieveData(
         identifier: String
     ) async -> Result<Data, SecurityStorageError> {
-        return await secureStorage.retrieveData(withIdentifier: identifier)
+        return await secureStorage.retrieve(identifier: identifier)
     }
     
     /**
@@ -679,6 +793,6 @@ public actor ApplePlatformCryptoService: CryptoServiceProtocol {
         _ data: Data,
         identifier: String
     ) async -> Result<Bool, SecurityStorageError> {
-        return await secureStorage.storeData(data, withIdentifier: identifier)
+        return await secureStorage.store(data, withIdentifier: identifier)
     }
 }

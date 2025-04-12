@@ -1,6 +1,7 @@
 import CoreSecurityTypes
 import CryptoInterfaces
 import CryptoServicesCore
+import CryptoServicesCore.Testing
 import CryptoServicesStandard
 import Foundation
 import LoggingInterfaces
@@ -103,38 +104,25 @@ public enum SecurityServiceFactory {
     )
   }
 
-  /// Creates a mock security service for testing
-  /// - Parameters:
-  ///   - logger: The logger to use for general logging
-  ///   - secureLogger: The secure logger to use for privacy-aware logging
-  /// - Returns: A mock security service instance
-  public static func createMock(
-    logger: LoggingInterfaces.LoggingProtocol,
-    secureLogger: LoggingInterfaces.LoggingProtocol?=nil
-  ) async -> SecurityProviderProtocol {
-    // Create a secure logger if one wasn't provided
-    let actualSecureLogger: LoggingInterfaces.LoggingProtocol=if let secureLogger {
-      secureLogger
-    } else {
-      await createSecureLogger(logger: logger)
-    }
-
-    // Create mock crypto service
-    let cryptoService=MockCryptoService()
-
-    // Create mock configuration
-    let configuration=CoreSecurityTypes.SecurityConfigDTO(
-      encryptionAlgorithm: CoreSecurityTypes.EncryptionAlgorithm.aes256GCM,
-      hashAlgorithm: CoreSecurityTypes.HashAlgorithm.sha256,
-      providerType: CoreSecurityTypes.SecurityProviderType.cryptoKit
+  /**
+   Creates a mock security service for testing.
+   
+   - Returns: A security provider that provides mock implementations for testing
+   */
+  public static func createForTesting() async -> SecurityProviderProtocol {
+    let baseLogger = NoOpLoggerImpl()
+    let logger = await SecurityLoggingUtilities.createLoggingWrapper(logger: baseLogger)
+    
+    // Use the standardised MockCryptoService from CryptoServicesCore.Testing
+    let cryptoService = MockCryptoService(
+      secureStorage: MockSecureStorage(), 
+      mockBehaviour: MockCryptoService.MockBehaviour(logOperations: true)
     )
-
-    // Create the security service with mock dependencies
-    return SecurityServiceActor(
+    
+    return SecurityProviderImpl(
       cryptoService: cryptoService,
-      logger: logger,
-      secureLogger: actualSecureLogger,
-      configuration: configuration
+      keyManager: TestKeyManager(),
+      logger: logger
     )
   }
 
@@ -216,132 +204,19 @@ private func createMetadataDictionary(_: LogMetadataDTOCollection) -> [String: S
   [:]
 }
 
-/// Mock implementation of CryptoServiceProtocol for testing
-private final class MockCryptoService: CryptoServiceProtocol {
-  // MARK: - Required Properties
-
-  /// The secure storage used for handling sensitive data
-  public var secureStorage: SecureStorageProtocol {
-    // Return a mock secure storage implementation
-    fatalError("Secure storage not implemented in mock")
+/**
+ A simple key manager for testing purposes.
+ */
+private final class TestKeyManager: KeyManagementProtocol {
+  public func storeKey(_ key: [UInt8], withIdentifier identifier: String) async -> Result<Void, KeyManagementError> {
+    return .success(())
   }
-
-  // MARK: - Required Methods
-
-  /// Encrypts binary data using a key from secure storage.
-  func encrypt(
-    dataIdentifier _: String,
-    keyIdentifier _: String,
-    options _: CoreSecurityTypes.EncryptionOptions?
-  ) async -> Result<String, SecurityStorageError> {
-    // Mock implementation that always succeeds
-    .success("mock-encrypted-data-id")
+  
+  public func retrieveKey(withIdentifier identifier: String) async -> Result<[UInt8], KeyManagementError> {
+    return .success([0, 1, 2, 3, 4, 5])
   }
-
-  /// Decrypts binary data using a key from secure storage.
-  func decrypt(
-    encryptedDataIdentifier _: String,
-    keyIdentifier _: String,
-    options _: CoreSecurityTypes.DecryptionOptions?
-  ) async -> Result<String, SecurityStorageError> {
-    // Mock implementation that always succeeds
-    .success("mock-decrypted-data-id")
-  }
-
-  /// Computes a cryptographic hash of data in secure storage.
-  func hash(
-    dataIdentifier _: String,
-    options _: CoreSecurityTypes.HashingOptions?
-  ) async -> Result<String, SecurityStorageError> {
-    // Mock implementation that always succeeds
-    .success("mock-hash-id")
-  }
-
-  /// Verifies a cryptographic hash against the expected value, both stored securely.
-  func verifyHash(
-    dataIdentifier _: String,
-    hashIdentifier _: String,
-    options _: CoreSecurityTypes.HashingOptions?
-  ) async -> Result<Bool, SecurityStorageError> {
-    // Mock implementation that always verifies successfully
-    .success(true)
-  }
-
-  /// Generates a cryptographic key and stores it securely.
-  func generateKey(
-    length _: Int,
-    options _: CoreSecurityTypes.KeyGenerationOptions?
-  ) async -> Result<String, SecurityStorageError> {
-    // Mock implementation that always succeeds
-    .success("mock-key-id")
-  }
-
-  /// Imports data into secure storage for use with cryptographic operations.
-  func importData(
-    _: [UInt8],
-    customIdentifier: String?
-  ) async -> Result<String, SecurityStorageError> {
-    // Mock implementation that always succeeds
-    .success(customIdentifier ?? "mock-data-id")
-  }
-
-  /// Imports data into secure storage with a specific identifier.
-  func importData(
-    _: Data,
-    customIdentifier: String
-  ) async -> Result<String, SecurityStorageError> {
-    // Mock implementation that always succeeds
-    .success(customIdentifier)
-  }
-
-  /// Generates a hash of the data associated with the given identifier.
-  func generateHash(
-    dataIdentifier _: String,
-    options _: CoreSecurityTypes.HashingOptions?
-  ) async -> Result<String, SecurityStorageError> {
-    // Mock implementation that always succeeds
-    .success("mock-hash-id")
-  }
-
-  /// Stores raw data under a specific identifier in secure storage.
-  func storeData(
-    data _: Data,
-    identifier _: String
-  ) async -> Result<Void, SecurityStorageError> {
-    // Mock implementation that always succeeds
-    .success(())
-  }
-
-  /// Retrieves raw data associated with a specific identifier from secure storage.
-  func retrieveData(
-    identifier _: String
-  ) async -> Result<Data, SecurityStorageError> {
-    // Mock implementation that always succeeds
-    .success(Data([0, 1, 2, 3])) // Mock data
-  }
-
-  /// Deletes data associated with a specific identifier from secure storage.
-  func deleteData(
-    identifier _: String
-  ) async -> Result<Void, SecurityStorageError> {
-    // Mock implementation that always succeeds
-    .success(())
-  }
-
-  /// Imports data into secure storage with a specific identifier.
-  func importData(
-    data _: Data,
-    identifier _: String
-  ) async -> Result<Void, SecurityStorageError> {
-    // Mock implementation that always succeeds
-    .success(())
-  }
-
-  /// Exports data from secure storage.
-  func exportData(
-    identifier _: String
-  ) async -> Result<[UInt8], SecurityStorageError> {
-    // Mock implementation that always succeeds
-    .success([0, 1, 2, 3]) // Mock data
+  
+  public func deleteKey(withIdentifier identifier: String) async -> Result<Void, KeyManagementError> {
+    return .success(())
   }
 }
