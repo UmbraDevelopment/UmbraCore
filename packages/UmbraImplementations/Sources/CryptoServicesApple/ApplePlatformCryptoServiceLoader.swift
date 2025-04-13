@@ -1,6 +1,6 @@
 import CryptoInterfaces
 import CryptoServicesCore
-import SecurityInterfaces
+import SecurityCoreInterfaces
 import LoggingInterfaces
 import BuildConfig
 import Foundation

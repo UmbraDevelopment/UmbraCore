@@ -1,37 +1,72 @@
 import CoreSecurityTypes
-import CryptoTypes
-import DomainSecurityTypes
 import Foundation
 import SecurityCoreInterfaces
-import UmbraErrors
 
 /**
  Namespace for unified types to avoid ambiguity and naming conflicts.
+ 
+ These types provide a unified interface for cryptographic operations
+ across the UmbraCore system while maintaining compatibility with the
+ Alpha Dot Five architecture.
  */
 public enum UnifiedCryptoTypes {
   /**
-   Canonical reference to CoreSecurityTypes.EncryptionAlgorithm.
-   Using type alias to ensure consistent algorithm definitions across the codebase.
-   */
-  public typealias EncryptionAlgorithm=CoreSecurityTypes.EncryptionAlgorithm
-
-  /**
    Unified key generation options.
    */
-  public struct KeyGenerationOptions: @unchecked Sendable {
+  public struct KeyGenerationOptions: Sendable {
     /// The key algorithm to use
     public let algorithm: KeyAlgorithm
+    
+    /// The key type (symmetric, asymmetric, etc.)
+    public let keyType: CoreSecurityTypes.KeyType
+    
+    /// The key size in bits
+    public let keySizeInBits: Int
+    
+    /// Whether the key can be extracted from the secure storage
+    public let isExtractable: Bool
+    
+    /// Whether to use secure enclave (Apple platforms) or equivalent secure hardware
+    public let useSecureEnclave: Bool
 
     /// Additional parameters for the operation (optional)
-    public let parameters: [String: Any]?
+    public let parameters: [String: String]?
 
     /// Creates a new key generation options instance
     public init(
       algorithm: KeyAlgorithm = .symmetric,
-      parameters: [String: Any]?=nil
+      keyType: CoreSecurityTypes.KeyType = .aes,
+      keySizeInBits: Int = 256,
+      isExtractable: Bool = false,
+      useSecureEnclave: Bool = false,
+      parameters: [String: String]? = nil
     ) {
-      self.algorithm=algorithm
-      self.parameters=parameters
+      self.algorithm = algorithm
+      self.keyType = keyType
+      self.keySizeInBits = keySizeInBits
+      self.isExtractable = isExtractable
+      self.useSecureEnclave = useSecureEnclave
+      self.parameters = parameters
+    }
+    
+    /// Convert to CoreSecurityTypes.KeyGenerationOptions
+    public func toCoreOptions() -> CoreSecurityTypes.KeyGenerationOptions {
+      CoreSecurityTypes.KeyGenerationOptions(
+        keyType: keyType,
+        keySizeInBits: keySizeInBits,
+        isExtractable: isExtractable,
+        useSecureEnclave: useSecureEnclave
+      )
+    }
+    
+    /// Convert from CoreSecurityTypes.KeyGenerationOptions
+    public init(from options: CoreSecurityTypes.KeyGenerationOptions) {
+      self.keyType = options.keyType
+      self.keySizeInBits = options.keySizeInBits
+      self.isExtractable = options.isExtractable
+      self.useSecureEnclave = options.useSecureEnclave
+      self.algorithm = .symmetric  // Default
+      self.parameters = nil
     }
 
     /**
@@ -48,7 +83,7 @@ public enum UnifiedCryptoTypes {
       case ecc
 
       /// ChaCha20 algorithm
-      case chaCha20
+      case chacha20
     }
   }
 
@@ -57,7 +92,7 @@ public enum UnifiedCryptoTypes {
    */
   public struct EncryptionOptions: Sendable, Equatable {
     /// The encryption algorithm to use
-    public let algorithm: EncryptionAlgorithm
+    public let algorithm: CoreSecurityTypes.EncryptionAlgorithm
 
     /// Optional authenticated data for authenticated encryption modes
     public let authenticatedData: [UInt8]?
@@ -67,13 +102,13 @@ public enum UnifiedCryptoTypes {
 
     /// Creates a new encryption options instance
     public init(
-      algorithm: EncryptionAlgorithm = .aes256GCM,
-      authenticatedData: [UInt8]?=nil,
-      padding: PaddingMode?=nil
+      algorithm: CoreSecurityTypes.EncryptionAlgorithm = .aes256GCM,
+      authenticatedData: [UInt8]? = nil,
+      padding: PaddingMode? = nil
     ) {
-      self.algorithm=algorithm
-      self.authenticatedData=authenticatedData
-      self.padding=padding
+      self.algorithm = algorithm
+      self.authenticatedData = authenticatedData
+      self.padding = padding
     }
 
     /// Convert from CoreSecurityTypes.EncryptionOptions if available
@@ -81,16 +116,27 @@ public enum UnifiedCryptoTypes {
       // Default values if options is nil
       if let options {
         // Map the algorithm
-        algorithm=options.algorithm // Direct assignment since it's the same type
-        authenticatedData=options.additionalAuthenticatedData
+        algorithm = options.algorithm // Direct assignment since it's the same type
+        authenticatedData = options.additionalAuthenticatedData
         // Padding is optional and depends on implementation
-        padding=nil
+        padding = nil
       } else {
         // Defaults
         algorithm = .aes256GCM
-        authenticatedData=nil
-        padding=nil
+        authenticatedData = nil
+        padding = nil
       }
+    }
+    
+    /// Convert to CoreSecurityTypes.EncryptionOptions
+    public func toCoreOptions() -> CoreSecurityTypes.EncryptionOptions {
+      CoreSecurityTypes.EncryptionOptions(
+        algorithm: algorithm,
+        mode: .gcm, // Default to GCM mode
+        padding: .pkcs7, // Default to PKCS7 padding
+        iv: nil, // Will be generated during operation
+        additionalAuthenticatedData: authenticatedData
+      )
     }
 
     // Implement Equatable manually
@@ -106,7 +152,7 @@ public enum UnifiedCryptoTypes {
    */
   public struct DecryptionOptions: Sendable, Equatable {
     /// The encryption algorithm that was used (needed for decryption)
-    public let algorithm: EncryptionAlgorithm
+    public let algorithm: CoreSecurityTypes.EncryptionAlgorithm
 
     /// Optional authenticated data that was used for encryption
     public let authenticatedData: [UInt8]?
@@ -116,13 +162,13 @@ public enum UnifiedCryptoTypes {
 
     /// Creates a new decryption options instance
     public init(
-      algorithm: EncryptionAlgorithm = .aes256GCM,
-      authenticatedData: [UInt8]?=nil,
-      padding: PaddingMode?=nil
+      algorithm: CoreSecurityTypes.EncryptionAlgorithm = .aes256GCM,
+      authenticatedData: [UInt8]? = nil,
+      padding: PaddingMode? = nil
     ) {
-      self.algorithm=algorithm
-      self.authenticatedData=authenticatedData
-      self.padding=padding
+      self.algorithm = algorithm
+      self.authenticatedData = authenticatedData
+      self.padding = padding
     }
 
     /// Convert from SecurityCoreInterfaces.DecryptionOptions if available
@@ -130,16 +176,27 @@ public enum UnifiedCryptoTypes {
       // Default values if options is nil
       if let options {
         // Map the algorithm - both use the same type
-        algorithm=options.algorithm
-        authenticatedData=nil
+        algorithm = options.algorithm
+        authenticatedData = nil
         // Padding is optional and depends on implementation
-        padding=nil
+        padding = nil
       } else {
         // Defaults
         algorithm = .aes256GCM
-        authenticatedData=nil
-        padding=nil
+        authenticatedData = nil
+        padding = nil
       }
+    }
+    
+    /// Convert to CoreSecurityTypes.DecryptionOptions
+    public func toCoreOptions() -> CoreSecurityTypes.DecryptionOptions {
+      CoreSecurityTypes.DecryptionOptions(
+        algorithm: algorithm,
+        mode: .gcm, // Default to GCM mode
+        padding: .pkcs7, // Default to PKCS7 padding
+        iv: nil, // Will be provided during operation
+        additionalAuthenticatedData: authenticatedData
+      )
     }
 
     // Implement Equatable manually
@@ -149,102 +206,127 @@ public enum UnifiedCryptoTypes {
         lhs.padding == rhs.padding
     }
   }
-
+  
   /**
-   Unified error types for crypto operations.
+   Unified hashing options.
    */
-  public enum CryptoError: Error, Equatable {
-    /// Operation failed with the specified reason
-    case operationFailed(String)
-
-    /// Key not found
-    case keyNotFound
-
-    /// Key generation failed
-    case keyGenerationFailed(String)
-
-    /// Key retrieval failed
-    case keyRetrievalFailed(String)
-
-    /// Encryption failed
-    case encryptionFailed(String)
-
-    /// Decryption failed
-    case decryptionFailed(String)
-
-    /// Hashing failed
-    case hashingFailed(String)
-
-    /// Storage failed
-    case storageFailed(String)
-
-    /// Retrieval failed
-    case retrievalFailed(String)
-
-    /// Invalid key format
-    case invalidKey
-
-    /// Invalid data format
-    case invalidData
-
-    /// Invalid input
-    case invalidInput(String)
-
-    /// Storage failure
-    case storageFailure(Error?)
-
-    /// Static comparison for Equatable
-    public static func == (lhs: CryptoError, rhs: CryptoError) -> Bool {
-      switch (lhs, rhs) {
-        case let (.operationFailed(lhsReason), .operationFailed(rhsReason)):
-          lhsReason == rhsReason
-        case (.keyNotFound, .keyNotFound):
-          true
-        case let (.keyGenerationFailed(lhsReason), .keyGenerationFailed(rhsReason)):
-          lhsReason == rhsReason
-        case let (.keyRetrievalFailed(lhsReason), .keyRetrievalFailed(rhsReason)):
-          lhsReason == rhsReason
-        case let (.encryptionFailed(lhsReason), .encryptionFailed(rhsReason)):
-          lhsReason == rhsReason
-        case let (.decryptionFailed(lhsReason), .decryptionFailed(rhsReason)):
-          lhsReason == rhsReason
-        case let (.hashingFailed(lhsReason), .hashingFailed(rhsReason)):
-          lhsReason == rhsReason
-        case let (.storageFailed(lhsReason), .storageFailed(rhsReason)):
-          lhsReason == rhsReason
-        case let (.retrievalFailed(lhsReason), .retrievalFailed(rhsReason)):
-          lhsReason == rhsReason
-        case (.invalidKey, .invalidKey):
-          true
-        case (.invalidData, .invalidData):
-          true
-        case let (.invalidInput(lhsReason), .invalidInput(rhsReason)):
-          lhsReason == rhsReason
-        case (.storageFailure(_), .storageFailure(_)):
-          // Can't compare errors directly
-          true
-        default:
-          false
+  public struct HashingOptions: Sendable, Equatable {
+    /// The hash algorithm to use
+    public let algorithm: CoreSecurityTypes.HashAlgorithm
+    
+    /// Additional parameters for hashing
+    public let parameters: [String: String]?
+    
+    /// Creates a new hashing options instance
+    public init(
+      algorithm: CoreSecurityTypes.HashAlgorithm = .sha256,
+      parameters: [String: String]? = nil
+    ) {
+      self.algorithm = algorithm
+      self.parameters = parameters
+    }
+    
+    /// Convert to CoreSecurityTypes.HashingOptions
+    public func toCoreOptions() -> CoreSecurityTypes.HashingOptions {
+      CoreSecurityTypes.HashingOptions(
+        algorithm: algorithm
+      )
+    }
+    
+    /// Convert from CoreSecurityTypes.HashingOptions
+    public init(from options: CoreSecurityTypes.HashingOptions?) {
+      if let options {
+        self.algorithm = options.algorithm
+        self.parameters = nil
+      } else {
+        self.algorithm = .sha256
+        self.parameters = nil
       }
+    }
+    
+    // Implement Equatable manually
+    public static func == (lhs: HashingOptions, rhs: HashingOptions) -> Bool {
+      lhs.algorithm == rhs.algorithm &&
+      areMetadataEqual(lhs.parameters, rhs.parameters)
     }
   }
 
   /**
-   Padding mode for encryption algorithms.
+   Padding modes for cryptographic operations.
    */
-  public enum PaddingMode: String, Sendable, Equatable, CaseIterable {
-    /// No padding
-    case none
-
-    /// PKCS#7 padding
+  public enum PaddingMode: String, Sendable, CaseIterable {
+    /// PKCS#7 padding (standard padding for block ciphers)
     case pkcs7
+    
+    /// No padding (data must be a multiple of the block size)
+    case none
+  }
+
+  /**
+   Map SecurityStorageError to a user-presentable error message.
+   
+   - Parameter error: The security storage error
+   - Returns: A user-friendly error message
+   */
+  public static func userFriendlyErrorMessage(for error: SecurityStorageError) -> String {
+    switch error {
+    case .dataNotFound:
+      return "The security data requested was not found."
+    case .keyNotFound:
+      return "The key requested was not found."
+    case .hashNotFound:
+      return "The hash requested was not found."
+    case .operationFailed(let message):
+      return "The security operation failed: \(message)"
+    case .storageUnavailable:
+      return "The secure storage is not available."
+    case .encryptionFailed:
+      return "The encryption operation failed."
+    case .decryptionFailed:
+      return "The decryption operation failed."
+    case .hashingFailed:
+      return "The hashing operation failed."
+    case .hashVerificationFailed:
+      return "The hash verification failed."
+    case .keyGenerationFailed:
+      return "The key generation failed."
+    case .unsupportedOperation:
+      return "The requested operation is not supported."
+    case .implementationUnavailable:
+      return "The security implementation is not available."
+    case .invalidIdentifier(let reason):
+      return "The identifier is invalid: \(reason)"
+    case .identifierNotFound(let identifier):
+      return "The security identifier '\(identifier)' was not found."
+    case .storageFailure(let reason):
+      return "A storage system error occurred: \(reason)"
+    case .generalError(let reason):
+      return "A general security error occurred: \(reason)"
+    case .invalidInput(let message):
+      return "Invalid input provided: \(message)"
+    case .operationRateLimited:
+      return "The security operation was rate limited for security purposes."
+    case .storageError:
+      return "A storage system error occurred."
+    }
   }
 }
 
-// Type aliases to help with migration
-public typealias UEncryptionAlgorithm=UnifiedCryptoTypes.EncryptionAlgorithm
-public typealias UKeyGenerationOptions=UnifiedCryptoTypes.KeyGenerationOptions
-public typealias UKeyAlgorithm=UnifiedCryptoTypes.KeyGenerationOptions.KeyAlgorithm
-public typealias UEncryptionOptions=UnifiedCryptoTypes.EncryptionOptions
-public typealias UDecryptionOptions=UnifiedCryptoTypes.DecryptionOptions
-public typealias UCryptoError=UnifiedCryptoTypes.CryptoError
+// Helper function to compare metadata dictionaries
+private func areMetadataEqual(_ lhs: [String: String]?, _ rhs: [String: String]?) -> Bool {
+  guard let lhs = lhs, let rhs = rhs else {
+    return lhs == nil && rhs == nil
+  }
+  
+  guard lhs.count == rhs.count else {
+    return false
+  }
+  
+  for (key, value) in lhs {
+    guard let rhsValue = rhs[key], rhsValue == value else {
+      return false
+    }
+  }
+  
+  return true
+}

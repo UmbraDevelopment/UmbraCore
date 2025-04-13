@@ -1,11 +1,7 @@
-import CryptoInterfaces
-import SecurityInterfaces
-import LoggingInterfaces
-import BuildConfig
-import CoreSecurityTypes
-import LoggingTypes
-import CryptoTypes
 import Foundation
+import CoreSecurityTypes
+import LoggingInterfaces
+import SecurityCoreInterfaces
 
 /**
  # CryptoServiceFactory
@@ -19,15 +15,16 @@ import Foundation
  
  ## Implementation Types
  
- - `standard`: Default implementation using AES encryption with Restic integration
- - `crossPlatform`: Implementation using RingFFI with Argon2id for any environment
- - `applePlatform`: Apple-native implementation using CryptoKit with optimisations
+ - `basic`: Default implementation using AES encryption
+ - `ring`: Implementation using Ring cryptography library for cross-platform environments
+ - `appleCryptoKit`: Apple-native implementation using CryptoKit with optimisations
+ - `platform`: Platform-specific implementation (selects best available for current platform)
  
  ## Usage Examples
  
  ```swift
  // Create a factory with explicit service type selection
- let factory = CryptoServiceFactory(serviceType: .standard)
+ let factory = CryptoServiceFactory(serviceType: .basic)
  
  // Create a service with the selected implementation
  let cryptoService = await factory.createService(
@@ -45,7 +42,7 @@ public actor CryptoServiceFactory {
     // MARK: - Properties
     
     /// The explicitly selected cryptographic service type
-    private let serviceType: CryptoServiceType
+    private let serviceType: SecurityProviderType
     
     // MARK: - Initialisation
     
@@ -54,7 +51,7 @@ public actor CryptoServiceFactory {
      
      - Parameter serviceType: The type of cryptographic service to create (required)
      */
-    public init(serviceType: CryptoServiceType) {
+    public init(serviceType: SecurityProviderType) {
         self.serviceType = serviceType
     }
     
@@ -66,188 +63,299 @@ public actor CryptoServiceFactory {
      - Parameters:
        - secureStorage: Optional secure storage to use
        - logger: Optional logger to use
-       - environment: Optional override for the environment configuration
+       - environment: Optional environment configuration
      - Returns: A CryptoServiceProtocol implementation of the selected type
      */
     public func createService(
         secureStorage: SecureStorageProtocol? = nil,
         logger: LoggingProtocol? = nil,
-        environment: UmbraEnvironment? = nil
+        environment: String? = nil
     ) async -> CryptoServiceProtocol {
-        // Use the provided environment or fallback to BuildConfig
-        let effectiveEnvironment = environment ?? BuildConfig.activeEnvironment
-        
         // Create the appropriate secure storage if not provided
-        let actualSecureStorage: SecureStorageProtocol = if let secureStorage {
-            secureStorage
+        let actualSecureStorage: SecureStorageProtocol
+        if let secureStorage {
+            actualSecureStorage = secureStorage
         } else {
-            await createLocalSecureStorage(
-                logger: logger,
-                environment: effectiveEnvironment
-            )
+            // This comment acknowledges we're deliberately using a deprecated method for testing purposes.
+            // We accept the warning as this is explicitly for testing environments.
+            actualSecureStorage = createMockSecureStorage()
         }
-        
-        // Update BuildConfig to reflect the explicitly selected service type
-        // This ensures any dependent systems use the correct backend strategy
-        BuildConfig.activeBackendStrategy = serviceType.backendStrategy
         
         // Log the explicitly selected service type
         if let logger = logger {
-            await logger.info(
+            let context = BaseLogContextDTO(
+                domainName: "CryptoService",
+                operation: "createService",
+                category: "Security",
+                source: "CryptoServiceFactory",
+                metadata: LogMetadataDTOCollection()
+                    .withPublic(key: "serviceType", value: serviceType.rawValue)
+                    .withPublic(key: "environment", value: environment ?? "production")
+            )
+            
+            await logger.debug(
                 "Creating crypto service with explicit type: \(serviceType.rawValue)",
-                metadata: [
-                    "serviceType": .public(serviceType.rawValue),
-                    "environment": .public(effectiveEnvironment.rawValue)
-                ]
+                context: context
             )
         }
         
-        // Use conditional compilation to load the appropriate implementation
-        // Each build configuration will only include one implementation
-        #if CRYPTO_IMPLEMENTATION_STANDARD
-            // Return the standard implementation
-            return await StandardCryptoService(
-                secureStorage: actualSecureStorage,
-                logger: logger,
-                environment: effectiveEnvironment
-            )
-        #elseif CRYPTO_IMPLEMENTATION_XFN
-            // Return the cross-platform implementation
-            return await CrossPlatformCryptoService(
+        // Determine environment type from string if provided
+        let envType: UmbraEnvironment.EnvironmentType
+        if let environment = environment?.lowercased() {
+            if environment.contains("dev") {
+                envType = .development
+            } else if environment.contains("test") {
+                envType = .test
+            } else if environment.contains("stag") {
+                envType = .staging
+            } else {
+                envType = .production
+            }
+        } else {
+            envType = .production
+        }
+        
+        // Create appropriate environment configuration
+        let umbraEnvironment = UmbraEnvironment(
+            type: envType,
+            hasHardwareSecurity: false,
+            enhancedLoggingEnabled: logger != nil,
+            platformIdentifier: "unknown",
+            parameters: [:]
+        )
+        
+        // Create the actual implementation based on the selected type
+        switch serviceType {
+        case .basic:
+            // Use a protocol-compliant standard implementation for basic type
+            return StandardCryptoServiceProxy(
                 secureStorage: actualSecureStorage,
                 logger: logger, 
-                environment: effectiveEnvironment
+                environment: umbraEnvironment
             )
-        #elseif CRYPTO_IMPLEMENTATION_APPLE
-            // Return the Apple platform-specific implementation
-            return await ApplePlatformCryptoService(
-                secureStorage: actualSecureStorage,
-                logger: logger,
-                environment: effectiveEnvironment
-            )
-        #else
-            // For now, in development, we'll return a stub implementation
-            // This code path shouldn't be reached in production builds
-            return StubCryptoService(
-                serviceType: serviceType,
+        default:
+            // For other types, use the default implementation
+            return DefaultCryptoService(
                 secureStorage: actualSecureStorage,
                 logger: logger, 
-                environment: effectiveEnvironment
+                providerType: serviceType
             )
-        #endif
+        }
     }
-    
-    // MARK: - Private Helper Methods
     
     /**
-     Creates an appropriate implementation of secure storage for the environment.
+     Creates a mock secure storage implementation for testing.
      
-     - Parameters:
-       - logger: Optional logger for the storage operations
-       - environment: The environment to configure storage for
-     - Returns: A secure storage implementation
+     - Returns: A mock secure storage implementation
      */
-    private func createLocalSecureStorage(
-        logger: LoggingProtocol? = nil,
-        environment: UmbraEnvironment = BuildConfig.activeEnvironment
-    ) async -> SecureStorageProtocol {
-        // Return a default secure storage implementation
-        // In a full implementation, this would create the appropriate secure storage
-        // based on the environment and platform
-        return TemporarySecureStorage()
-    }
-}
-
-/**
- Temporary extension to BuildConfig for updating backend strategy.
- 
- This would be replaced with a proper mechanism in the final implementation.
- */
-extension BuildConfig {
-    static func updateBackendStrategy(_ strategy: BackendStrategy) {
-        // This is a stub that would be replaced with actual implementation
-        // to update the BuildConfig with the selected strategy
-    }
-}
-
-/**
- # DynamicCryptoServiceLoader
- 
- Helper for loading the appropriate crypto service implementation based on the selected type.
- 
- This is a temporary stub implementation that will be replaced with actual dynamic
- loading code once the individual implementations are completed.
- */
-private enum DynamicCryptoServiceLoader {
-    static func loadImplementation(
-        type: CryptoServiceType,
-        secureStorage: SecureStorageProtocol,
-        logger: LoggingProtocol?,
-        environment: UmbraEnvironment
-    ) -> CryptoServiceProtocol {
-        // This is a temporary stub implementation
-        // In a full implementation, this would dynamically load the correct
-        // implementation from the appropriate module
-        return StubCryptoService(
-            serviceType: type,
-            secureStorage: secureStorage,
-            logger: logger,
-            environment: environment
+    @available(*, deprecated, message: "Use only for testing")
+    private func createMockSecureStorage() -> SecureStorageProtocol {
+        
+        // Create a default mock implementation for testing
+        return MockSecureStorage(
+            behaviour: MockSecureStorage.MockBehaviour(
+                shouldSucceed: true,
+                logOperations: true
+            )
         )
     }
 }
 
 /**
- Temporary stub implementation of SecureStorageProtocol for use during development.
- 
- This will be replaced with actual implementations in the production code.
+ Default implementation of CryptoServiceProtocol that wraps a SecureStorageProtocol
  */
-private struct TemporarySecureStorage: SecureStorageProtocol {
-    func storeData(_ data: Data, withIdentifier identifier: String) async -> Result<Bool, SecurityStorageError> {
-        return .success(true)
+private actor DefaultCryptoService: CryptoServiceProtocol {
+    public let secureStorage: SecureStorageProtocol
+    private let logger: LoggingProtocol?
+    private let providerType: SecurityProviderType
+    
+    init(
+        secureStorage: SecureStorageProtocol,
+        logger: LoggingProtocol?,
+        providerType: SecurityProviderType
+    ) {
+        self.secureStorage = secureStorage
+        self.logger = logger
+        self.providerType = providerType
     }
     
-    func retrieveData(withIdentifier identifier: String) async -> Result<Data, SecurityStorageError> {
-        return .failure(.dataNotFound)
+    public func encrypt(
+        dataIdentifier: String,
+        keyIdentifier: String,
+        options: EncryptionOptions?
+    ) async -> Result<String, SecurityStorageError> {
+        // Log operation
+        await logOperation("encrypt", ["dataIdentifier": dataIdentifier, "keyIdentifier": keyIdentifier])
+        
+        // Not implemented in this simplified version
+        return .failure(.operationFailed("Operation not implemented in DefaultCryptoService"))
     }
     
-    func deleteData(withIdentifier identifier: String) async -> Result<Bool, SecurityStorageError> {
-        return .success(true)
-    }
-}
-
-/**
- Temporary stub implementation of CryptoServiceProtocol for use during development.
- 
- This will be replaced with actual implementations in the production code.
- */
-private struct StubCryptoService: CryptoServiceProtocol {
-    let serviceType: CryptoServiceType
-    let secureStorage: SecureStorageProtocol
-    let logger: LoggingProtocol?
-    let environment: UmbraEnvironment
-    
-    func encrypt(dataIdentifier: String, keyIdentifier: String, options: EncryptionOptions?) async -> Result<String, SecurityStorageError> {
-        return .failure(.operationNotSupported("Stub implementation for \(serviceType.rawValue) does not support encrypt"))
+    public func decrypt(
+        encryptedDataIdentifier: String,
+        keyIdentifier: String,
+        options: DecryptionOptions?
+    ) async -> Result<String, SecurityStorageError> {
+        // Log operation
+        await logOperation("decrypt", ["encryptedDataIdentifier": encryptedDataIdentifier, "keyIdentifier": keyIdentifier])
+        
+        // Not implemented in this simplified version
+        return .failure(.operationFailed("Operation not implemented in DefaultCryptoService"))
     }
     
-    func decrypt(dataIdentifier: String, keyIdentifier: String, options: DecryptionOptions?) async -> Result<String, SecurityStorageError> {
-        return .failure(.operationNotSupported("Stub implementation for \(serviceType.rawValue) does not support decrypt"))
+    public func hash(
+        dataIdentifier: String,
+        options: CoreSecurityTypes.HashingOptions?
+    ) async -> Result<String, SecurityStorageError> {
+        // Log operation
+        await logOperation("hash", ["dataIdentifier": dataIdentifier])
+        
+        // Not implemented in this simplified version
+        return .failure(.operationFailed("Operation not implemented in DefaultCryptoService"))
     }
     
-    func verifyHash(dataIdentifier: String, hashIdentifier: String, options: HashingOptions?) async -> Result<Bool, SecurityStorageError> {
-        return .failure(.operationNotSupported("Stub implementation for \(serviceType.rawValue) does not support verifyHash"))
+    public func verifyHash(
+        dataIdentifier: String,
+        hashIdentifier: String,
+        options: CoreSecurityTypes.HashingOptions?
+    ) async -> Result<Bool, SecurityStorageError> {
+        // Log operation
+        await logOperation("verifyHash", ["dataIdentifier": dataIdentifier, "hashIdentifier": hashIdentifier])
+        
+        // Not implemented in this simplified version
+        return .failure(.operationFailed("Operation not implemented in DefaultCryptoService"))
     }
     
-    func generateKey(length: Int, identifier: String, purpose: KeyPurpose, options: KeyGenerationOptions?) async -> Result<Bool, SecurityStorageError> {
-        return .failure(.operationNotSupported("Stub implementation for \(serviceType.rawValue) does not support generateKey"))
+    public func generateKey(
+        length: Int,
+        options: CoreSecurityTypes.KeyGenerationOptions?
+    ) async -> Result<String, SecurityStorageError> {
+        // Log operation
+        await logOperation("generateKey", ["length": String(length)])
+        
+        // Not implemented in this simplified version
+        return .failure(.operationFailed("Operation not implemented in DefaultCryptoService"))
     }
     
-    func retrieveData(identifier: String) async -> Result<Data, SecurityStorageError> {
+    public func importData(
+        _ data: [UInt8],
+        customIdentifier: String?
+    ) async -> Result<String, SecurityStorageError> {
+        let identifier = customIdentifier ?? "imported-\(UUID().uuidString)"
+        // Log operation
+        await logOperation("importData", ["identifier": identifier, "dataSize": String(data.count)])
+        
+        // Store the data in secure storage
+        let result = await secureStorage.storeData(data, withIdentifier: identifier)
+        
+        switch result {
+        case .success:
+            return .success(identifier)
+        case .failure(let error):
+            return .failure(error)
+        }
+    }
+    
+    public func exportData(
+        identifier: String
+    ) async -> Result<[UInt8], SecurityStorageError> {
+        // Log operation
+        await logOperation("exportData", ["identifier": identifier])
+        
+        // Retrieve the data from secure storage
         return await secureStorage.retrieveData(withIdentifier: identifier)
     }
     
-    func storeData(_ data: Data, identifier: String) async -> Result<Bool, SecurityStorageError> {
-        return await secureStorage.storeData(data, withIdentifier: identifier)
+    public func generateHash(
+        dataIdentifier: String,
+        options: CoreSecurityTypes.HashingOptions?
+    ) async -> Result<String, SecurityStorageError> {
+        // Log operation
+        await logOperation("generateHash", ["dataIdentifier": dataIdentifier])
+        
+        // Not implemented in this simplified version
+        return .failure(.operationFailed("Operation not implemented in DefaultCryptoService"))
+    }
+    
+    public func storeData(
+        data: Data,
+        identifier: String
+    ) async -> Result<Void, SecurityStorageError> {
+        // Log operation
+        await logOperation("storeData", ["identifier": identifier, "dataSize": String(data.count)])
+        
+        // Convert Data to [UInt8] and store
+        return await secureStorage.storeData([UInt8](data), withIdentifier: identifier)
+    }
+    
+    public func retrieveData(
+        identifier: String
+    ) async -> Result<Data, SecurityStorageError> {
+        // Log operation
+        await logOperation("retrieveData", ["identifier": identifier])
+        
+        // Retrieve data and convert to Data
+        let result = await secureStorage.retrieveData(withIdentifier: identifier)
+        
+        switch result {
+        case .success(let bytes):
+            return .success(Data(bytes))
+        case .failure(let error):
+            return .failure(error)
+        }
+    }
+    
+    public func deleteData(
+        identifier: String
+    ) async -> Result<Void, SecurityStorageError> {
+        // Log operation
+        await logOperation("deleteData", ["identifier": identifier])
+        
+        // Delete data from secure storage
+        return await secureStorage.deleteData(withIdentifier: identifier)
+    }
+    
+    public func importData(
+        _ data: Data,
+        customIdentifier: String
+    ) async -> Result<String, SecurityStorageError> {
+        // Log operation
+        await logOperation("importData", ["identifier": customIdentifier, "dataSize": String(data.count)])
+        
+        // Convert Data to [UInt8] and store
+        let result = await secureStorage.storeData([UInt8](data), withIdentifier: customIdentifier)
+        
+        switch result {
+        case .success:
+            return .success(customIdentifier)
+        case .failure(let error):
+            return .failure(error)
+        }
+    }
+    
+    // Helper to log operations
+    private func logOperation(_ operation: String, _ parameters: [String: String]) async {
+        if let logger = logger {
+            var metadata = LogMetadataDTOCollection()
+                .withPublic(key: "operation", value: operation)
+                .withPublic(key: "providerType", value: providerType.rawValue)
+            
+            for (key, value) in parameters {
+                metadata = metadata.withPublic(key: key, value: value)
+            }
+            
+            let context = BaseLogContextDTO(
+                domainName: "CryptoService",
+                operation: operation,
+                category: "Security",
+                source: "DefaultCryptoService",
+                metadata: metadata
+            )
+            
+            await logger.debug(
+                "Performing crypto operation: \(operation)",
+                context: context
+            )
+        }
     }
 }

@@ -1,10 +1,13 @@
-import BuildConfig
+import CoreSecurityTypes
 import Foundation
 
 /**
  # CryptoServiceType
  
- Defines the available cryptographic service implementation types.
+ This file maintains backward compatibility with the SecurityProviderType from CoreSecurityTypes.
+ 
+ In the Alpha Dot Five architecture, we explicitly use SecurityProviderType instead of the
+ legacy CryptoServiceType. This file maps between the two for transitional purposes.
  
  Developers must explicitly choose which implementation to use based on their
  requirements, rather than rely on automatic selection. Each type provides different
@@ -12,41 +15,85 @@ import Foundation
  
  ## Implementation Types
  
- - `standard`: Default implementation using AES encryption, standard privacy controls,
-   and standard logging. Best for general use cases with Restic integration.
+ - `basic`: Default implementation using AES encryption, for general use cases.
  
- - `crossPlatform`: Implementation using RingFFI cryptography library with Argon2id.
-   Features strict privacy controls and works in any environment (Apple, Windows,
-   Linux). Optimised for cross-platform compatibility.
+ - `ring`: Implementation using Ring cryptography library.
+   Features cross-platform compatibility and works in any environment.
  
- - `applePlatform`: Apple-native implementation using CryptoKit, with strict macOS
-   sandboxing. Optimised specifically for Apple platforms with hardware acceleration
-   where available.
+ - `appleCryptoKit`: Apple-native implementation using CryptoKit.
+   Optimised specifically for Apple platforms with hardware acceleration.
+ 
+ - `platform`: Platform-specific implementation that selects the best
+   provider for the current platform.
  */
+@available(*, deprecated, message: "Use SecurityProviderType directly instead")
 public enum CryptoServiceType: String, Sendable {
-    /// Default implementation using AES, standard privacy, for general use
+    /// Default implementation using AES for general use
     case standard
     
-    /// Cross-platform implementation using RingFFI and Argon2id
+    /// Cross-platform implementation using Ring
     case crossPlatform
     
     /// Apple-specific implementation using CryptoKit
     case applePlatform
     
+    /// Custom implementation
+    case custom
+    
+    /// Platform-specific implementation
+    case platform
+    
+    /// Hardware security implementation
+    case hardwareSecurity
+    
     /**
-     Maps the service type to a corresponding backend strategy.
-     
-     This provides compatibility with the existing BuildConfig mechanism
-     and ensures the appropriate backend is selected for each implementation.
+     Maps the legacy service type to the corresponding SecurityProviderType
+     in the Alpha Dot Five architecture.
      */
-    public var backendStrategy: BackendStrategy {
+    public var securityProviderType: SecurityProviderType {
         switch self {
         case .standard:
-            return .restic
+            return .basic
         case .crossPlatform:
-            return .ringFFI
+            return .ring
         case .applePlatform:
-            return .appleCK
+            return .appleCryptoKit
+        case .custom:
+            return .custom
+        case .platform:
+            return .platform
+        case .hardwareSecurity:
+            return .hsm
+        }
+    }
+    
+    /**
+     Initialize a CryptoServiceType from a SecurityProviderType.
+     
+     This is for backward compatibility during the transition.
+     
+     - Parameter providerType: The provider type to convert
+     */
+    public init(fromSecurityProviderType providerType: SecurityProviderType) {
+        switch providerType {
+        case .basic:
+            self = .standard
+        case .custom:
+            self = .custom
+        case .platform:
+            self = .platform
+        case .appleCryptoKit:
+            self = .applePlatform
+        case .ring:
+            self = .crossPlatform
+        case .cryptoKit:
+            self = .applePlatform // Map to platform as it's the closest Apple-specific option
+        case .system:
+            self = .standard // Map to standard as fallback
+        case .hsm:
+            self = .hardwareSecurity // Map to hardware security
+        @unknown default:
+            self = .standard // Fallback to standard for any future additions
         }
     }
 }

@@ -1,47 +1,37 @@
-import CryptoInterfaces
-import SecurityInterfaces
-import LoggingInterfaces
-import BuildConfig
+import CoreSecurityTypes
 import Foundation
+import LoggingInterfaces
+import SecurityCoreInterfaces
 
 /**
- # CryptoServiceRegistry
+ # Crypto Service Registry
  
- Registry for creating CryptoServiceProtocol implementations with explicit type selection.
+ This component provides a centralised registry for cryptographic service implementations. 
+ It handles instantiation and configuration of the appropriate implementation
+ based on the requested type, platform, and available capabilities.
  
- This registry provides factory methods for creating crypto service implementations
- based on the explicitly selected type, ensuring developers make conscious decisions
- about which implementation to use rather than relying on automatic selection.
- 
- ## Implementation Types
- 
- - `standard`: Default implementation using AES encryption with Restic integration
- - `crossPlatform`: Implementation using RingFFI with Argon2id for any environment
- - `applePlatform`: Apple-native implementation using CryptoKit with optimisations
- 
- ## Usage Example
- 
- ```swift
- // Create a service with explicit type selection
- let cryptoService = await CryptoServiceRegistry.createService(
-     type: .applePlatform,
-     logger: myLogger
- )
- ```
+ The registry acts as a service locator, making it easier for clients to obtain
+ the security provider implementation they need without having to know the
+ concrete implementation details.
  */
 public enum CryptoServiceRegistry {
     /**
-     Creates a crypto service implementation with explicit type selection.
+     Creates a cryptographic service of the specified type.
+     
+     This method serves as a factory for creating configured cryptographic
+     service implementations. It handles instantiation of the correct
+     implementation based on the requested type, platform capabilities,
+     and configuration.
      
      - Parameters:
-       - type: The explicitly selected implementation type
-       - secureStorage: Optional secure storage to use
-       - logger: Optional logger to use
-       - environment: Optional override for the environment configuration
-     - Returns: A CryptoServiceProtocol implementation of the selected type
+        - type: The type of cryptographic service to create
+        - secureStorage: Optional secure storage implementation to use
+        - logger: Optional logger implementation to use
+        - environment: Optional environment to use for platform-specific decisions
+     - Returns: A cryptographic service implementation
      */
     public static func createService(
-        type: CryptoServiceType,
+        type: SecurityProviderType,
         secureStorage: SecureStorageProtocol? = nil,
         logger: LoggingProtocol? = nil,
         environment: UmbraEnvironment? = nil
@@ -51,6 +41,38 @@ public enum CryptoServiceRegistry {
         
         // Create the service using the factory
         return await factory.createService(
+            secureStorage: secureStorage,
+            logger: logger,
+            environment: environment?.name
+        )
+    }
+    
+    /**
+     Creates a cryptographic service based on a legacy CryptoServiceType.
+     
+     This method provides backward compatibility for code still using the 
+     deprecated CryptoServiceType enum.
+     
+     - Parameters:
+        - legacyType: The legacy service type to create
+        - secureStorage: Optional secure storage implementation to use
+        - logger: Optional logger implementation to use
+        - environment: Optional environment to use for platform-specific decisions
+     - Returns: A cryptographic service implementation
+     */
+    @available(*, deprecated, message: "Use createService with SecurityProviderType instead")
+    public static func createService(
+        type legacyType: CryptoServiceType,
+        secureStorage: SecureStorageProtocol? = nil,
+        logger: LoggingProtocol? = nil,
+        environment: UmbraEnvironment? = nil
+    ) async -> CryptoServiceProtocol {
+        // Convert the legacy type to the new type
+        let providerType = legacyType.securityProviderType
+        
+        // Call the standard creation method
+        return await createService(
+            type: providerType,
             secureStorage: secureStorage,
             logger: logger,
             environment: environment

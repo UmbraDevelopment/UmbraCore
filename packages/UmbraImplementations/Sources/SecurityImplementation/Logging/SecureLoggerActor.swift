@@ -2,7 +2,6 @@ import Foundation
 import LoggingInterfaces
 import LoggingTypes
 import SecurityCoreInterfaces
-import SecurityInterfaces
 
 /**
  Secure logger actor for privacy-aware security operations.

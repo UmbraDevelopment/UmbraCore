@@ -6,7 +6,6 @@ import LoggingInterfaces
 import LoggingServices
 import LoggingTypes
 import SecurityCoreInterfaces
-import SecurityInterfaces
 import UmbraErrors
 
 /// Helper function to create LogMetadataDTOCollection from dictionary

@@ -3,7 +3,7 @@ import Foundation
 import LoggingInterfaces
 import LoggingTypes
 import RepositoryInterfaces
-import SecurityInterfaces
+import SecurityCoreInterfaces
 
 /**
  # Security Service Factory

@@ -1,27 +1,30 @@
-import CryptoInterfaces
-import SecurityInterfaces
-import LoggingInterfaces
-import BuildConfig
 import Foundation
+import LoggingInterfaces
+import SecurityCoreInterfaces
 
 /**
- # CryptoServiceLoader
+ # Crypto Service Loader Protocol
  
- Protocol for loading crypto service implementations based on the selected type.
+ Protocol for components that can create cryptographic service implementations.
+ This protocol defines the interface for service loaders that can instantiate
+ cryptographic services based on specific requirements.
  
- This protocol defines the interface for loader implementations that are responsible
- for instantiating the appropriate crypto service implementation. Each implementation
- module will provide its own loader that conforms to this protocol.
+ Service loaders are responsible for creating the correct implementation based on
+ the requested configuration, including secure storage and logging.
  */
-public protocol CryptoServiceLoader {
+public protocol CryptoServiceLoaderProtocol {
     /**
-     Creates a crypto service implementation.
+     Creates a cryptographic service implementation.
+     
+     This method should create and configure a service implementation based on the
+     provided parameters. The implementation may vary based on the platform,
+     environment, and other factors.
      
      - Parameters:
-       - secureStorage: The secure storage to use
-       - logger: Optional logger for recording operations
-       - environment: The environment configuration
-     - Returns: An implementation of CryptoServiceProtocol
+        - secureStorage: The secure storage to use with the service
+        - logger: Optional logger to use for operations
+        - environment: Environment information for configuration
+     - Returns: A configured crypto service implementation
      */
     static func createService(
         secureStorage: SecureStorageProtocol,

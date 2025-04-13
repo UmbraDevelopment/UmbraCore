@@ -1,17 +1,17 @@
 import Foundation
 import LoggingTypes
-import SecurityInterfaces
+import SecurityCoreInterfaces
 
 /**
  This file is deprecated.
 
- Please use SecurityConfigurationDTO from the SecurityInterfaces module.
+ Please use SecurityConfigurationDTO from the SecurityCoreInterfaces module.
 
  This file is kept for temporary backwards compatibility and will be removed
  in a future update.
  */
 
-// Use SecurityConfigurationDTO from SecurityInterfaces instead
+// Use SecurityConfigurationDTO from SecurityCoreInterfaces instead
 
 /**
  Security level for cryptographic operations.

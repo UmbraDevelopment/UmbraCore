@@ -5,7 +5,7 @@ import DateTimeTypes
 import Foundation
 import LoggingInterfaces
 import LoggingTypes
-import SecurityInterfaces
+import SecurityCoreInterfaces
 import UmbraErrors
 
 /// APIServiceActor
@@ -33,7 +33,7 @@ public actor APIServiceActor: APIServiceProtocol {
   private let logger: LoggingProtocol
 
   /// The security bookmark service for managing security-scoped bookmarks
-  private let securityBookmarkService: SecurityInterfaces.SecurityBookmarkProtocol
+  private let securityBookmarkService: SecurityCoreInterfaces.SecurityBookmarkProtocol
 
   /// Event continuations for streaming events
   private var eventContinuations: [UUID: AsyncStream<APIEventDTO>.Continuation]=[:]
@@ -48,7 +48,7 @@ public actor APIServiceActor: APIServiceProtocol {
   public init(
     configuration: APIInterfaces.APIConfigurationDTO,
     logger: LoggingProtocol,
-    securityBookmarkService: SecurityInterfaces.SecurityBookmarkProtocol
+    securityBookmarkService: SecurityCoreInterfaces.SecurityBookmarkProtocol
   ) {
     self.configuration=configuration
     self.logger=logger

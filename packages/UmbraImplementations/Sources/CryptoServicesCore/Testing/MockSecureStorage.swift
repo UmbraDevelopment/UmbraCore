@@ -5,210 +5,274 @@ import SecurityCoreInterfaces
 /**
  # MockSecureStorage
  
- A standardised mock implementation of the SecureStorageProtocol for testing.
+ A mock implementation of the SecureStorageProtocol for testing.
  
- This mock provides an in-memory implementation of secure storage with configurable
- behaviour for success and failure cases. It's suitable for unit testing and
- integration testing of components that rely on secure storage.
- 
- ## Usage
- 
- ```swift
- // Create a mock with default configuration
- let mockStorage = MockSecureStorage()
- 
- // Create a mock that simulates failures
- let mockStorage = MockSecureStorage(shouldSucceed: false)
- 
- // Configure behaviour with more options
- let mockStorage = MockSecureStorage(
-     shouldSucceed: true,
-     mockResponseDelay: 0.1,
-     preloadedData: ["existing-id": Data([1, 2, 3])]
- )
- ```
- 
- ## Features
- 
- - In-memory storage that persists during the lifetime of the object
+ This mock implementation allows testing of components that depend on secure storage
+ without requiring access to actual secure storage mechanisms. It provides:
+ - In-memory storage of data
  - Configurable success/failure responses
- - Optional simulated delays to mimic asynchronous operations
- - Preloaded data option for testing retrieval scenarios
- - Operation logging for debugging and verification
+ - Optional simulated delays
+ - Operation logging
+ 
+ Because this is a mock implementation, it does not provide any actual security
+ guarantees and should only be used for testing.
  */
-public final class MockSecureStorage: SecureStorageProtocol {
+@available(*, deprecated, message: "Use only for testing")
+public actor MockSecureStorage: SecureStorageProtocol {
     // MARK: - Types
     
     /// Configuration options for the mock storage behaviour
-    public struct MockBehaviour {
+    public struct MockBehaviour: Sendable {
         /// Whether operations should succeed or fail
         public var shouldSucceed: Bool
         
-        /// Optional delay in seconds to simulate operation time
-        public var mockResponseDelay: TimeInterval?
-        
-        /// Custom error to return when operations fail
-        public var mockError: SecurityStorageError
+        /// Optional delay to simulate asynchronous operations (in seconds)
+        public var delay: TimeInterval?
         
         /// Whether to log operations
         public var logOperations: Bool
         
+        /// Error to return when operations fail
+        public var failureError: SecurityStorageError
+        
+        /// Creates a new behaviour configuration
         public init(
             shouldSucceed: Bool = true,
-            mockResponseDelay: TimeInterval? = nil,
-            mockError: SecurityStorageError = .storageError("Mock operation failed"),
-            logOperations: Bool = false
+            delay: TimeInterval? = nil,
+            logOperations: Bool = false,
+            failureError: SecurityStorageError = .operationFailed("Mock operation failed")
         ) {
             self.shouldSucceed = shouldSucceed
-            self.mockResponseDelay = mockResponseDelay
-            self.mockError = mockError
+            self.delay = delay
             self.logOperations = logOperations
+            self.failureError = failureError
+        }
+    }
+    
+    /**
+     A thread-safe dictionary implementation for use in the mock storage.
+     */
+    private final class AtomicDictionary<Key: Hashable, Value>: @unchecked Sendable {
+        private var dictionary: [Key: Value]
+        private let lock = NSLock()
+        
+        init(dictionary: [Key: Value] = [:]) {
+            self.dictionary = dictionary
+        }
+        
+        /// Get a value for a key in a thread-safe manner
+        func value(for key: Key) -> Value? {
+            lock.lock()
+            defer { lock.unlock() }
+            return dictionary[key]
+        }
+        
+        /// Set a value for a key in a thread-safe manner
+        func setValue(_ value: Value, for key: Key) {
+            lock.lock()
+            defer { lock.unlock() }
+            dictionary[key] = value
+        }
+        
+        /// Remove a value for a key in a thread-safe manner
+        func removeValue(for key: Key) {
+            lock.lock()
+            defer { lock.unlock() }
+            dictionary.removeValue(forKey: key)
+        }
+        
+        /// Get all keys in a thread-safe manner
+        var keys: [Key] {
+            lock.lock()
+            defer { lock.unlock() }
+            return Array(dictionary.keys)
+        }
+        
+        /// Get all values in a thread-safe manner
+        var values: [Value] {
+            lock.lock()
+            defer { lock.unlock() }
+            return Array(dictionary.values)
+        }
+        
+        /// Check if the dictionary contains a key in a thread-safe manner
+        func containsKey(_ key: Key) -> Bool {
+            lock.lock()
+            defer { lock.unlock() }
+            return dictionary.keys.contains(key)
+        }
+        
+        /// Return a thread-safe copy of the dictionary
+        var dictionaryCopy: [Key: Value] {
+            lock.lock()
+            defer { lock.unlock() }
+            return dictionary
         }
     }
     
     // MARK: - Properties
     
     /// In-memory storage for data
-    private var storage: [String: Data]
+    private let storage: AtomicDictionary<String, [UInt8]>
     
     /// Behaviour configuration
     private let behaviour: MockBehaviour
     
     /// Optional call handler for monitoring and customising mock responses
-    public var callHandler: ((String, [String: Any]) -> Void)?
+    private var callHandler: ((String, [String: Any]) -> Void)?
     
     // MARK: - Initialisation
     
     /**
-     Initialises a new mock secure storage with the specified configuration.
+     Create a new mock secure storage instance.
      
      - Parameters:
-        - shouldSucceed: Whether operations should succeed or fail
-        - mockResponseDelay: Optional delay to simulate operation time
-        - preloadedData: Initial data to populate the storage with
-        - mockError: Error to return when operations fail
-        - logOperations: Whether to log operations
+       - behaviour: Configuration for the mock behaviour
+       - callHandler: Optional handler to receive notifications of method calls
      */
     public init(
-        shouldSucceed: Bool = true,
-        mockResponseDelay: TimeInterval? = nil,
-        preloadedData: [String: Data] = [:],
-        mockError: SecurityStorageError = .storageError("Mock operation failed"),
-        logOperations: Bool = false
+        behaviour: MockBehaviour = MockBehaviour(),
+        callHandler: ((String, [String: Any]) -> Void)? = nil
     ) {
-        self.storage = preloadedData
-        self.behaviour = MockBehaviour(
-            shouldSucceed: shouldSucceed,
-            mockResponseDelay: mockResponseDelay,
-            mockError: mockError,
-            logOperations: logOperations
-        )
-    }
-    
-    /**
-     Initialises with a specific behaviour configuration.
-     
-     - Parameters:
-        - behaviour: The behaviour configuration to use
-        - preloadedData: Initial data to populate the storage with
-     */
-    public init(
-        behaviour: MockBehaviour,
-        preloadedData: [String: Data] = [:]
-    ) {
-        self.storage = preloadedData
+        self.storage = AtomicDictionary<String, [UInt8]>()
         self.behaviour = behaviour
+        self.callHandler = callHandler
     }
     
     // MARK: - Helper Methods
     
     /**
-     Simulates an asynchronous operation with configurable delay and success.
+     Simulates a mock operation with configurable outcomes.
      
      - Parameters:
-        - operation: The name of the operation for logging
-        - params: Parameters associated with the operation
-        - action: The storage action to perform if succeeding
-        - successResult: The result to return on success
-     - Returns: A result with either the success value or the configured error
+        - operation: The name of the operation being performed
+        - parameters: Operation parameters for logging
+        - body: The operation implementation to run on success
+     - Returns: A Result with the operation outcome or configured error
      */
     private func mockOperation<T>(
         operation: String,
-        params: [String: Any] = [:],
-        action: () -> Void = {},
-        successResult: T
+        parameters: [String: Any] = [:],
+        body: () throws -> T
     ) async -> Result<T, SecurityStorageError> {
-        // Log the operation if configured
+        // Log the operation if enabled
         if behaviour.logOperations {
-            print("MockSecureStorage: \(operation) called with \(params)")
+            print("[MockSecureStorage] \(operation) - Parameters: \(parameters)")
         }
         
-        // Call the handler if set
-        callHandler?(operation, params)
+        // Call the handler if available
+        callHandler?(operation, parameters)
         
-        // Simulate delay if configured
-        if let delay = behaviour.mockResponseDelay {
+        // Apply configured delay if needed
+        if let delay = behaviour.delay {
             try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
         }
         
-        // Return result based on configuration
+        // Return success or failure based on configuration
         if behaviour.shouldSucceed {
-            action()
-            return .success(successResult)
+            do {
+                let result = try body()
+                return .success(result)
+            } catch {
+                return .failure(.operationFailed("Internal error: \(error.localizedDescription)"))
+            }
         } else {
-            return .failure(behaviour.mockError)
+            return .failure(behaviour.failureError)
         }
     }
     
-    // MARK: - SecureStorageProtocol Implementation
+    // MARK: - SecureStorageProtocol Methods
     
-    public func store(
-        _ data: Data,
+    public func storeData(
+        _ data: [UInt8],
         withIdentifier identifier: String
     ) async -> Result<Void, SecurityStorageError> {
         await mockOperation(
-            operation: "store",
-            params: [
-                "identifier": identifier,
-                "dataSize": data.count
-            ],
-            action: { self.storage[identifier] = data },
-            successResult: ()
-        )
-    }
-    
-    public func retrieve(
-        identifier: String
-    ) async -> Result<Data, SecurityStorageError> {
-        // Special case: If the identifier doesn't exist, return itemNotFound error
-        // regardless of the shouldSucceed setting
-        if !storage.keys.contains(identifier) {
-            return .failure(.itemNotFound("Item with identifier \(identifier) not found"))
+            operation: "storeData",
+            parameters: ["identifier": identifier, "dataSize": data.count]
+        ) {
+            storage.setValue(data, for: identifier)
+            return ()
         }
-        
-        return await mockOperation(
-            operation: "retrieve",
-            params: ["identifier": identifier],
-            successResult: storage[identifier] ?? Data()
-        )
     }
     
-    public func delete(
-        identifier: String
+    public func retrieveData(
+        withIdentifier identifier: String
+    ) async -> Result<[UInt8], SecurityStorageError> {
+        await mockOperation(
+            operation: "retrieveData",
+            parameters: ["identifier": identifier]
+        ) {
+            if let data = storage.value(for: identifier) {
+                return data
+            } else {
+                throw SecurityStorageError.dataNotFound
+            }
+        }
+    }
+    
+    public func deleteData(
+        withIdentifier identifier: String
     ) async -> Result<Void, SecurityStorageError> {
         await mockOperation(
-            operation: "delete",
-            params: ["identifier": identifier],
-            action: { self.storage.removeValue(forKey: identifier) },
-            successResult: ()
-        )
+            operation: "deleteData",
+            parameters: ["identifier": identifier]
+        ) {
+            storage.removeValue(for: identifier)
+            return ()
+        }
     }
     
-    public func clear() async -> Result<Void, SecurityStorageError> {
+    /**
+     Lists all available data identifiers in the storage.
+     
+     - Returns: Array of identifiers or error
+     */
+    public func listDataIdentifiers() async -> Result<[String], SecurityStorageError> {
         await mockOperation(
-            operation: "clear",
-            action: { self.storage.removeAll() },
-            successResult: ()
-        )
+            operation: "listDataIdentifiers",
+            parameters: [:]
+        ) {
+            return storage.keys
+        }
+    }
+    
+    // MARK: - Additional Methods for Testing
+    
+    /**
+     Get a list of all identifiers currently in the storage.
+     
+     - Returns: Array of identifiers
+     */
+    public func allIdentifiers() -> [String] {
+        return storage.keys
+    }
+    
+    /**
+     Check if the storage contains data for an identifier.
+     
+     - Parameter identifier: The identifier to check
+     - Returns: True if data exists, false otherwise
+     */
+    public func containsIdentifier(_ identifier: String) -> Bool {
+        return storage.containsKey(identifier)
+    }
+    
+    /**
+     Clear all data from the storage.
+     */
+    public func clearAllData() {
+        for key in storage.keys {
+            storage.removeValue(for: key)
+        }
+    }
+    
+    /**
+     Set the call handler for monitoring operations.
+     
+     - Parameter handler: The handler function
+     */
+    public func setCallHandler(_ handler: @escaping (String, [String: Any]) -> Void) {
+        callHandler = handler
     }
 }

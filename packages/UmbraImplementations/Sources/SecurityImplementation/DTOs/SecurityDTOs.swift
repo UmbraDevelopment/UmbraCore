@@ -2,7 +2,6 @@ import CoreSecurityTypes
 import Foundation
 import LoggingTypes
 import SecurityCoreInterfaces
-import SecurityInterfaces
 
 /// The type of security event
 public enum SecurityEventTypeDTO: String, Sendable, Equatable, CaseIterable {

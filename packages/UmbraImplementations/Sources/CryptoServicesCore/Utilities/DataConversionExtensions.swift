@@ -1,7 +1,6 @@
 import Foundation
 import SecurityCoreInterfaces
 import UmbraErrors
-import BuildConfig
 
 // UMBRA_EXTENSIONS_DEFINED should be defined in BuildConfig
 // to prevent duplicate extensions
@@ -46,10 +45,9 @@ import BuildConfig
         return specificError
       }
       
-      // Use the appropriate error factory method instead of direct initialisation
+      // Use the appropriate error type based on the updated enum
       return SecurityStorageError.operationFailed(
-        error?.localizedDescription ?? "Unknown error",
-        underlyingError: error
+        error?.localizedDescription ?? "Unknown error"
       )
     }
   }
@@ -72,12 +70,20 @@ extension SecureStorageProtocol {
   /// - Returns: The retrieved data as a Data object or an error.
   public func retrieveData(withIdentifier identifier: String) async
   -> Result<Data, SecurityStorageError> {
-    let result=await retrieveData(withIdentifier: identifier)
+    let result = await retrieveData(withIdentifier: identifier)
     switch result {
       case let .success(bytes):
         return .success(Data(bytes))
       case let .failure(error):
         return .failure(error)
     }
+  }
+  
+  /// Deletes data securely by its identifier.
+  /// - Parameter identifier: A string identifying the data to delete.
+  /// - Returns: The retrieved data as a Data object or an error.
+  public func deleteData(identifier: String) async
+  -> Result<Void, SecurityStorageError> {
+    await deleteData(withIdentifier: identifier)
   }
 }

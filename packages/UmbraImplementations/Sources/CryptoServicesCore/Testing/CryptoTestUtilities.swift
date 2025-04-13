@@ -72,129 +72,111 @@ public enum CryptoTestUtilities {
     // MARK: - Configuration Creation
     
     /**
-     Creates a test EncryptionOptions object for the specified algorithm.
+     Creates encryption options for testing.
      
      - Parameters:
-        - algorithm: The encryption algorithm to create options for
-        - iv: An optional initialisation vector to use (generated if nil)
-        - aad: Optional additional authenticated data
-     - Returns: An EncryptionOptions object suitable for testing
+        - algorithm: The encryption algorithm
+        - testIV: The initialisation vector to use
+        - aad: Additional authenticated data (for AEAD modes)
+     - Returns: Configured encryption options
      */
     public static func createEncryptionOptions(
-        algorithm: String,
-        iv: Data? = nil,
-        aad: Data? = nil
+        algorithm: EncryptionAlgorithm,
+        testIV: [UInt8],
+        aad: [UInt8]? = nil
     ) -> EncryptionOptions {
-        let testIV = iv ?? createTestIV(for: algorithm)
+        // Create appropriate EncryptionMode based on algorithm
+        let mode: EncryptionMode
+        switch algorithm {
+        case .aes256CBC:
+            mode = .cbc
+        case .aes256GCM:
+            mode = .gcm
+        case .chacha20Poly1305:
+            mode = .gcm // ChaCha20 doesn't have a direct mode in EncryptionMode
+        }
+        
+        // Create appropriate EncryptionPadding based on algorithm
+        let padding: EncryptionPadding
+        switch algorithm {
+        case .aes256CBC:
+            padding = .pkcs7
+        case .aes256GCM, .chacha20Poly1305:
+            padding = .none
+        }
         
         return EncryptionOptions(
             algorithm: algorithm,
-            mode: getDefaultMode(for: algorithm),
-            padding: getDefaultPadding(for: algorithm),
+            mode: mode,
+            padding: padding,
             iv: testIV,
-            aad: aad
+            additionalAuthenticatedData: aad
         )
     }
     
     /**
-     Creates a test DecryptionOptions object for the specified algorithm.
+     Creates decryption options for testing.
      
      - Parameters:
-        - algorithm: The decryption algorithm to create options for
-        - iv: An optional initialisation vector to use (generated if nil)
-        - aad: Optional additional authenticated data
-     - Returns: A DecryptionOptions object suitable for testing
+        - algorithm: The decryption algorithm
+        - testIV: The initialisation vector to use
+        - aad: Additional authenticated data (for AEAD modes)
+     - Returns: Configured decryption options
      */
     public static func createDecryptionOptions(
-        algorithm: String,
-        iv: Data? = nil,
-        aad: Data? = nil
+        algorithm: EncryptionAlgorithm,
+        testIV: [UInt8],
+        aad: [UInt8]? = nil
     ) -> DecryptionOptions {
-        let testIV = iv ?? createTestIV(for: algorithm)
-        
-        return DecryptionOptions(
+        // Decryption options mirror encryption options
+        return createEncryptionOptions(
             algorithm: algorithm,
-            mode: getDefaultMode(for: algorithm),
-            padding: getDefaultPadding(for: algorithm),
-            iv: testIV,
+            testIV: testIV,
             aad: aad
         )
     }
     
     /**
-     Creates a test HashingOptions object for the specified algorithm.
+     Creates hashing options for testing.
      
-     - Parameter algorithm: The hashing algorithm to create options for
-     - Returns: A HashingOptions object suitable for testing
+     - Parameter algorithm: The hash algorithm to use
+     - Returns: Configured hashing options
      */
     public static func createHashingOptions(
-        algorithm: String = "SHA-256"
-    ) -> HashingOptions {
-        return HashingOptions(
-            algorithm: algorithm,
-            metadata: nil
+        algorithm: HashAlgorithm = .sha256
+    ) -> CoreSecurityTypes.HashingOptions {
+        return CoreSecurityTypes.HashingOptions(
+            algorithm: algorithm
         )
     }
     
     /**
-     Creates a test KeyGenerationOptions object for the specified algorithm.
+     Creates key generation options for testing.
      
      - Parameters:
-        - algorithm: The encryption algorithm to create key options for
-        - keyUsage: The intended usage of the key
-        - metadata: Additional metadata for the key
-     - Returns: A KeyGenerationOptions object suitable for testing
+        - keyType: The type of key to generate
+        - keySizeInBits: The key size in bits
+        - isExtractable: Whether the key can be exported
+        - useSecureEnclave: Whether to use secure hardware if available
+     - Returns: Configured key generation options
      */
     public static func createKeyGenerationOptions(
-        algorithm: String,
-        keyUsage: String = "encryption",
-        metadata: [String: String]? = nil
-    ) -> KeyGenerationOptions {
-        return KeyGenerationOptions(
-            algorithm: algorithm,
-            keyUsage: keyUsage,
-            metadata: metadata
+        keyType: KeyType = .aes,
+        keySizeInBits: Int = 256,
+        isExtractable: Bool = true,
+        useSecureEnclave: Bool = false
+    ) -> CoreSecurityTypes.KeyGenerationOptions {
+        return CoreSecurityTypes.KeyGenerationOptions(
+            keyType: keyType,
+            keySizeInBits: keySizeInBits,
+            isExtractable: isExtractable,
+            useSecureEnclave: useSecureEnclave
         )
     }
     
     // MARK: - Helper Functions
     
-    /**
-     Gets the default mode for an encryption algorithm.
-     
-     - Parameter algorithm: The encryption algorithm
-     - Returns: The default mode for the algorithm
-     */
-    private static func getDefaultMode(for algorithm: String) -> String {
-        if algorithm.lowercased().contains("gcm") {
-            return "GCM"
-        } else if algorithm.lowercased().contains("cbc") {
-            return "CBC"
-        } else if algorithm.lowercased().contains("aes") {
-            return "GCM" // Default to GCM for AES
-        } else if algorithm.lowercased().contains("chacha20") {
-            return "Poly1305" // For ChaCha20-Poly1305
-        } else {
-            return "GCM" // Default to GCM
-        }
-    }
-    
-    /**
-     Gets the default padding for an encryption algorithm.
-     
-     - Parameter algorithm: The encryption algorithm
-     - Returns: The default padding for the algorithm
-     */
-    private static func getDefaultPadding(for algorithm: String) -> String {
-        if algorithm.lowercased().contains("gcm") || 
-           algorithm.lowercased().contains("chacha20") {
-            return "NoPadding"
-        } else if algorithm.lowercased().contains("cbc") {
-            return "PKCS7Padding"
-        } else {
-            return "NoPadding" // Default
-        }
-    }
+    // MARK: - Extensions
 }
 
 // MARK: - Extensions
@@ -225,34 +207,38 @@ public extension Data {
 }
 
 /// Extension to simplify mocking for test verification
+@available(*, deprecated, message: "Use only for testing")
 public extension CryptoServiceProtocol {
     /// Convenience function to test if an implementation is a mock
+    @available(*, deprecated, message: "Use only for testing")
     var isMock: Bool {
         return self is MockCryptoService
     }
 }
 
 /// Extension to allow direct construction of mock secure storage with common configurations
+@available(*, deprecated, message: "Use only for testing")
 public extension MockSecureStorage {
     /// Creates a mockSecureStorage that always fails with a specific error
     static func alwaysFailing(
-        error: SecurityStorageError = .storageError("Mock failure"),
+        error: SecurityStorageError = .operationFailed("Mock failure"),
         delay: TimeInterval? = nil
     ) -> MockSecureStorage {
-        return MockSecureStorage(
-            shouldSucceed: false, 
-            mockResponseDelay: delay,
-            mockError: error
+        let behaviour = MockBehaviour(
+            shouldSucceed: false,
+            failureError: error
         )
+        return MockSecureStorage(behaviour: behaviour)
     }
     
-    /// Creates a mockSecureStorage with simulated network delay
+    /// Creates a mockSecureStorage with a specified delay
     static func withDelay(
         seconds: TimeInterval = 0.5
     ) -> MockSecureStorage {
-        return MockSecureStorage(
+        let behaviour = MockBehaviour(
             shouldSucceed: true,
-            mockResponseDelay: seconds
+            delay: seconds
         )
+        return MockSecureStorage(behaviour: behaviour)
     }
 }

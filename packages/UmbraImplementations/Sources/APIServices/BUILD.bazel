@@ -30,7 +30,7 @@ umbra_swift_library(
         "//packages/UmbraCoreTypes/Sources/DateTimeTypes",
         "//packages/UmbraInterfaces/Sources/APIInterfaces",
         "//packages/UmbraInterfaces/Sources/LoggingInterfaces",
-        "//packages/UmbraCoreTypes/Sources/SecurityInterfaces",
+        "//packages/UmbraInterfaces/Sources/SecurityCoreInterfaces",
         "//packages/UmbraImplementations/Sources/LoggingServices",
         "//packages/UmbraInterfaces/Sources/RepositoryInterfaces", 
         "//packages/UmbraImplementations/Sources/SecurityImplementation",

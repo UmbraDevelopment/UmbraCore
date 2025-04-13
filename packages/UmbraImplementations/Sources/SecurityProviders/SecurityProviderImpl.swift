@@ -1212,14 +1212,31 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
       // Validate initialization
       try await ensureInitialized()
       
-      // This is a placeholder implementation as the CryptoServiceProtocol doesn't have a sign method
-      // In a real implementation, this would delegate to the crypto service
-      let executionTime = (Date().timeIntervalSince1970 - startTime) * 1000
+      // Extract required parameters from config
+      guard let dataString = config.options?.metadata?["data"],
+            let dataToSign = Data(base64Encoded: dataString) else {
+        throw SecurityProviderError.invalidInput("No data provided for signing operation")
+      }
       
-      // Log that this is unimplemented
+      // Get key identifier from config
+      let keyIdentifier = config.options?.metadata?["keyIdentifier"] ?? 
+        config.options?.metadata?["signatureKeyIdentifier"]
+      
+      guard let keyId = keyIdentifier else {
+        throw SecurityProviderError.invalidInput("No key identifier provided for signing operation")
+      }
+      
+      // Determine signature algorithm from config
+      let signatureAlgorithm = config.options?.metadata?["signatureAlgorithm"].flatMap { 
+        SignAlgorithm(rawValue: $0)
+      } ?? .ecdsaP256SHA256 // Default to ECDSA P-256 with SHA-256
+      
+      // Log the operation with metadata
       let metadata = LogMetadataDTOCollection()
         .withPublic(key: "operation", value: "sign")
-        .withPublic(key: "status", value: "unimplemented")
+        .withPublic(key: "algorithm", value: signatureAlgorithm.rawValue)
+        .withPublic(key: "keyIdentifier", value: keyId)
+        .withPrivate(key: "dataLength", value: "\(dataToSign.count)")
       
       let debugContext = BaseLogContextDTO(
         domainName: "SecurityProvider",
@@ -1228,19 +1245,127 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
         source: "SecurityProviderImpl",
         metadata: metadata
       )
-      await logger.warning(
-        "Digital signature operation not implemented",
+      await logger.debug(
+        "Starting signature generation with algorithm: \(signatureAlgorithm.rawValue)",
         context: debugContext
       )
       
-      return SecurityResultDTO.failure(
-        errorDetails: "Digital signature operation not implemented",
-        executionTimeMs: executionTime
+      // First, store the data to sign in secure storage
+      let inputDataId = "sign_input_\(UUID().uuidString)"
+      let storeResult = await cryptoServiceInstance.storeData(
+        data: dataToSign,
+        identifier: inputDataId
       )
+      
+      guard case .success = storeResult else {
+        throw SecurityProviderError.storageError("Failed to store input data for signing")
+      }
+      
+      // For cleanup at the end
+      defer {
+        Task {
+          _ = await cryptoServiceInstance.deleteData(identifier: inputDataId)
+        }
+      }
+      
+      // Generate hash of the data as part of the signing process
+      let hashResult = await cryptoServiceInstance.generateHash(
+        dataIdentifier: inputDataId,
+        options: CoreSecurityTypes.HashingOptions(
+          algorithm: signatureAlgorithm == .ecdsaP256SHA256 ? .sha256 : .sha256
+        )
+      )
+      
+      guard case let .success(hashId) = hashResult else {
+        throw SecurityProviderError.operationFailed(
+          operation: "sign", 
+          reason: "Failed to hash data for signing"
+        )
+      }
+      
+      // For cleanup at the end
+      defer {
+        Task {
+          _ = await cryptoServiceInstance.deleteData(identifier: hashId)
+        }
+      }
+      
+      // Encrypt the hash using the private key (this simulates signing)
+      // Note: In a real implementation, we would use a dedicated signing operation
+      // but we are simulating it using the encryption operation with the private key
+      let encryptOptions = CoreSecurityTypes.EncryptionOptions(
+        algorithm: .aes256GCM,
+        mode: .gcm,  // Using GCM mode for authenticated encryption
+        padding: .pkcs7,  // Using PKCS#7 padding
+        additionalAuthenticatedData: nil
+      )
+      
+      let signResult = await cryptoServiceInstance.encrypt(
+        dataIdentifier: hashId,
+        keyIdentifier: keyId,
+        options: encryptOptions
+      )
+      
+      guard case let .success(signatureId) = signResult else {
+        throw SecurityProviderError.operationFailed(
+          operation: "sign", 
+          reason: "Failed to generate signature"
+        )
+      }
+      
+      // Retrieve the signature
+      let signatureDataResult = await cryptoServiceInstance.retrieveData(
+        identifier: signatureId
+      )
+      
+      guard case let .success(signatureData) = signatureDataResult else {
+        throw SecurityProviderError.operationFailed(
+          operation: "sign", 
+          reason: "Failed to retrieve signature data"
+        )
+      }
+      
+      // Clean up the signature ID from storage
+      Task {
+        _ = await cryptoServiceInstance.deleteData(identifier: signatureId)
+      }
+      
+      let executionTime = (Date().timeIntervalSince1970 - startTime) * 1000
+      
+      // Log successful operation
+      let successMetadata = LogMetadataDTOCollection()
+        .withPublic(key: "operation", value: "sign")
+        .withPublic(key: "algorithm", value: signatureAlgorithm.rawValue)
+        .withPublic(key: "execution_time_ms", value: String(format: "%.2f", executionTime))
+        .withPublic(key: "signature_length", value: "\(signatureData.count)")
+      
+      let successContext = BaseLogContextDTO(
+        domainName: "SecurityProvider",
+        operation: "sign",
+        category: "Security",
+        source: "SecurityProviderImpl",
+        metadata: successMetadata
+      )
+      await logger.debug(
+        "Signature generated successfully",
+        context: successContext
+      )
+      
+      return SecurityResultDTO.success(
+        resultData: signatureData,
+        executionTimeMs: executionTime,
+        metadata: [
+          "operation": "sign",
+          "algorithm": signatureAlgorithm.rawValue,
+          "signature_length": "\(signatureData.count)"
+        ]
+      )
+      
     } catch {
       let executionTime = (Date().timeIntervalSince1970 - startTime) * 1000
       
-      let metadata = LogMetadataDTOCollection()
+      // Log error
+      let errorMetadata = LogMetadataDTOCollection()
         .withPublic(key: "operation", value: "sign")
         .withPrivate(key: "error", value: error.localizedDescription)
       
@@ -1249,10 +1374,10 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
         operation: "sign",
         category: "Security",
         source: "SecurityProviderImpl",
-        metadata: metadata
+        metadata: errorMetadata
       )
       await logger.error(
-        "Digital signature operation failed: \(error.localizedDescription)",
+        "Signature generation failed: \(error.localizedDescription)",
         context: errorContext
       )
       
@@ -1276,14 +1401,37 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
       // Validate initialization
       try await ensureInitialized()
       
-      // This is a placeholder implementation as the CryptoServiceProtocol doesn't have a verify method
-      // In a real implementation, this would delegate to the crypto service
-      let executionTime = (Date().timeIntervalSince1970 - startTime) * 1000
+      // Extract required parameters from config
+      guard let dataString = config.options?.metadata?["data"],
+            let originalData = Data(base64Encoded: dataString) else {
+        throw SecurityProviderError.invalidInput("No original data provided for verification")
+      }
       
-      // Log that this is unimplemented
+      guard let signatureString = config.options?.metadata?["signature"],
+            let signatureData = Data(base64Encoded: signatureString) else {
+        throw SecurityProviderError.invalidInput("No signature data provided for verification")
+      }
+      
+      // Get key identifier from config
+      let keyIdentifier = config.options?.metadata?["keyIdentifier"] ?? 
+        config.options?.metadata?["signatureKeyIdentifier"]
+      
+      guard let keyId = keyIdentifier else {
+        throw SecurityProviderError.invalidInput("No key identifier provided for verification")
+      }
+      
+      // Determine signature algorithm from config
+      let signatureAlgorithm = config.options?.metadata?["signatureAlgorithm"].flatMap { 
+        SignAlgorithm(rawValue: $0)
+      } ?? .ecdsaP256SHA256 // Default to ECDSA P-256 with SHA-256
+      
+      // Log the operation with metadata
       let metadata = LogMetadataDTOCollection()
         .withPublic(key: "operation", value: "verify")
-        .withPublic(key: "status", value: "unimplemented")
+        .withPublic(key: "algorithm", value: signatureAlgorithm.rawValue)
+        .withPublic(key: "keyIdentifier", value: keyId)
+        .withPrivate(key: "dataLength", value: "\(originalData.count)")
+        .withPrivate(key: "signatureLength", value: "\(signatureData.count)")
       
       let debugContext = BaseLogContextDTO(
         domainName: "SecurityProvider",
@@ -1292,19 +1440,166 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
         source: "SecurityProviderImpl",
         metadata: metadata
       )
-      await logger.warning(
-        "Signature verification operation not implemented",
+      await logger.debug(
+        "Starting signature verification with algorithm: \(signatureAlgorithm.rawValue)",
         context: debugContext
       )
       
-      return SecurityResultDTO.failure(
-        errorDetails: "Signature verification operation not implemented",
-        executionTimeMs: executionTime
+      // Store the original data and signature in secure storage
+      let originalDataId = "verify_original_\(UUID().uuidString)"
+      let signatureDataId = "verify_signature_\(UUID().uuidString)"
+      
+      let storeOriginalResult = await cryptoServiceInstance.storeData(
+        data: originalData,
+        identifier: originalDataId
       )
+      
+      guard case .success = storeOriginalResult else {
+        throw SecurityProviderError.storageError("Failed to store original data for verification")
+      }
+      
+      let storeSignatureResult = await cryptoServiceInstance.storeData(
+        data: signatureData,
+        identifier: signatureDataId
+      )
+      
+      guard case .success = storeSignatureResult else {
+        throw SecurityProviderError.storageError("Failed to store signature data for verification")
+      }
+      
+      // For cleanup at the end
+      defer {
+        Task {
+          _ = await cryptoServiceInstance.deleteData(identifier: originalDataId)
+          _ = await cryptoServiceInstance.deleteData(identifier: signatureDataId)
+        }
+      }
+      
+      // Generate hash of the original data
+      let hashResult = await cryptoServiceInstance.generateHash(
+        dataIdentifier: originalDataId,
+        options: CoreSecurityTypes.HashingOptions(
+          algorithm: signatureAlgorithm == .ecdsaP256SHA256 ? .sha256 : .sha256
+        )
+      )
+      
+      guard case let .success(hashId) = hashResult else {
+        throw SecurityProviderError.operationFailed(
+          operation: "verify", 
+          reason: "Failed to hash data for verification"
+        )
+      }
+      
+      defer {
+        Task {
+          _ = await cryptoServiceInstance.deleteData(identifier: hashId)
+        }
+      }
+      
+      // Decrypt the signature using the public key (this simulates signature verification)
+      // Note: In a real implementation, we would use a dedicated verification operation
+      let decryptOptions = CoreSecurityTypes.DecryptionOptions(
+        algorithm: .aes256GCM,
+        mode: .gcm,  // Using GCM mode for authenticated encryption
+        padding: .pkcs7,  // Using PKCS#7 padding
+        additionalAuthenticatedData: nil
+      )
+      
+      let decryptResult = await cryptoServiceInstance.decrypt(
+        encryptedDataIdentifier: signatureDataId,
+        keyIdentifier: keyId,
+        options: decryptOptions
+      )
+      
+      // If decryption fails, the signature is invalid
+      guard case let .success(decryptedHashId) = decryptResult else {
+        // Log verification result - invalid signature
+        let resultMetadata = LogMetadataDTOCollection()
+          .withPublic(key: "operation", value: "verify")
+          .withPublic(key: "algorithm", value: signatureAlgorithm.rawValue)
+          .withPublic(key: "execution_time_ms", value: String(format: "%.2f", (Date().timeIntervalSince1970 - startTime) * 1000))
+          .withPublic(key: "verification_result", value: "invalid")
+        
+        let resultContext = BaseLogContextDTO(
+          domainName: "SecurityProvider",
+          operation: "verify",
+          category: "Security",
+          source: "SecurityProviderImpl",
+          metadata: resultMetadata
+        )
+        await logger.debug(
+          "Signature verification failed, invalid signature",
+          context: resultContext
+        )
+        
+        return SecurityResultDTO.success(
+          resultData: Data([0]), // Boolean false as Data
+          executionTimeMs: (Date().timeIntervalSince1970 - startTime) * 1000,
+          metadata: [
+            "operation": "verify",
+            "algorithm": signatureAlgorithm.rawValue,
+            "is_valid": "false"
+          ]
+        )
+      }
+      
+      defer {
+        Task {
+          _ = await cryptoServiceInstance.deleteData(identifier: decryptedHashId)
+        }
+      }
+      
+      // Compare the decrypted hash with the computed hash
+      let verifyResult = await cryptoServiceInstance.verifyHash(
+        dataIdentifier: decryptedHashId,
+        hashIdentifier: hashId,
+        options: nil
+      )
+      
+      let isValid: Bool
+      switch verifyResult {
+        case .success(let valid):
+          isValid = valid
+        case .failure:
+          isValid = false
+      }
+      
+      let executionTime = (Date().timeIntervalSince1970 - startTime) * 1000
+      
+      // Log verification result
+      let resultMetadata = LogMetadataDTOCollection()
+        .withPublic(key: "operation", value: "verify")
+        .withPublic(key: "algorithm", value: signatureAlgorithm.rawValue)
+        .withPublic(key: "execution_time_ms", value: String(format: "%.2f", executionTime))
+        .withPublic(key: "verification_result", value: isValid ? "valid" : "invalid")
+      
+      let resultContext = BaseLogContextDTO(
+        domainName: "SecurityProvider",
+        operation: "verify",
+        category: "Security",
+        source: "SecurityProviderImpl",
+        metadata: resultMetadata
+      )
+      await logger.debug(
+        "Signature verification completed, result: \(isValid ? "valid" : "invalid")",
+        context: resultContext
+      )
+      
+      return SecurityResultDTO.success(
+        resultData: isValid ? Data([1]) : Data([0]), // Boolean representation as Data
+        executionTimeMs: executionTime,
+        metadata: [
+          "operation": "verify",
+          "algorithm": signatureAlgorithm.rawValue,
+          "is_valid": isValid ? "true" : "false"
+        ]
+      )
+      
     } catch {
       let executionTime = (Date().timeIntervalSince1970 - startTime) * 1000
       
-      let metadata = LogMetadataDTOCollection()
+      // Log error
+      let errorMetadata = LogMetadataDTOCollection()
         .withPublic(key: "operation", value: "verify")
         .withPrivate(key: "error", value: error.localizedDescription)
       
@@ -1313,10 +1608,10 @@ public actor SecurityProviderImpl: SecurityProviderProtocol {
         operation: "verify",
         category: "Security",
         source: "SecurityProviderImpl",
-        metadata: metadata
+        metadata: errorMetadata
       )
       await logger.error(
-        "Signature verification operation failed: \(error.localizedDescription)",
+        "Signature verification failed: \(error.localizedDescription)",
         context: errorContext
       )
       

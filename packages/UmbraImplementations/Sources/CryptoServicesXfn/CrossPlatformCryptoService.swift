@@ -1,7 +1,6 @@
 import CryptoInterfaces
 import CryptoServicesCore
-import CryptoServicesCore.Interfaces
-import SecurityInterfaces
+import SecurityCoreInterfaces
 import LoggingInterfaces
 import BuildConfig
 import CoreSecurityTypes

@@ -1,5 +1,6 @@
 import CoreSecurityTypes
 import Foundation
+import SecurityCoreInterfaces
 
 /**
  # Error Standards
@@ -46,6 +47,7 @@ public enum CryptoErrorCode: Int, Codable, Sendable {
     case invalidHash = 8
     case invalidData = 9
     case invalidParameter = 10
+    case duplicateEntry = 11
     
     // Operational errors (100-199)
     case encryptionFailed = 100
@@ -57,6 +59,7 @@ public enum CryptoErrorCode: Int, Codable, Sendable {
     case verificationFailed = 106
     case operationTimedOut = 107
     case operationCancelled = 108
+    case unsupportedOperation = 109
     
     // Storage errors (200-299)
     case storageError = 200
@@ -86,6 +89,13 @@ public enum CryptoErrorCode: Int, Codable, Sendable {
     case internalError = 1000
     case notImplemented = 1001
     case unspecifiedError = 9999
+    case encryptionError = 1002
+    case decryptionError = 1003
+    case hashingError = 1004
+    case verificationError = 1005
+    case keyGenerationError = 1006
+    case invalidIdentifier = 1007
+    case rateLimited = 1008
 }
 
 /**
@@ -146,7 +156,11 @@ public struct CryptoOperationError: Error, Equatable, Codable, Sendable {
         
         // We can't decode the actual Error, but we can decode its description
         let errorDescription = try container.decodeIfPresent(String.self, forKey: .underlyingErrorDescription)
-        underlyingError = errorDescription.map { NSError(domain: "CryptoErrorDomain", code: code.rawValue, userInfo: [NSLocalizedDescriptionKey: $0]) }
+        if let description = errorDescription {
+            self.underlyingError = NSError(domain: "CryptoErrorDomain", code: code.rawValue, userInfo: [NSLocalizedDescriptionKey: description])
+        } else {
+            self.underlyingError = nil
+        }
     }
     
     public func encode(to encoder: Encoder) throws {
@@ -178,17 +192,202 @@ public enum CryptoErrorMapper {
      */
     public static func map(storageError: SecurityStorageError) -> CryptoOperationError {
         switch storageError {
-        case .itemNotFound(let message):
+        case .dataNotFound:
             return CryptoOperationError(
                 code: .itemNotFound,
-                message: message,
+                message: "Data not found in secure storage",
                 underlyingError: storageError
             )
-        case .storageError(let message):
+        case .invalidInput(let message):
+            return CryptoOperationError(
+                code: .invalidInput,
+                message: "Invalid input: \(message)",
+                underlyingError: storageError
+            )
+        case .keyNotFound:
+            return CryptoOperationError(
+                code: .itemNotFound,
+                message: "Key not found in secure storage",
+                underlyingError: storageError
+            )
+        case .hashNotFound:
+            return CryptoOperationError(
+                code: .itemNotFound,
+                message: "Hash not found in secure storage",
+                underlyingError: storageError
+            )
+        case .storageUnavailable:
             return CryptoOperationError(
                 code: .storageError,
-                message: message,
+                message: "Secure storage is not available",
                 underlyingError: storageError
+            )
+        case .encryptionFailed:
+            return CryptoOperationError(
+                code: .encryptionError,
+                message: "Encryption operation failed",
+                underlyingError: storageError
+            )
+        case .decryptionFailed:
+            return CryptoOperationError(
+                code: .decryptionError,
+                message: "Decryption operation failed",
+                underlyingError: storageError
+            )
+        case .hashingFailed:
+            return CryptoOperationError(
+                code: .hashingError,
+                message: "Hashing operation failed",
+                underlyingError: storageError
+            )
+        case .hashVerificationFailed:
+            return CryptoOperationError(
+                code: .verificationError,
+                message: "Hash verification failed",
+                underlyingError: storageError
+            )
+        case .keyGenerationFailed:
+            return CryptoOperationError(
+                code: .keyGenerationError,
+                message: "Key generation failed",
+                underlyingError: storageError
+            )
+        case .unsupportedOperation:
+            return CryptoOperationError(
+                code: .unsupportedOperation,
+                message: "The operation is not supported",
+                underlyingError: storageError
+            )
+        case .implementationUnavailable:
+            return CryptoOperationError(
+                code: .internalError,
+                message: "The protocol implementation is not available",
+                underlyingError: storageError
+            )
+        case .invalidIdentifier(let reason):
+            return CryptoOperationError(
+                code: .invalidIdentifier,
+                message: "Invalid identifier: \(reason)",
+                underlyingError: storageError
+            )
+        case .identifierNotFound(let identifier):
+            return CryptoOperationError(
+                code: .itemNotFound,
+                message: "Identifier not found: \(identifier)",
+                underlyingError: storageError
+            )
+        case .storageFailure(let reason):
+            return CryptoOperationError(
+                code: .storageError,
+                message: "Storage failure: \(reason)",
+                underlyingError: storageError
+            )
+        case .generalError(let reason):
+            return CryptoOperationError(
+                code: .internalError,
+                message: "General error: \(reason)",
+                underlyingError: storageError
+            )
+        case .operationFailed(let message):
+            return CryptoOperationError(
+                code: .internalError,
+                message: "Operation failed: \(message)",
+                underlyingError: storageError
+            )
+        case .operationRateLimited:
+            return CryptoOperationError(
+                code: .rateLimited,
+                message: "Operation was rate limited for security purposes",
+                underlyingError: storageError
+            )
+        case .storageError:
+            return CryptoOperationError(
+                code: .storageError,
+                message: "Generic storage error",
+                underlyingError: storageError
+            )
+        }
+    }
+    
+    /**
+     Maps a SecurityProviderError to a CryptoOperationError.
+     
+     - Parameter error: The provider error to map
+     - Returns: A standardised CryptoOperationError
+     */
+    public static func map(providerError: SecurityProviderError) -> CryptoOperationError {
+        switch providerError {
+        case .invalidKeySize(let expected, let actual):
+            return CryptoOperationError(
+                code: .invalidKey,
+                message: "Invalid key size: expected \(expected), got \(actual)",
+                underlyingError: providerError
+            )
+        case .invalidIVSize(let expected, let actual):
+            return CryptoOperationError(
+                code: .invalidIV,
+                message: "Invalid IV size: expected \(expected), got \(actual)",
+                underlyingError: providerError
+            )
+        case .encryptionFailed(let reason):
+            return CryptoOperationError(
+                code: .encryptionFailed,
+                message: "Encryption failed: \(reason)",
+                underlyingError: providerError
+            )
+        case .decryptionFailed(let reason):
+            return CryptoOperationError(
+                code: .decryptionFailed,
+                message: "Decryption failed: \(reason)",
+                underlyingError: providerError
+            )
+        case .hashingFailed(let reason):
+            return CryptoOperationError(
+                code: .hashingFailed,
+                message: "Hashing failed: \(reason)",
+                underlyingError: providerError
+            )
+        case .signingFailed(let reason):
+            return CryptoOperationError(
+                code: .signatureFailed,
+                message: "Signing failed: \(reason)",
+                underlyingError: providerError
+            )
+        case .verificationFailed(let reason):
+            return CryptoOperationError(
+                code: .verificationFailed,
+                message: "Verification failed: \(reason)",
+                underlyingError: providerError
+            )
+        case .randomGenerationFailed(let reason):
+            return CryptoOperationError(
+                code: .randomGenerationFailed,
+                message: "Random number generation failed: \(reason)",
+                underlyingError: providerError
+            )
+        case .keyGenerationFailed(let reason):
+            return CryptoOperationError(
+                code: .keyGenerationFailed,
+                message: "Key generation failed: \(reason)",
+                underlyingError: providerError
+            )
+        case .unsupportedAlgorithm(let algorithm):
+            return CryptoOperationError(
+                code: .invalidAlgorithm,
+                message: "Unsupported algorithm: \(algorithm)",
+                underlyingError: providerError
+            )
+        case .configurationError(let reason):
+            return CryptoOperationError(
+                code: .invalidConfiguration,
+                message: "Configuration error: \(reason)",
+                underlyingError: providerError
+            )
+        case .internalError(let reason):
+            return CryptoOperationError(
+                code: .internalError,
+                message: "Internal error: \(reason)",
+                underlyingError: providerError
             )
         }
     }
@@ -209,7 +408,7 @@ public enum CryptoErrorMapper {
     ) -> CryptoOperationError {
         precondition(
             code.rawValue < 100,
-            "Validation errors must have codes less than 100"
+            "Validation error codes must be between 1-99, got \(code.rawValue)"
         )
         
         return CryptoOperationError(
@@ -225,19 +424,19 @@ public enum CryptoErrorMapper {
      - Parameters:
         - code: The specific operational error code
         - message: A human-readable error message
-        - underlyingError: The original error that caused this error
         - metadata: Additional diagnostic information
+        - underlyingError: The original error that caused this error
      - Returns: A standardised CryptoOperationError
      */
     public static func operationalError(
         code: CryptoErrorCode,
         message: String,
-        underlyingError: Error? = nil,
-        metadata: [String: String]? = nil
+        metadata: [String: String]? = nil,
+        underlyingError: Error? = nil
     ) -> CryptoOperationError {
         precondition(
             code.rawValue >= 100 && code.rawValue < 200,
-            "Operational errors must have codes between 100 and 199"
+            "Operational error codes must be between 100-199, got \(code.rawValue)"
         )
         
         return CryptoOperationError(
@@ -247,67 +446,49 @@ public enum CryptoErrorMapper {
             underlyingError: underlyingError
         )
     }
-}
-
-// MARK: - Result Extension for Error Handling
-
-/**
- Extensions to Result for standardised error handling in cryptographic operations.
- */
-public extension Result where Failure == SecurityStorageError {
-    /**
-     Maps a SecurityStorageError result to a CryptoOperationError result.
-     
-     - Returns: A new Result with the same success value but with CryptoOperationError failure
-     */
-    func mapError() -> Result<Success, CryptoOperationError> {
-        return mapError { CryptoErrorMapper.map(storageError: $0) }
-    }
     
     /**
-     Maps the success value and maps the error to a standard CryptoOperationError.
+     Maps a generic Error to a CryptoOperationError.
      
-     - Parameter transform: A function to transform the success value
-     - Returns: A new Result with the transformed success value and CryptoOperationError failure
+     - Parameters:
+        - error: The error to map
+        - context: Additional context for the error mapping
+     - Returns: A standardised CryptoOperationError
      */
-    func mapBoth<NewSuccess>(
-        _ transform: (Success) -> NewSuccess
-    ) -> Result<NewSuccess, CryptoOperationError> {
-        return self.map(transform).mapError()
-    }
-}
-
-/**
- Extensions to Result for handling CryptoOperationError.
- */
-public extension Result where Failure == CryptoOperationError {
-    /**
-     Adds metadata to the error if this result is a failure.
-     
-     - Parameter metadata: Metadata to add to the error
-     - Returns: A new Result with the same success value but with added metadata in the error
-     */
-    func withMetadata(_ metadata: [String: String]) -> Self {
-        return mapError { error in
-            var combinedMetadata = error.metadata ?? [:]
-            for (key, value) in metadata {
-                combinedMetadata[key] = value
-            }
-            
-            return CryptoOperationError(
-                code: error.code,
-                message: error.message,
-                metadata: combinedMetadata,
-                underlyingError: error.underlyingError
-            )
+    public static func mapGenericError(
+        _ error: Error,
+        context: String? = nil
+    ) -> CryptoOperationError {
+        // If it's already a CryptoOperationError, return it
+        if let cryptoError = error as? CryptoOperationError {
+            return cryptoError
         }
+        
+        // If it's a SecurityStorageError, map it
+        if let storageError = error as? SecurityStorageError {
+            return map(storageError: storageError)
+        }
+        
+        // If it's a SecurityProviderError, map it
+        if let providerError = error as? SecurityProviderError {
+            return map(providerError: providerError)
+        }
+        
+        // Otherwise, create a generic error
+        let contextPrefix = context.map { "\($0): " } ?? ""
+        return CryptoOperationError(
+            code: .unspecifiedError,
+            message: "\(contextPrefix)\(error.localizedDescription)",
+            underlyingError: error
+        )
     }
 }
 
-// MARK: - Error Handling Utilities
-
 /**
- Utilities for consistent error handling in cryptographic operations.
+ Utility for handling cryptographic operation errors in a standardised way.
+ 
+ This provides validation helpers and error transformation methods to ensure
+ consistent error handling logic across implementations.
  */
 public enum CryptoErrorHandling {
     /**
@@ -315,135 +496,94 @@ public enum CryptoErrorHandling {
      
      - Parameters:
         - condition: The condition to validate
-        - code: The error code to use if validation fails
+        - errorCode: The error code to use if validation fails
         - message: The error message to use if validation fails
-     - Returns: A result with void on success or an error on failure
+     - Throws: A CryptoOperationError if the validation fails
      */
-    public static func validate(
+    public static func validateOrThrow(
         _ condition: Bool,
-        code: CryptoErrorCode,
+        errorCode: CryptoErrorCode,
         message: String
-    ) -> Result<Void, CryptoOperationError> {
-        guard condition else {
-            return .failure(CryptoErrorMapper.validationError(
-                code: code,
+    ) throws {
+        if !condition {
+            throw CryptoErrorMapper.validationError(
+                code: errorCode,
                 message: message
-            ))
+            )
         }
-        return .success(())
     }
     
     /**
-     Validates input data for cryptographic operations.
+     Transforms a Result type to handle CryptoOperationError consistently.
      
      - Parameters:
-        - data: The data to validate
-        - minSize: The minimum size in bytes
-        - maxSize: The maximum size in bytes, if applicable
-        - name: A name for the data being validated (for error messages)
-     - Returns: A result with void on success or an error on failure
+        - result: The result to transform
+        - context: Additional context for error handling
+     - Returns: A new Result with any errors mapped to CryptoOperationError
      */
-    public static func validateData(
-        _ data: Data?,
-        minSize: Int = 1,
-        maxSize: Int? = nil,
-        name: String
-    ) -> Result<Void, CryptoOperationError> {
-        guard let data = data else {
-            return .failure(CryptoErrorMapper.validationError(
-                code: .invalidData,
-                message: "\(name) cannot be nil"
-            ))
+    public static func transformResult<T>(
+        _ result: Result<T, Error>,
+        context: String? = nil
+    ) -> Result<T, CryptoOperationError> {
+        result.mapError { error in
+            CryptoErrorMapper.mapGenericError(error, context: context)
         }
-        
-        guard data.count >= minSize else {
-            return .failure(CryptoErrorMapper.validationError(
-                code: .invalidData,
-                message: "\(name) must be at least \(minSize) bytes",
-                metadata: ["actual_size": "\(data.count)"]
-            ))
-        }
-        
-        if let maxSize = maxSize {
-            guard data.count <= maxSize else {
-                return .failure(CryptoErrorMapper.validationError(
-                    code: .invalidData,
-                    message: "\(name) must be at most \(maxSize) bytes",
-                    metadata: ["actual_size": "\(data.count)"]
-                ))
-            }
-        }
-        
-        return .success(())
     }
     
     /**
-     Validates a key for cryptographic operations.
+     Transforms a Result type specifically for SecurityStorageError.
      
      - Parameters:
-        - key: The key data to validate
-        - algorithm: The encryption algorithm
-     - Returns: A result with void on success or an error on failure
+        - result: The result to transform
+        - context: Additional context for error handling
+     - Returns: A new Result with SecurityStorageError mapped to CryptoOperationError
      */
-    public static func validateKey(
-        _ key: Data?,
-        algorithm: StandardEncryptionAlgorithm
-    ) -> Result<Void, CryptoOperationError> {
-        guard let key = key else {
-            return .failure(CryptoErrorMapper.validationError(
-                code: .invalidKey,
-                message: "Encryption key cannot be nil"
-            ))
+    public static func transformStorageResult<T>(
+        _ result: Result<T, SecurityStorageError>,
+        context: String? = nil
+    ) -> Result<T, CryptoOperationError> {
+        result.mapError { error in
+            CryptoErrorMapper.map(storageError: error)
         }
-        
-        let requiredSize = algorithm.keySizeBytes
-        guard key.count == requiredSize else {
-            return .failure(CryptoErrorMapper.validationError(
-                code: .invalidKey,
-                message: "Key for \(algorithm.rawValue) must be exactly \(requiredSize) bytes",
-                metadata: [
-                    "algorithm": algorithm.rawValue,
-                    "required_size": "\(requiredSize)",
-                    "actual_size": "\(key.count)"
-                ]
-            ))
-        }
-        
-        return .success(())
     }
     
     /**
-     Validates an initialisation vector for cryptographic operations.
+     Execute a function and map any thrown errors to CryptoOperationError.
      
      - Parameters:
-        - iv: The initialisation vector data to validate
-        - algorithm: The encryption algorithm
-     - Returns: A result with void on success or an error on failure
+        - context: Context description for error reporting
+        - operation: The function to execute
+     - Returns: The result of the operation
+     - Throws: A CryptoOperationError if the operation fails
      */
-    public static func validateIV(
-        _ iv: Data?,
-        algorithm: StandardEncryptionAlgorithm
-    ) -> Result<Void, CryptoOperationError> {
-        guard let iv = iv else {
-            return .failure(CryptoErrorMapper.validationError(
-                code: .invalidIV,
-                message: "Initialisation vector cannot be nil"
-            ))
+    public static func execute<T>(
+        context: String? = nil,
+        operation: () throws -> T
+    ) throws -> T {
+        do {
+            return try operation()
+        } catch {
+            throw CryptoErrorMapper.mapGenericError(error, context: context)
         }
-        
-        let requiredSize = algorithm.ivSizeBytes
-        guard iv.count == requiredSize else {
-            return .failure(CryptoErrorMapper.validationError(
-                code: .invalidIV,
-                message: "IV for \(algorithm.rawValue) must be exactly \(requiredSize) bytes",
-                metadata: [
-                    "algorithm": algorithm.rawValue,
-                    "required_size": "\(requiredSize)",
-                    "actual_size": "\(iv.count)"
-                ]
-            ))
+    }
+    
+    /**
+     Execute an async function and map any thrown errors to CryptoOperationError.
+     
+     - Parameters:
+        - context: Context description for error reporting
+        - operation: The async function to execute
+     - Returns: The result of the operation
+     - Throws: A CryptoOperationError if the operation fails
+     */
+    public static func execute<T>(
+        context: String? = nil,
+        operation: () async throws -> T
+    ) async throws -> T {
+        do {
+            return try await operation()
+        } catch {
+            throw CryptoErrorMapper.mapGenericError(error, context: context)
         }
-        
-        return .success(())
     }
 }
