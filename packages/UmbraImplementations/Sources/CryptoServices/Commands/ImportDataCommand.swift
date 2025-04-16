@@ -74,13 +74,13 @@ public class ImportDataCommand: BaseCryptoCommand, CryptoCommand {
 
     switch storeResult {
       case .success:
-        let updatedContext = logContext.withMetadata(
+        let updatedContext=logContext.withMetadata(
           LogMetadataDTOCollection().withPrivate(
-            key: "dataIdentifier", 
+            key: "dataIdentifier",
             value: dataIdentifier
           )
         )
-        
+
         await logInfo(
           "Successfully imported \(data.count) bytes of data",
           context: updatedContext

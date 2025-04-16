@@ -158,7 +158,7 @@ public enum FileSystemError: Error, Equatable, Sendable {
 
     // For NSError, try to create a more specific error based on the error code
     // Any Swift Error can be bridged to NSError, so no conditional cast is needed
-    let nsError = error as NSError
+    let nsError=error as NSError
     switch nsError.domain {
       case NSCocoaErrorDomain:
         return mapCocoaError(nsError, operation: operation, path: path)

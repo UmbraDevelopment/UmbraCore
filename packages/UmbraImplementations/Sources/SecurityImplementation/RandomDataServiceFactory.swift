@@ -13,8 +13,9 @@ import LoggingTypes
 /// The factory utilises privacy-aware logging to ensure sensitive information is handled in
 /// accordance with data protection regulations.
 public enum RandomDataServiceFactory {
-  /// Creates a default random data service instance with standard configuration
-  /// - Returns: A fully configured random data service
+  /// Creates a default random data service instance with standard configuration.
+  ///
+  /// - Returns: A fully configured random data service.
   public static func createDefault() async -> RandomDataServiceProtocol {
     let factory=LoggingServiceFactory.shared
     let logger=await factory.createPrivacyAwareLogger(
@@ -22,23 +23,23 @@ public enum RandomDataServiceFactory {
       category: "RandomDataService"
     )
 
-    // Create a proper LoggingProtocol instance from the PrivacyAwareLoggingActor
+    // Create a proper LoggingProtocol instance from the PrivacyAwareLoggingActor.
     let loggingAdapter=PrivacyAwareLoggingAdapter(logger: logger)
 
     return RandomDataServiceActor(logger: loggingAdapter)
   }
 
-  /// Creates a custom random data service instance with the specified logger
-  /// - Parameter logger: The logger to use for logging random data generation events
-  /// - Returns: A fully configured random data service
-  public static func createCustom(
-    logger: LoggingProtocol
-  ) -> RandomDataServiceProtocol {
+  /// Creates a custom random data service instance with the specified logger.
+  ///
+  /// - Parameter logger: The logger to use for logging random data generation events.
+  /// - Returns: A fully configured random data service.
+  public static func createCustom(logger: LoggingProtocol) -> RandomDataServiceProtocol {
     RandomDataServiceActor(logger: logger)
   }
 
-  /// Creates a high-security random data service instance with enhanced security settings
-  /// - Returns: A fully configured high-security random data service
+  /// Creates a high-security random data service instance with enhanced security settings.
+  ///
+  /// - Returns: A fully configured high-security random data service.
   public static func createHighSecurity() async -> RandomDataServiceProtocol {
     let factory=LoggingServiceFactory.shared
     let logger=await factory.createComprehensivePrivacyAwareLogger(
@@ -47,12 +48,12 @@ public enum RandomDataServiceFactory {
       environment: .production
     )
 
-    // Create a proper LoggingProtocol instance from the PrivacyAwareLoggingActor
+    // Create a proper LoggingProtocol instance from the PrivacyAwareLoggingActor.
     let loggingAdapter=PrivacyAwareLoggingAdapter(logger: logger)
 
     let service=RandomDataServiceActor(logger: loggingAdapter)
 
-    // Initialise with hardware entropy source for maximum security
+    // Initialise with hardware entropy source for maximum security.
     Task {
       try? await service.initialise(entropySource: .hardware)
     }
@@ -60,8 +61,9 @@ public enum RandomDataServiceFactory {
     return service
   }
 
-  /// Creates a minimal random data service instance with basic configuration
-  /// - Returns: A minimally configured random data service
+  /// Creates a minimal random data service instance with basic configuration.
+  ///
+  /// - Returns: A minimally configured random data service.
   public static func createMinimal() async -> RandomDataServiceProtocol {
     let factory=LoggingServiceFactory.shared
     let logger=await factory.createPrivacyAwareLogger(
@@ -70,12 +72,12 @@ public enum RandomDataServiceFactory {
       environment: .production
     )
 
-    // Create a proper LoggingProtocol instance from the PrivacyAwareLoggingActor
+    // Create a proper LoggingProtocol instance from the PrivacyAwareLoggingActor.
     let loggingAdapter=PrivacyAwareLoggingAdapter(logger: logger)
 
     let service=RandomDataServiceActor(logger: loggingAdapter)
 
-    // Initialise with system entropy source for better performance
+    // Initialise with system entropy source for better performance.
     Task {
       try? await service.initialise(entropySource: .system)
     }
@@ -84,12 +86,12 @@ public enum RandomDataServiceFactory {
   }
 }
 
-/// Adapter to convert PrivacyAwareLoggingActor to LoggingProtocol
+/// Adapter to convert PrivacyAwareLoggingActor to LoggingProtocol.
 private final actor PrivacyAwareLoggingAdapter: LoggingProtocol {
-  /// The underlying logger actor instance
+  /// The underlying logger actor instance.
   private let logger: PrivacyAwareLoggingActor
 
-  /// Required by LoggingProtocol - access to the underlying logging actor
+  /// Required by LoggingProtocol - access to the underlying logging actor.
   nonisolated var loggingActor: LoggingActor {
     fatalError("Direct LoggingActor access not supported in this adapter")
   }
@@ -98,7 +100,7 @@ private final actor PrivacyAwareLoggingAdapter: LoggingProtocol {
     self.logger=logger
   }
 
-  /// Core protocol requirement for the LoggingProtocol
+  /// Core protocol requirement for the LoggingProtocol.
   func log(_ level: LogLevel, _ message: String, context: LogContextDTO) async {
     await logger.log(level, message, context: context)
   }
@@ -125,7 +127,7 @@ private final actor PrivacyAwareLoggingAdapter: LoggingProtocol {
 
   @available(*, deprecated, message: "Use info(_:context:) instead")
   func info(_ message: String, metadata _: PrivacyMetadata?, source: String) async {
-    // Create a simple metadata collection instead of trying to convert
+    // Create a simple metadata collection instead of trying to convert.
     let logMetadata=LogMetadataDTOCollection()
       .withPublic(key: "operation", value: "info")
       .withPublic(key: "source", value: source)
@@ -162,7 +164,7 @@ private final actor PrivacyAwareLoggingAdapter: LoggingProtocol {
 
   @available(*, deprecated, message: "Use error(_:context:) instead")
   func error(_ message: String, metadata _: PrivacyMetadata?, source: String) async {
-    // Create a simple metadata collection instead of trying to convert
+    // Create a simple metadata collection instead of trying to convert.
     let logMetadata=LogMetadataDTOCollection()
       .withPublic(key: "operation", value: "error")
       .withPublic(key: "source", value: source)
@@ -197,6 +199,14 @@ private final actor PrivacyAwareLoggingAdapter: LoggingProtocol {
 
   func error(_ message: String, context: LogContextDTO) async {
     await logger.error(message, context: context)
+  }
+
+  func debug(_ message: String, context: LogContextDTO) async {
+    await logger.debug(message, context: context)
+  }
+
+  func warning(_ message: String, context: LogContextDTO) async {
+    await logger.warning(message, context: context)
   }
 
   func critical(_ message: String, context: LogContextDTO) async {

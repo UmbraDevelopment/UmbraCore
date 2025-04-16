@@ -186,7 +186,7 @@ actor MockXPCServiceActor: XPCServiceProtocol {
   private func log(_ level: LogLevel, _ message: String) async {
     if let logger {
       let context=BaseLogContextDTO(
-        domainName: "XPCService", 
+        domainName: "XPCService",
         operation: "generic",
         category: "System",
         source: "MockXPCService"

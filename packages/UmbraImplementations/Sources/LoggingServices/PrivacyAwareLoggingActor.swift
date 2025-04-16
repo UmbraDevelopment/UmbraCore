@@ -154,7 +154,11 @@ public actor PrivacyAwareLoggingActor: PrivacyAwareLoggingProtocol {
    await logger.log(.info, "User logged in", context: authContext)
    ```
    */
-  public func log(_ level: LogLevel, _ message: String, context: LoggingInterfaces.LogContextDTO) async {
+  public func log(
+    _ level: LogLevel,
+    _ message: String,
+    context: LoggingInterfaces.LogContextDTO
+  ) async {
     // Convert LogLevel to UmbraLogLevel
     let umbraLevel=convertToUmbraLogLevel(level)
 
@@ -366,7 +370,11 @@ public actor PrivacyAwareLoggingActor: PrivacyAwareLoggingProtocol {
    await logger.log(.info, message, context: baseContext)
    ```
    */
-  public func log(_ level: LogLevel, _ message: PrivacyString, context: LoggingInterfaces.LogContextDTO) async {
+  public func log(
+    _ level: LogLevel,
+    _ message: PrivacyString,
+    context: LoggingInterfaces.LogContextDTO
+  ) async {
     // Apply privacy controls to the message
     let processedMessage=message
       .rawValue // In a real implementation, use message.processForLogging()

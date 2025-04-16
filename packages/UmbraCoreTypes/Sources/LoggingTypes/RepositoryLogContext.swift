@@ -31,7 +31,7 @@ public struct RepositoryLogContext: LogContextDTO, Equatable {
 
   /// The operation being performed
   public let operation: String
-  
+
   /// The category for the log entry
   public let category: String
 
@@ -86,7 +86,7 @@ public struct RepositoryLogContext: LogContextDTO, Equatable {
 
     // Add operation with public privacy
     collection=collection.withPublic(key: "operation", value: operation)
-    
+
     // Add category with public privacy
     collection=collection.withPublic(key: "category", value: category)
 
@@ -97,19 +97,19 @@ public struct RepositoryLogContext: LogContextDTO, Equatable {
 
     metadata=collection
   }
-  
+
   /// Creates a new context with additional metadata merged with the existing metadata
   /// - Parameter additionalMetadata: Additional metadata to include
   /// - Returns: New context with merged metadata
-  public func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> RepositoryLogContext {
-    return RepositoryLogContext(
-      repositoryID: self.repositoryID,
-      locationPath: self.locationPath, 
-      state: self.state,
-      operation: self.operation,
-      category: self.category,
-      source: self.source,
-      correlationID: self.correlationID,
+  public func withMetadata(_: LogMetadataDTOCollection) -> RepositoryLogContext {
+    RepositoryLogContext(
+      repositoryID: repositoryID,
+      locationPath: locationPath,
+      state: state,
+      operation: operation,
+      category: category,
+      source: source,
+      correlationID: correlationID,
       additionalMetadata: [:]
     )
   }
@@ -129,45 +129,45 @@ public struct RepositoryLogContext: LogContextDTO, Equatable {
   ) {
     self.source=source
     self.correlationID=correlationID
-    
+
     // Create a new metadata collection
-    var collection = LogMetadataDTOCollection()
-    
+    var collection=LogMetadataDTOCollection()
+
     // Extract repository ID from metadata if available
-    let repositoryID = metadata.storage["repository_id"]?.valueString
-    self.repositoryID = repositoryID
-    
+    let repositoryID=metadata.storage["repository_id"]?.valueString
+    self.repositoryID=repositoryID
+
     // Extract location path from metadata if available
-    let locationPath = metadata.storage["location"]?.valueString
-    self.locationPath = locationPath
-    
+    let locationPath=metadata.storage["location"]?.valueString
+    self.locationPath=locationPath
+
     // Extract state from metadata if available
-    let state = metadata.storage["state"]?.valueString
-    self.state = state
-    
+    let state=metadata.storage["state"]?.valueString
+    self.state=state
+
     // Extract operation from metadata if available
-    let extractedOperation = metadata.storage["operation"]?.valueString
-    self.operation = extractedOperation ?? "repository"
-    
+    let extractedOperation=metadata.storage["operation"]?.valueString
+    operation=extractedOperation ?? "repository"
+
     // Use a default category
-    self.category = "Repository"
-    
+    category="Repository"
+
     // Convert the privacy metadata to the DTO collection
     for (key, value) in metadata.storage {
       switch value.privacy {
         case .public:
-          collection = collection.withPublic(key: key, value: value.valueString)
+          collection=collection.withPublic(key: key, value: value.valueString)
         case .private:
-          collection = collection.withPrivate(key: key, value: value.valueString)
+          collection=collection.withPrivate(key: key, value: value.valueString)
         case .sensitive:
-          collection = collection.withSensitive(key: key, value: value.valueString)
+          collection=collection.withSensitive(key: key, value: value.valueString)
         case .hash:
-          collection = collection.withHashed(key: key, value: value.valueString)
+          collection=collection.withHashed(key: key, value: value.valueString)
         case .auto:
-          collection = collection.withAuto(key: key, value: value.valueString)
+          collection=collection.withAuto(key: key, value: value.valueString)
       }
     }
-    
-    self.metadata = collection
+
+    self.metadata=collection
   }
 }

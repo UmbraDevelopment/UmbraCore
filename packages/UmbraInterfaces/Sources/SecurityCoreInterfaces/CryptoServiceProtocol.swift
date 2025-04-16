@@ -11,6 +11,7 @@ public protocol CryptoServiceProtocol: Sendable {
   var secureStorage: SecureStorageProtocol { get }
 
   /// Encrypts binary data using a key from secure storage.
+  ///
   /// - Parameters:
   ///   - dataIdentifier: Identifier of the data to encrypt in secure storage.
   ///   - keyIdentifier: Identifier of the encryption key in secure storage.
@@ -23,6 +24,7 @@ public protocol CryptoServiceProtocol: Sendable {
   ) async -> Result<String, SecurityStorageError>
 
   /// Decrypts binary data using a key from secure storage.
+  ///
   /// - Parameters:
   ///   - encryptedDataIdentifier: Identifier of the encrypted data in secure storage.
   ///   - keyIdentifier: Identifier of the decryption key in secure storage.
@@ -35,7 +37,10 @@ public protocol CryptoServiceProtocol: Sendable {
   ) async -> Result<String, SecurityStorageError>
 
   /// Computes a cryptographic hash of data in secure storage.
-  /// - Parameter dataIdentifier: Identifier of the data to hash in secure storage.
+  ///
+  /// - Parameters:
+  ///   - dataIdentifier: Identifier of the data to hash in secure storage.
+  ///   - options: Optional hashing configuration.
   /// - Returns: Identifier for the hash in secure storage, or an error.
   func hash(
     dataIdentifier: String,
@@ -43,9 +48,11 @@ public protocol CryptoServiceProtocol: Sendable {
   ) async -> Result<String, SecurityStorageError>
 
   /// Verifies a cryptographic hash against the expected value, both stored securely.
+  ///
   /// - Parameters:
   ///   - dataIdentifier: Identifier of the data to verify in secure storage.
   ///   - hashIdentifier: Identifier of the expected hash in secure storage.
+  ///   - options: Optional hashing configuration.
   /// - Returns: `true` if the hash matches, `false` if not, or an error.
   func verifyHash(
     dataIdentifier: String,
@@ -54,6 +61,7 @@ public protocol CryptoServiceProtocol: Sendable {
   ) async -> Result<Bool, SecurityStorageError>
 
   /// Generates a cryptographic key and stores it securely.
+  ///
   /// - Parameters:
   ///   - length: The length of the key to generate in bytes.
   ///   - options: Optional key generation configuration.
@@ -64,10 +72,11 @@ public protocol CryptoServiceProtocol: Sendable {
   ) async -> Result<String, SecurityStorageError>
 
   /// Imports data into secure storage for use with cryptographic operations.
+  ///
   /// - Parameters:
   ///   - data: The raw data to store securely.
   ///   - customIdentifier: Optional custom identifier for the data. If nil, a random identifier is
-  /// generated.
+  ///     generated.
   /// - Returns: The identifier for the data in secure storage, or an error.
   func importData(
     _ data: [UInt8],
@@ -75,6 +84,7 @@ public protocol CryptoServiceProtocol: Sendable {
   ) async -> Result<String, SecurityStorageError>
 
   /// Exports data from secure storage.
+  ///
   /// - Parameter identifier: The identifier of the data to export.
   /// - Returns: The raw data, or an error.
   /// - Warning: Use with caution as this exposes sensitive data.
@@ -82,60 +92,51 @@ public protocol CryptoServiceProtocol: Sendable {
     identifier: String
   ) async -> Result<[UInt8], SecurityStorageError>
 
-  /**
-   Generates a hash of the data associated with the given identifier.
-
-   - Parameters:
-     - dataIdentifier: Identifier for the data to hash in secure storage.
-     - options: Optional hashing configuration.
-   - Returns: Identifier for the generated hash in secure storage, or an error.
-   */
+  /// Generates a hash of the data associated with the given identifier.
+  ///
+  /// - Parameters:
+  ///   - dataIdentifier: Identifier for the data to hash in secure storage.
+  ///   - options: Optional hashing configuration.
+  /// - Returns: Identifier for the generated hash in secure storage, or an error.
   func generateHash(
     dataIdentifier: String,
     options: CoreSecurityTypes.HashingOptions?
   ) async -> Result<String, SecurityStorageError>
 
-  /**
-   Stores raw data under a specific identifier in secure storage.
-
-   - Parameters:
-     - data: The data to store.
-     - identifier: The identifier to associate with the data.
-   - Returns: Success or an error.
-   */
+  /// Stores raw data under a specific identifier in secure storage.
+  ///
+  /// - Parameters:
+  ///   - data: The data to store.
+  ///   - identifier: The identifier to associate with the data.
+  /// - Returns: Success or an error.
   func storeData(
     data: Data,
     identifier: String
   ) async -> Result<Void, SecurityStorageError>
 
-  /**
-   Retrieves raw data associated with a specific identifier from secure storage.
-
-   - Parameter identifier: The identifier of the data to retrieve.
-   - Returns: The retrieved data or an error.
-   */
+  /// Retrieves raw data associated with a specific identifier from secure storage.
+  ///
+  /// - Parameter identifier: The identifier of the data to retrieve.
+  /// - Returns: The retrieved data or an error.
   func retrieveData(
     identifier: String
   ) async -> Result<Data, SecurityStorageError>
 
-  /**
-   Deletes data associated with a specific identifier from secure storage.
-
-   - Parameter identifier: The identifier of the data to delete.
-   - Returns: Success or an error.
-   */
+  /// Deletes data associated with a specific identifier from secure storage.
+  ///
+  /// - Parameter identifier: The identifier of the data to delete.
+  /// - Returns: Success or an error.
   func deleteData(
     identifier: String
   ) async -> Result<Void, SecurityStorageError>
 
-  /**
-   Imports data into secure storage with a specific identifier.
-
-   - Parameters:
-     - data: The data to import.
-     - customIdentifier: The identifier to assign to the imported data.
-   - Returns: The identifier used for storage (which might be the custom one or a derived one), or an error.
-   */
+  /// Imports data into secure storage with a specific identifier.
+  ///
+  /// - Parameters:
+  ///   - data: The data to import.
+  ///   - customIdentifier: The identifier to assign to the imported data.
+  /// - Returns: The identifier used for storage (which might be the custom one or a derived one),
+  /// or an error.
   func importData(
     _ data: Data,
     customIdentifier: String
@@ -204,7 +205,17 @@ public struct CryptoServiceDto: Sendable {
   /// Function to export data
   public let exportData: ExportDataFunction
 
-  /// Initialises a new DTO from the given functions
+  /// Initialises a new CryptoServiceDto with the given parameters.
+  ///
+  /// - Parameters:
+  ///   - secureStorage: The secure storage to use.
+  ///   - encrypt: Function to encrypt data.
+  ///   - decrypt: Function to decrypt data.
+  ///   - hash: Function to hash data.
+  ///   - verifyHash: Function to verify hash.
+  ///   - generateKey: Function to generate key.
+  ///   - importData: Function to import data.
+  ///   - exportData: Function to export data.
   public init(
     secureStorage: SecureStorageProtocol,
     encrypt: @escaping EncryptFunction,

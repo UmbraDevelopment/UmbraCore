@@ -1,9 +1,9 @@
 import CoreSecurityTypes
 import CryptoInterfaces
+import CryptoServicesApple
 import CryptoServicesCore
 import CryptoServicesStandard
 import CryptoServicesXfn
-import CryptoServicesApple
 import DomainSecurityTypes
 import Foundation
 import LoggingInterfaces
@@ -152,24 +152,24 @@ public enum SecurityProviderFactoryImpl {
  */
 private final class CryptoKitProvider: EncryptionProviderProtocol {
   public var providerType: SecurityProviderType { .cryptoKit }
-  
+
   // The CryptoServiceProtocol instance from CryptoServicesApple
   private let cryptoService: CryptoServiceProtocol
-  
+
   // Secure storage for cryptographic operations
   private let secureStorage: SecureStorageProtocol
-  
+
   // Logger for secure operations
   private let logger: LoggingProtocol?
 
   init() throws {
     // Create a dedicated secure storage instance for this provider
-    self.secureStorage = TemporarySecureStorage()
-    self.logger = nil
-    
+    secureStorage=TemporarySecureStorage()
+    logger=nil
+
     // Create the Apple-native cryptographic service
-    self.cryptoService = try Task {
-      return await CryptoServiceRegistry.createService(
+    cryptoService=try Task {
+      await CryptoServiceRegistry.createService(
         type: .apple,
         secureStorage: secureStorage,
         logger: logger
@@ -184,60 +184,60 @@ private final class CryptoKitProvider: EncryptionProviderProtocol {
     config: SecurityConfigDTO
   ) throws -> Data {
     // Store the data and key in secure storage
-    let dataId = UUID().uuidString
-    let keyId = UUID().uuidString
-    
+    let dataID=UUID().uuidString
+    let keyID=UUID().uuidString
+
     // Convert async operations to synchronous for compatibility
-    let dataStoreResult = try Task {
-      return await cryptoService.storeData(data: plaintext, identifier: dataId)
+    let dataStoreResult=try Task {
+      await cryptoService.storeData(data: plaintext, identifier: dataID)
     }.value
-    
-    guard case .success = dataStoreResult else {
+
+    guard case .success=dataStoreResult else {
       throw SecurityServiceError.providerError("Failed to store plaintext data for encryption")
     }
-    
-    let keyStoreResult = try Task {
-      return await cryptoService.storeData(data: key, identifier: keyId)
+
+    let keyStoreResult=try Task {
+      await cryptoService.storeData(data: key, identifier: keyID)
     }.value
-    
-    guard case .success = keyStoreResult else {
+
+    guard case .success=keyStoreResult else {
       throw SecurityServiceError.providerError("Failed to store key for encryption")
     }
-    
+
     // Create encryption options with the IV
-    let options = EncryptionOptions(
+    let options=EncryptionOptions(
       algorithm: config.encryptionAlgorithm.rawValue,
       mode: "GCM",
       padding: "NoPadding",
       iv: iv,
       aad: nil
     )
-    
+
     // Perform the encryption operation
-    let encryptResult = try Task {
-      return await cryptoService.encrypt(
-        dataIdentifier: dataId,
-        keyIdentifier: keyId,
+    let encryptResult=try Task {
+      await cryptoService.encrypt(
+        dataIdentifier: dataID,
+        keyIdentifier: keyID,
         options: options
       )
     }.value
-    
+
     // Retrieve the encrypted data
     switch encryptResult {
-    case .success(let encryptedId):
-      let retrieveResult = try Task {
-        return await cryptoService.retrieveData(identifier: encryptedId)
-      }.value
-      
-      switch retrieveResult {
-      case .success(let encryptedData):
-        return encryptedData
+      case let .success(encryptedID):
+        let retrieveResult=try Task {
+          await cryptoService.retrieveData(identifier: encryptedID)
+        }.value
+
+        switch retrieveResult {
+          case let .success(encryptedData):
+            return encryptedData
+          case .failure:
+            throw SecurityServiceError.providerError("Failed to retrieve encrypted data")
+        }
+
       case .failure:
-        throw SecurityServiceError.providerError("Failed to retrieve encrypted data")
-      }
-      
-    case .failure:
-      throw SecurityServiceError.providerError("Encryption operation failed")
+        throw SecurityServiceError.providerError("Encryption operation failed")
     }
   }
 
@@ -248,179 +248,180 @@ private final class CryptoKitProvider: EncryptionProviderProtocol {
     config: SecurityConfigDTO
   ) throws -> Data {
     // Store the data and key in secure storage
-    let dataId = UUID().uuidString
-    let keyId = UUID().uuidString
-    
+    let dataID=UUID().uuidString
+    let keyID=UUID().uuidString
+
     // Convert async operations to synchronous for compatibility
-    let dataStoreResult = try Task {
-      return await cryptoService.storeData(data: ciphertext, identifier: dataId)
+    let dataStoreResult=try Task {
+      await cryptoService.storeData(data: ciphertext, identifier: dataID)
     }.value
-    
-    guard case .success = dataStoreResult else {
+
+    guard case .success=dataStoreResult else {
       throw SecurityServiceError.providerError("Failed to store ciphertext data for decryption")
     }
-    
-    let keyStoreResult = try Task {
-      return await cryptoService.storeData(data: key, identifier: keyId)
+
+    let keyStoreResult=try Task {
+      await cryptoService.storeData(data: key, identifier: keyID)
     }.value
-    
-    guard case .success = keyStoreResult else {
+
+    guard case .success=keyStoreResult else {
       throw SecurityServiceError.providerError("Failed to store key for decryption")
     }
-    
+
     // Create decryption options with the IV
-    let options = DecryptionOptions(
+    let options=DecryptionOptions(
       algorithm: config.encryptionAlgorithm.rawValue,
       mode: "GCM",
       padding: "NoPadding",
       iv: iv,
       aad: nil
     )
-    
+
     // Perform the decryption operation
-    let decryptResult = try Task {
-      return await cryptoService.decrypt(
-        encryptedDataIdentifier: dataId,
-        keyIdentifier: keyId,
+    let decryptResult=try Task {
+      await cryptoService.decrypt(
+        encryptedDataIdentifier: dataID,
+        keyIdentifier: keyID,
         options: options
       )
     }.value
-    
+
     // Retrieve the decrypted data
     switch decryptResult {
-    case .success(let decryptedId):
-      let retrieveResult = try Task {
-        return await cryptoService.retrieveData(identifier: decryptedId)
-      }.value
-      
-      switch retrieveResult {
-      case .success(let decryptedData):
-        return decryptedData
+      case let .success(decryptedID):
+        let retrieveResult=try Task {
+          await cryptoService.retrieveData(identifier: decryptedID)
+        }.value
+
+        switch retrieveResult {
+          case let .success(decryptedData):
+            return decryptedData
+          case .failure:
+            throw SecurityServiceError.providerError("Failed to retrieve decrypted data")
+        }
+
       case .failure:
-        throw SecurityServiceError.providerError("Failed to retrieve decrypted data")
-      }
-      
-    case .failure:
-      throw SecurityServiceError.providerError("Decryption operation failed")
+        throw SecurityServiceError.providerError("Decryption operation failed")
     }
   }
 
   public func generateKey(size: Int, config: SecurityConfigDTO) throws -> Data {
     // Create key generation options
-    let options = KeyGenerationOptions(
+    let options=KeyGenerationOptions(
       algorithm: config.encryptionAlgorithm.rawValue,
       keyUsage: "encryption",
       metadata: ["keySize": "\(size)"]
     )
-    
+
     // Perform the key generation operation
-    let generateResult = try Task {
-      return await cryptoService.generateKey(
+    let generateResult=try Task {
+      await cryptoService.generateKey(
         length: size / 8, // Convert bits to bytes
         options: options
       )
     }.value
-    
+
     // Retrieve the generated key
     switch generateResult {
-    case .success(let keyId):
-      let retrieveResult = try Task {
-        return await cryptoService.retrieveData(identifier: keyId)
-      }.value
-      
-      switch retrieveResult {
-      case .success(let keyData):
-        return keyData
+      case let .success(keyID):
+        let retrieveResult=try Task {
+          await cryptoService.retrieveData(identifier: keyID)
+        }.value
+
+        switch retrieveResult {
+          case let .success(keyData):
+            return keyData
+          case .failure:
+            throw SecurityServiceError.providerError("Failed to retrieve generated key")
+        }
+
       case .failure:
-        throw SecurityServiceError.providerError("Failed to retrieve generated key")
-      }
-      
-    case .failure:
-      throw SecurityServiceError.providerError("Key generation failed")
+        throw SecurityServiceError.providerError("Key generation failed")
     }
   }
 
   public func generateIV(size: Int) throws -> Data {
     // Delegate to crypto service for random bytes generation
-    let generateResult = try Task {
+    let generateResult=try Task {
       // We'll need to import the key first, then export it
-      let randomId = UUID().uuidString
-      let randomBytes = Array(repeating: UInt8(0), count: size)
-      let importResult = await cryptoService.importData(randomBytes, customIdentifier: randomId)
-      
-      guard case .success = importResult else {
-        return Result<Data, SecurityStorageError>.failure(.storageError("Failed to create random bytes"))
+      let randomID=UUID().uuidString
+      let randomBytes=Array(repeating: UInt8(0), count: size)
+      let importResult=await cryptoService.importData(randomBytes, customIdentifier: randomID)
+
+      guard case .success=importResult else {
+        return Result<Data, SecurityStorageError>
+          .failure(.storageError("Failed to create random bytes"))
       }
-      
+
       // Now generate random bytes by storing and retrieving
-      let options = KeyGenerationOptions(
+      let options=KeyGenerationOptions(
         algorithm: "AES",
         keyUsage: "iv",
         metadata: ["size": "\(size)"]
       )
-      
-      let keyResult = await cryptoService.generateKey(length: size, options: options)
-      
+
+      let keyResult=await cryptoService.generateKey(length: size, options: options)
+
       switch keyResult {
-      case .success(let keyId):
-        let dataResult = await cryptoService.retrieveData(identifier: keyId)
-        return dataResult
-      case .failure(let error):
-        return Result<Data, SecurityStorageError>.failure(error)
+        case let .success(keyID):
+          let dataResult=await cryptoService.retrieveData(identifier: keyID)
+          return dataResult
+        case let .failure(error):
+          return Result<Data, SecurityStorageError>.failure(error)
       }
     }.value
-    
+
     switch generateResult {
-    case .success(let ivData):
-      return ivData
-    case .failure:
-      throw SecurityServiceError.providerError("Failed to generate IV")
+      case let .success(ivData):
+        return ivData
+      case .failure:
+        throw SecurityServiceError.providerError("Failed to generate IV")
     }
   }
 
   public func hash(data: Data, algorithm: String) throws -> Data {
     // Store the data in secure storage
-    let dataId = UUID().uuidString
-    
+    let dataID=UUID().uuidString
+
     // Convert async operations to synchronous for compatibility
-    let dataStoreResult = try Task {
-      return await cryptoService.storeData(data: data, identifier: dataId)
+    let dataStoreResult=try Task {
+      await cryptoService.storeData(data: data, identifier: dataID)
     }.value
-    
-    guard case .success = dataStoreResult else {
+
+    guard case .success=dataStoreResult else {
       throw SecurityServiceError.providerError("Failed to store data for hashing")
     }
-    
+
     // Create hashing options
-    let options = HashingOptions(
+    let options=HashingOptions(
       algorithm: algorithm,
       metadata: nil
     )
-    
+
     // Perform the hashing operation
-    let hashResult = try Task {
-      return await cryptoService.hash(
-        dataIdentifier: dataId,
+    let hashResult=try Task {
+      await cryptoService.hash(
+        dataIdentifier: dataID,
         options: options
       )
     }.value
-    
+
     // Retrieve the hash result
     switch hashResult {
-    case .success(let hashId):
-      let retrieveResult = try Task {
-        return await cryptoService.retrieveData(identifier: hashId)
-      }.value
-      
-      switch retrieveResult {
-      case .success(let hashData):
-        return hashData
+      case let .success(hashID):
+        let retrieveResult=try Task {
+          await cryptoService.retrieveData(identifier: hashID)
+        }.value
+
+        switch retrieveResult {
+          case let .success(hashData):
+            return hashData
+          case .failure:
+            throw SecurityServiceError.providerError("Failed to retrieve hash data")
+        }
+
       case .failure:
-        throw SecurityServiceError.providerError("Failed to retrieve hash data")
-      }
-      
-    case .failure:
-      throw SecurityServiceError.providerError("Hashing operation failed")
+        throw SecurityServiceError.providerError("Hashing operation failed")
     }
   }
 }
@@ -433,24 +434,24 @@ private final class CryptoKitProvider: EncryptionProviderProtocol {
  */
 private final class RingProvider: EncryptionProviderProtocol {
   public var providerType: SecurityProviderType { .ring }
-  
+
   // The CryptoServiceProtocol instance from CryptoServicesXfn
   private let cryptoService: CryptoServiceProtocol
-  
+
   // Secure storage for cryptographic operations
   private let secureStorage: SecureStorageProtocol
-  
+
   // Logger for secure operations
   private let logger: LoggingProtocol?
 
   init() throws {
     // Create a dedicated secure storage instance for this provider
-    self.secureStorage = TemporarySecureStorage()
-    self.logger = nil
-    
+    secureStorage=TemporarySecureStorage()
+    logger=nil
+
     // Create the Ring-based cryptographic service
-    self.cryptoService = try Task {
-      return await CryptoServiceRegistry.createService(
+    cryptoService=try Task {
+      await CryptoServiceRegistry.createService(
         type: .xfn,
         secureStorage: secureStorage,
         logger: logger
@@ -465,60 +466,60 @@ private final class RingProvider: EncryptionProviderProtocol {
     config: SecurityConfigDTO
   ) throws -> Data {
     // Store the data and key in secure storage
-    let dataId = UUID().uuidString
-    let keyId = UUID().uuidString
-    
+    let dataID=UUID().uuidString
+    let keyID=UUID().uuidString
+
     // Convert async operations to synchronous for compatibility
-    let dataStoreResult = try Task {
-      return await cryptoService.storeData(data: plaintext, identifier: dataId)
+    let dataStoreResult=try Task {
+      await cryptoService.storeData(data: plaintext, identifier: dataID)
     }.value
-    
-    guard case .success = dataStoreResult else {
+
+    guard case .success=dataStoreResult else {
       throw SecurityServiceError.providerError("Failed to store plaintext data for encryption")
     }
-    
-    let keyStoreResult = try Task {
-      return await cryptoService.storeData(data: key, identifier: keyId)
+
+    let keyStoreResult=try Task {
+      await cryptoService.storeData(data: key, identifier: keyID)
     }.value
-    
-    guard case .success = keyStoreResult else {
+
+    guard case .success=keyStoreResult else {
       throw SecurityServiceError.providerError("Failed to store key for encryption")
     }
-    
+
     // Create encryption options with the IV
-    let options = EncryptionOptions(
+    let options=EncryptionOptions(
       algorithm: config.encryptionAlgorithm.rawValue,
       mode: "GCM",
       padding: "NoPadding",
       iv: iv,
       aad: nil
     )
-    
+
     // Perform the encryption operation
-    let encryptResult = try Task {
-      return await cryptoService.encrypt(
-        dataIdentifier: dataId,
-        keyIdentifier: keyId,
+    let encryptResult=try Task {
+      await cryptoService.encrypt(
+        dataIdentifier: dataID,
+        keyIdentifier: keyID,
         options: options
       )
     }.value
-    
+
     // Retrieve the encrypted data
     switch encryptResult {
-    case .success(let encryptedId):
-      let retrieveResult = try Task {
-        return await cryptoService.retrieveData(identifier: encryptedId)
-      }.value
-      
-      switch retrieveResult {
-      case .success(let encryptedData):
-        return encryptedData
+      case let .success(encryptedID):
+        let retrieveResult=try Task {
+          await cryptoService.retrieveData(identifier: encryptedID)
+        }.value
+
+        switch retrieveResult {
+          case let .success(encryptedData):
+            return encryptedData
+          case .failure:
+            throw SecurityServiceError.providerError("Failed to retrieve encrypted data")
+        }
+
       case .failure:
-        throw SecurityServiceError.providerError("Failed to retrieve encrypted data")
-      }
-      
-    case .failure:
-      throw SecurityServiceError.providerError("Encryption operation failed")
+        throw SecurityServiceError.providerError("Encryption operation failed")
     }
   }
 
@@ -529,170 +530,170 @@ private final class RingProvider: EncryptionProviderProtocol {
     config: SecurityConfigDTO
   ) throws -> Data {
     // Store the data and key in secure storage
-    let dataId = UUID().uuidString
-    let keyId = UUID().uuidString
-    
+    let dataID=UUID().uuidString
+    let keyID=UUID().uuidString
+
     // Convert async operations to synchronous for compatibility
-    let dataStoreResult = try Task {
-      return await cryptoService.storeData(data: ciphertext, identifier: dataId)
+    let dataStoreResult=try Task {
+      await cryptoService.storeData(data: ciphertext, identifier: dataID)
     }.value
-    
-    guard case .success = dataStoreResult else {
+
+    guard case .success=dataStoreResult else {
       throw SecurityServiceError.providerError("Failed to store ciphertext data for decryption")
     }
-    
-    let keyStoreResult = try Task {
-      return await cryptoService.storeData(data: key, identifier: keyId)
+
+    let keyStoreResult=try Task {
+      await cryptoService.storeData(data: key, identifier: keyID)
     }.value
-    
-    guard case .success = keyStoreResult else {
+
+    guard case .success=keyStoreResult else {
       throw SecurityServiceError.providerError("Failed to store key for decryption")
     }
-    
+
     // Create decryption options with the IV
-    let options = DecryptionOptions(
+    let options=DecryptionOptions(
       algorithm: config.encryptionAlgorithm.rawValue,
       mode: "GCM",
       padding: "NoPadding",
       iv: iv,
       aad: nil
     )
-    
+
     // Perform the decryption operation
-    let decryptResult = try Task {
-      return await cryptoService.decrypt(
-        encryptedDataIdentifier: dataId,
-        keyIdentifier: keyId,
+    let decryptResult=try Task {
+      await cryptoService.decrypt(
+        encryptedDataIdentifier: dataID,
+        keyIdentifier: keyID,
         options: options
       )
     }.value
-    
+
     // Retrieve the decrypted data
     switch decryptResult {
-    case .success(let decryptedId):
-      let retrieveResult = try Task {
-        return await cryptoService.retrieveData(identifier: decryptedId)
-      }.value
-      
-      switch retrieveResult {
-      case .success(let decryptedData):
-        return decryptedData
+      case let .success(decryptedID):
+        let retrieveResult=try Task {
+          await cryptoService.retrieveData(identifier: decryptedID)
+        }.value
+
+        switch retrieveResult {
+          case let .success(decryptedData):
+            return decryptedData
+          case .failure:
+            throw SecurityServiceError.providerError("Failed to retrieve decrypted data")
+        }
+
       case .failure:
-        throw SecurityServiceError.providerError("Failed to retrieve decrypted data")
-      }
-      
-    case .failure:
-      throw SecurityServiceError.providerError("Decryption operation failed")
+        throw SecurityServiceError.providerError("Decryption operation failed")
     }
   }
 
   public func generateKey(size: Int, config: SecurityConfigDTO) throws -> Data {
     // Create key generation options
-    let options = KeyGenerationOptions(
+    let options=KeyGenerationOptions(
       algorithm: config.encryptionAlgorithm.rawValue,
       keyUsage: "encryption",
       metadata: ["keySize": "\(size)"]
     )
-    
+
     // Perform the key generation operation
-    let generateResult = try Task {
-      return await cryptoService.generateKey(
+    let generateResult=try Task {
+      await cryptoService.generateKey(
         length: size / 8, // Convert bits to bytes
         options: options
       )
     }.value
-    
+
     // Retrieve the generated key
     switch generateResult {
-    case .success(let keyId):
-      let retrieveResult = try Task {
-        return await cryptoService.retrieveData(identifier: keyId)
-      }.value
-      
-      switch retrieveResult {
-      case .success(let keyData):
-        return keyData
+      case let .success(keyID):
+        let retrieveResult=try Task {
+          await cryptoService.retrieveData(identifier: keyID)
+        }.value
+
+        switch retrieveResult {
+          case let .success(keyData):
+            return keyData
+          case .failure:
+            throw SecurityServiceError.providerError("Failed to retrieve generated key")
+        }
+
       case .failure:
-        throw SecurityServiceError.providerError("Failed to retrieve generated key")
-      }
-      
-    case .failure:
-      throw SecurityServiceError.providerError("Key generation failed")
+        throw SecurityServiceError.providerError("Key generation failed")
     }
   }
 
   public func generateIV(size: Int) throws -> Data {
     // Delegate to crypto service for random bytes generation
-    let generateResult = try Task {
+    let generateResult=try Task {
       // Generate key with IV usage
-      let options = KeyGenerationOptions(
+      let options=KeyGenerationOptions(
         algorithm: "AES",
         keyUsage: "iv",
         metadata: ["size": "\(size)"]
       )
-      
-      let keyResult = await cryptoService.generateKey(length: size, options: options)
-      
+
+      let keyResult=await cryptoService.generateKey(length: size, options: options)
+
       switch keyResult {
-      case .success(let keyId):
-        let dataResult = await cryptoService.retrieveData(identifier: keyId)
-        return dataResult
-      case .failure(let error):
-        return Result<Data, SecurityStorageError>.failure(error)
+        case let .success(keyID):
+          let dataResult=await cryptoService.retrieveData(identifier: keyID)
+          return dataResult
+        case let .failure(error):
+          return Result<Data, SecurityStorageError>.failure(error)
       }
     }.value
-    
+
     switch generateResult {
-    case .success(let ivData):
-      return ivData
-    case .failure:
-      throw SecurityServiceError.providerError("Failed to generate IV")
+      case let .success(ivData):
+        return ivData
+      case .failure:
+        throw SecurityServiceError.providerError("Failed to generate IV")
     }
   }
 
   public func hash(data: Data, algorithm: String) throws -> Data {
     // Store the data in secure storage
-    let dataId = UUID().uuidString
-    
+    let dataID=UUID().uuidString
+
     // Convert async operations to synchronous for compatibility
-    let dataStoreResult = try Task {
-      return await cryptoService.storeData(data: data, identifier: dataId)
+    let dataStoreResult=try Task {
+      await cryptoService.storeData(data: data, identifier: dataID)
     }.value
-    
-    guard case .success = dataStoreResult else {
+
+    guard case .success=dataStoreResult else {
       throw SecurityServiceError.providerError("Failed to store data for hashing")
     }
-    
+
     // Create hashing options
-    let options = HashingOptions(
+    let options=HashingOptions(
       algorithm: algorithm,
       metadata: nil
     )
-    
+
     // Perform the hashing operation
-    let hashResult = try Task {
-      return await cryptoService.hash(
-        dataIdentifier: dataId,
+    let hashResult=try Task {
+      await cryptoService.hash(
+        dataIdentifier: dataID,
         options: options
       )
     }.value
-    
+
     // Retrieve the hash result
     switch hashResult {
-    case .success(let hashId):
-      let retrieveResult = try Task {
-        return await cryptoService.retrieveData(identifier: hashId)
-      }.value
-      
-      switch retrieveResult {
-      case .success(let hashData):
-        return hashData
+      case let .success(hashID):
+        let retrieveResult=try Task {
+          await cryptoService.retrieveData(identifier: hashID)
+        }.value
+
+        switch retrieveResult {
+          case let .success(hashData):
+            return hashData
+          case .failure:
+            throw SecurityServiceError.providerError("Failed to retrieve hash data")
+        }
+
       case .failure:
-        throw SecurityServiceError.providerError("Failed to retrieve hash data")
-      }
-      
-    case .failure:
-      throw SecurityServiceError.providerError("Hashing operation failed")
+        throw SecurityServiceError.providerError("Hashing operation failed")
     }
   }
 }
@@ -705,24 +706,24 @@ private final class RingProvider: EncryptionProviderProtocol {
  */
 private final class SystemSecurityProvider: EncryptionProviderProtocol {
   public var providerType: SecurityProviderType { .system }
-  
+
   // The CryptoServiceProtocol instance from CryptoServicesStandard
   private let cryptoService: CryptoServiceProtocol
-  
+
   // Secure storage for cryptographic operations
   private let secureStorage: SecureStorageProtocol
-  
+
   // Logger for secure operations
   private let logger: LoggingProtocol?
 
   init() throws {
     // Create a dedicated secure storage instance for this provider
-    self.secureStorage = TemporarySecureStorage()
-    self.logger = nil
-    
+    secureStorage=TemporarySecureStorage()
+    logger=nil
+
     // Create the standard cryptographic service
-    self.cryptoService = try Task {
-      return await CryptoServiceRegistry.createService(
+    cryptoService=try Task {
+      await CryptoServiceRegistry.createService(
         type: .standard,
         secureStorage: secureStorage,
         logger: logger
@@ -737,60 +738,60 @@ private final class SystemSecurityProvider: EncryptionProviderProtocol {
     config: SecurityConfigDTO
   ) throws -> Data {
     // Store the data and key in secure storage
-    let dataId = UUID().uuidString
-    let keyId = UUID().uuidString
-    
+    let dataID=UUID().uuidString
+    let keyID=UUID().uuidString
+
     // Convert async operations to synchronous for compatibility
-    let dataStoreResult = try Task {
-      return await cryptoService.storeData(data: plaintext, identifier: dataId)
+    let dataStoreResult=try Task {
+      await cryptoService.storeData(data: plaintext, identifier: dataID)
     }.value
-    
-    guard case .success = dataStoreResult else {
+
+    guard case .success=dataStoreResult else {
       throw SecurityServiceError.providerError("Failed to store plaintext data for encryption")
     }
-    
-    let keyStoreResult = try Task {
-      return await cryptoService.storeData(data: key, identifier: keyId)
+
+    let keyStoreResult=try Task {
+      await cryptoService.storeData(data: key, identifier: keyID)
     }.value
-    
-    guard case .success = keyStoreResult else {
+
+    guard case .success=keyStoreResult else {
       throw SecurityServiceError.providerError("Failed to store key for encryption")
     }
-    
+
     // Create encryption options with the IV
-    let options = EncryptionOptions(
+    let options=EncryptionOptions(
       algorithm: config.encryptionAlgorithm.rawValue,
       mode: "GCM",
       padding: "NoPadding",
       iv: iv,
       aad: nil
     )
-    
+
     // Perform the encryption operation
-    let encryptResult = try Task {
-      return await cryptoService.encrypt(
-        dataIdentifier: dataId,
-        keyIdentifier: keyId,
+    let encryptResult=try Task {
+      await cryptoService.encrypt(
+        dataIdentifier: dataID,
+        keyIdentifier: keyID,
         options: options
       )
     }.value
-    
+
     // Retrieve the encrypted data
     switch encryptResult {
-    case .success(let encryptedId):
-      let retrieveResult = try Task {
-        return await cryptoService.retrieveData(identifier: encryptedId)
-      }.value
-      
-      switch retrieveResult {
-      case .success(let encryptedData):
-        return encryptedData
+      case let .success(encryptedID):
+        let retrieveResult=try Task {
+          await cryptoService.retrieveData(identifier: encryptedID)
+        }.value
+
+        switch retrieveResult {
+          case let .success(encryptedData):
+            return encryptedData
+          case .failure:
+            throw SecurityServiceError.providerError("Failed to retrieve encrypted data")
+        }
+
       case .failure:
-        throw SecurityServiceError.providerError("Failed to retrieve encrypted data")
-      }
-      
-    case .failure:
-      throw SecurityServiceError.providerError("Encryption operation failed")
+        throw SecurityServiceError.providerError("Encryption operation failed")
     }
   }
 
@@ -801,170 +802,170 @@ private final class SystemSecurityProvider: EncryptionProviderProtocol {
     config: SecurityConfigDTO
   ) throws -> Data {
     // Store the data and key in secure storage
-    let dataId = UUID().uuidString
-    let keyId = UUID().uuidString
-    
+    let dataID=UUID().uuidString
+    let keyID=UUID().uuidString
+
     // Convert async operations to synchronous for compatibility
-    let dataStoreResult = try Task {
-      return await cryptoService.storeData(data: ciphertext, identifier: dataId)
+    let dataStoreResult=try Task {
+      await cryptoService.storeData(data: ciphertext, identifier: dataID)
     }.value
-    
-    guard case .success = dataStoreResult else {
+
+    guard case .success=dataStoreResult else {
       throw SecurityServiceError.providerError("Failed to store ciphertext data for decryption")
     }
-    
-    let keyStoreResult = try Task {
-      return await cryptoService.storeData(data: key, identifier: keyId)
+
+    let keyStoreResult=try Task {
+      await cryptoService.storeData(data: key, identifier: keyID)
     }.value
-    
-    guard case .success = keyStoreResult else {
+
+    guard case .success=keyStoreResult else {
       throw SecurityServiceError.providerError("Failed to store key for decryption")
     }
-    
+
     // Create decryption options with the IV
-    let options = DecryptionOptions(
+    let options=DecryptionOptions(
       algorithm: config.encryptionAlgorithm.rawValue,
       mode: "GCM",
       padding: "NoPadding",
       iv: iv,
       aad: nil
     )
-    
+
     // Perform the decryption operation
-    let decryptResult = try Task {
-      return await cryptoService.decrypt(
-        encryptedDataIdentifier: dataId,
-        keyIdentifier: keyId,
+    let decryptResult=try Task {
+      await cryptoService.decrypt(
+        encryptedDataIdentifier: dataID,
+        keyIdentifier: keyID,
         options: options
       )
     }.value
-    
+
     // Retrieve the decrypted data
     switch decryptResult {
-    case .success(let decryptedId):
-      let retrieveResult = try Task {
-        return await cryptoService.retrieveData(identifier: decryptedId)
-      }.value
-      
-      switch retrieveResult {
-      case .success(let decryptedData):
-        return decryptedData
+      case let .success(decryptedID):
+        let retrieveResult=try Task {
+          await cryptoService.retrieveData(identifier: decryptedID)
+        }.value
+
+        switch retrieveResult {
+          case let .success(decryptedData):
+            return decryptedData
+          case .failure:
+            throw SecurityServiceError.providerError("Failed to retrieve decrypted data")
+        }
+
       case .failure:
-        throw SecurityServiceError.providerError("Failed to retrieve decrypted data")
-      }
-      
-    case .failure:
-      throw SecurityServiceError.providerError("Decryption operation failed")
+        throw SecurityServiceError.providerError("Decryption operation failed")
     }
   }
 
   public func generateKey(size: Int, config: SecurityConfigDTO) throws -> Data {
     // Create key generation options
-    let options = KeyGenerationOptions(
+    let options=KeyGenerationOptions(
       algorithm: config.encryptionAlgorithm.rawValue,
       keyUsage: "encryption",
       metadata: ["keySize": "\(size)"]
     )
-    
+
     // Perform the key generation operation
-    let generateResult = try Task {
-      return await cryptoService.generateKey(
+    let generateResult=try Task {
+      await cryptoService.generateKey(
         length: size / 8, // Convert bits to bytes
         options: options
       )
     }.value
-    
+
     // Retrieve the generated key
     switch generateResult {
-    case .success(let keyId):
-      let retrieveResult = try Task {
-        return await cryptoService.retrieveData(identifier: keyId)
-      }.value
-      
-      switch retrieveResult {
-      case .success(let keyData):
-        return keyData
+      case let .success(keyID):
+        let retrieveResult=try Task {
+          await cryptoService.retrieveData(identifier: keyID)
+        }.value
+
+        switch retrieveResult {
+          case let .success(keyData):
+            return keyData
+          case .failure:
+            throw SecurityServiceError.providerError("Failed to retrieve generated key")
+        }
+
       case .failure:
-        throw SecurityServiceError.providerError("Failed to retrieve generated key")
-      }
-      
-    case .failure:
-      throw SecurityServiceError.providerError("Key generation failed")
+        throw SecurityServiceError.providerError("Key generation failed")
     }
   }
 
   public func generateIV(size: Int) throws -> Data {
     // Delegate to crypto service for random bytes generation
-    let generateResult = try Task {
+    let generateResult=try Task {
       // Generate key with IV usage
-      let options = KeyGenerationOptions(
+      let options=KeyGenerationOptions(
         algorithm: "AES",
         keyUsage: "iv",
         metadata: ["size": "\(size)"]
       )
-      
-      let keyResult = await cryptoService.generateKey(length: size, options: options)
-      
+
+      let keyResult=await cryptoService.generateKey(length: size, options: options)
+
       switch keyResult {
-      case .success(let keyId):
-        let dataResult = await cryptoService.retrieveData(identifier: keyId)
-        return dataResult
-      case .failure(let error):
-        return Result<Data, SecurityStorageError>.failure(error)
+        case let .success(keyID):
+          let dataResult=await cryptoService.retrieveData(identifier: keyID)
+          return dataResult
+        case let .failure(error):
+          return Result<Data, SecurityStorageError>.failure(error)
       }
     }.value
-    
+
     switch generateResult {
-    case .success(let ivData):
-      return ivData
-    case .failure:
-      throw SecurityServiceError.providerError("Failed to generate IV")
+      case let .success(ivData):
+        return ivData
+      case .failure:
+        throw SecurityServiceError.providerError("Failed to generate IV")
     }
   }
 
   public func hash(data: Data, algorithm: String) throws -> Data {
     // Store the data in secure storage
-    let dataId = UUID().uuidString
-    
+    let dataID=UUID().uuidString
+
     // Convert async operations to synchronous for compatibility
-    let dataStoreResult = try Task {
-      return await cryptoService.storeData(data: data, identifier: dataId)
+    let dataStoreResult=try Task {
+      await cryptoService.storeData(data: data, identifier: dataID)
     }.value
-    
-    guard case .success = dataStoreResult else {
+
+    guard case .success=dataStoreResult else {
       throw SecurityServiceError.providerError("Failed to store data for hashing")
     }
-    
+
     // Create hashing options
-    let options = HashingOptions(
+    let options=HashingOptions(
       algorithm: algorithm,
       metadata: nil
     )
-    
+
     // Perform the hashing operation
-    let hashResult = try Task {
-      return await cryptoService.hash(
-        dataIdentifier: dataId,
+    let hashResult=try Task {
+      await cryptoService.hash(
+        dataIdentifier: dataID,
         options: options
       )
     }.value
-    
+
     // Retrieve the hash result
     switch hashResult {
-    case .success(let hashId):
-      let retrieveResult = try Task {
-        return await cryptoService.retrieveData(identifier: hashId)
-      }.value
-      
-      switch retrieveResult {
-      case .success(let hashData):
-        return hashData
+      case let .success(hashID):
+        let retrieveResult=try Task {
+          await cryptoService.retrieveData(identifier: hashID)
+        }.value
+
+        switch retrieveResult {
+          case let .success(hashData):
+            return hashData
+          case .failure:
+            throw SecurityServiceError.providerError("Failed to retrieve hash data")
+        }
+
       case .failure:
-        throw SecurityServiceError.providerError("Failed to retrieve hash data")
-      }
-      
-    case .failure:
-      throw SecurityServiceError.providerError("Hashing operation failed")
+        throw SecurityServiceError.providerError("Hashing operation failed")
     }
   }
 }
@@ -1032,24 +1033,24 @@ private final class HSMProvider: EncryptionProviderProtocol {
  */
 private final class StandardSecurityProvider: EncryptionProviderProtocol {
   public var providerType: SecurityProviderType { .basic }
-  
+
   // The CryptoServiceProtocol instance from CryptoServicesStandard
   private let cryptoService: CryptoServiceProtocol
-  
+
   // Secure storage for cryptographic operations
   private let secureStorage: SecureStorageProtocol
-  
+
   // Logger for secure operations
   private let logger: LoggingProtocol?
 
   public init() throws {
     // Create a dedicated secure storage instance for this provider
-    self.secureStorage = TemporarySecureStorage()
-    self.logger = nil
-    
+    secureStorage=TemporarySecureStorage()
+    logger=nil
+
     // Create the standard cryptographic service
-    self.cryptoService = try Task {
-      return await CryptoServiceRegistry.createService(
+    cryptoService=try Task {
+      await CryptoServiceRegistry.createService(
         type: .standard,
         secureStorage: secureStorage,
         logger: logger
@@ -1074,62 +1075,62 @@ private final class StandardSecurityProvider: EncryptionProviderProtocol {
     guard iv.count >= 12 else {
       throw SecurityServiceError.invalidInputData("Initialisation vector must be at least 12 bytes")
     }
-    
+
     // Store the data and key in secure storage
-    let dataId = UUID().uuidString
-    let keyId = UUID().uuidString
-    
+    let dataID=UUID().uuidString
+    let keyID=UUID().uuidString
+
     // Convert async operations to synchronous for compatibility
-    let dataStoreResult = try Task {
-      return await cryptoService.storeData(data: plaintext, identifier: dataId)
+    let dataStoreResult=try Task {
+      await cryptoService.storeData(data: plaintext, identifier: dataID)
     }.value
-    
-    guard case .success = dataStoreResult else {
+
+    guard case .success=dataStoreResult else {
       throw SecurityServiceError.providerError("Failed to store plaintext data for encryption")
     }
-    
-    let keyStoreResult = try Task {
-      return await cryptoService.storeData(data: key, identifier: keyId)
+
+    let keyStoreResult=try Task {
+      await cryptoService.storeData(data: key, identifier: keyID)
     }.value
-    
-    guard case .success = keyStoreResult else {
+
+    guard case .success=keyStoreResult else {
       throw SecurityServiceError.providerError("Failed to store key for encryption")
     }
-    
+
     // Create encryption options with the IV
-    let options = EncryptionOptions(
+    let options=EncryptionOptions(
       algorithm: config.encryptionAlgorithm.rawValue,
       mode: "GCM",
       padding: "NoPadding",
       iv: iv,
       aad: nil
     )
-    
+
     // Perform the encryption operation
-    let encryptResult = try Task {
-      return await cryptoService.encrypt(
-        dataIdentifier: dataId,
-        keyIdentifier: keyId,
+    let encryptResult=try Task {
+      await cryptoService.encrypt(
+        dataIdentifier: dataID,
+        keyIdentifier: keyID,
         options: options
       )
     }.value
-    
+
     // Retrieve the encrypted data
     switch encryptResult {
-    case .success(let encryptedId):
-      let retrieveResult = try Task {
-        return await cryptoService.retrieveData(identifier: encryptedId)
-      }.value
-      
-      switch retrieveResult {
-      case .success(let encryptedData):
-        return encryptedData
+      case let .success(encryptedID):
+        let retrieveResult=try Task {
+          await cryptoService.retrieveData(identifier: encryptedID)
+        }.value
+
+        switch retrieveResult {
+          case let .success(encryptedData):
+            return encryptedData
+          case .failure:
+            throw SecurityServiceError.providerError("Failed to retrieve encrypted data")
+        }
+
       case .failure:
-        throw SecurityServiceError.providerError("Failed to retrieve encrypted data")
-      }
-      
-    case .failure:
-      throw SecurityServiceError.providerError("Encryption operation failed")
+        throw SecurityServiceError.providerError("Encryption operation failed")
     }
   }
 
@@ -1150,101 +1151,102 @@ private final class StandardSecurityProvider: EncryptionProviderProtocol {
     guard iv.count >= 12 else {
       throw SecurityServiceError.invalidInputData("Initialisation vector must be at least 12 bytes")
     }
-    
+
     // Store the data and key in secure storage
-    let dataId = UUID().uuidString
-    let keyId = UUID().uuidString
-    
+    let dataID=UUID().uuidString
+    let keyID=UUID().uuidString
+
     // Convert async operations to synchronous for compatibility
-    let dataStoreResult = try Task {
-      return await cryptoService.storeData(data: ciphertext, identifier: dataId)
+    let dataStoreResult=try Task {
+      await cryptoService.storeData(data: ciphertext, identifier: dataID)
     }.value
-    
-    guard case .success = dataStoreResult else {
+
+    guard case .success=dataStoreResult else {
       throw SecurityServiceError.providerError("Failed to store ciphertext data for decryption")
     }
-    
-    let keyStoreResult = try Task {
-      return await cryptoService.storeData(data: key, identifier: keyId)
+
+    let keyStoreResult=try Task {
+      await cryptoService.storeData(data: key, identifier: keyID)
     }.value
-    
-    guard case .success = keyStoreResult else {
+
+    guard case .success=keyStoreResult else {
       throw SecurityServiceError.providerError("Failed to store key for decryption")
     }
-    
+
     // Create decryption options with the IV
-    let options = DecryptionOptions(
+    let options=DecryptionOptions(
       algorithm: config.encryptionAlgorithm.rawValue,
       mode: "GCM",
       padding: "NoPadding",
       iv: iv,
       aad: nil
     )
-    
+
     // Perform the decryption operation
-    let decryptResult = try Task {
-      return await cryptoService.decrypt(
-        encryptedDataIdentifier: dataId,
-        keyIdentifier: keyId,
+    let decryptResult=try Task {
+      await cryptoService.decrypt(
+        encryptedDataIdentifier: dataID,
+        keyIdentifier: keyID,
         options: options
       )
     }.value
-    
+
     // Retrieve the decrypted data
     switch decryptResult {
-    case .success(let decryptedId):
-      let retrieveResult = try Task {
-        return await cryptoService.retrieveData(identifier: decryptedId)
-      }.value
-      
-      switch retrieveResult {
-      case .success(let decryptedData):
-        return decryptedData
+      case let .success(decryptedID):
+        let retrieveResult=try Task {
+          await cryptoService.retrieveData(identifier: decryptedID)
+        }.value
+
+        switch retrieveResult {
+          case let .success(decryptedData):
+            return decryptedData
+          case .failure:
+            throw SecurityServiceError.providerError("Failed to retrieve decrypted data")
+        }
+
       case .failure:
-        throw SecurityServiceError.providerError("Failed to retrieve decrypted data")
-      }
-      
-    case .failure:
-      throw SecurityServiceError.providerError("Decryption operation failed")
+        throw SecurityServiceError.providerError("Decryption operation failed")
     }
   }
 
   public func generateKey(size: Int, config: SecurityConfigDTO) throws -> Data {
     guard size >= 128, size % 8 == 0 else {
-      throw SecurityServiceError.invalidInputData("Key size must be at least 128 bits and a multiple of 8")
+      throw SecurityServiceError
+        .invalidInputData("Key size must be at least 128 bits and a multiple of 8")
     }
-    
+
     // Create key generation options
-    let options = KeyGenerationOptions(
+    let options=KeyGenerationOptions(
       algorithm: config.encryptionAlgorithm.rawValue,
       keyUsage: "encryption",
       metadata: ["keySize": "\(size)"]
     )
-    
+
     // Perform the key generation operation
-    let generateResult = try Task {
-      return await cryptoService.generateKey(
+    let generateResult=try Task {
+      await cryptoService.generateKey(
         length: size / 8, // Convert bits to bytes
         options: options
       )
     }.value
-    
+
     // Retrieve the generated key
     switch generateResult {
-    case .success(let keyId):
-      let retrieveResult = try Task {
-        return await cryptoService.retrieveData(identifier: keyId)
-      }.value
-      
-      switch retrieveResult {
-      case .success(let keyData):
-        return keyData
+      case let .success(keyID):
+        let retrieveResult=try Task {
+          await cryptoService.retrieveData(identifier: keyID)
+        }.value
+
+        switch retrieveResult {
+          case let .success(keyData):
+            return keyData
+          case .failure:
+            throw SecurityServiceError.providerError("Failed to retrieve generated key")
+        }
+
       case .failure:
-        throw SecurityServiceError.providerError("Failed to retrieve generated key")
-      }
-      
-    case .failure:
-      throw SecurityServiceError.providerError("Key generation failed")
+        throw SecurityServiceError.providerError("Key generation failed")
     }
   }
 
@@ -1252,32 +1254,32 @@ private final class StandardSecurityProvider: EncryptionProviderProtocol {
     guard size >= 12 else {
       throw SecurityServiceError.invalidInputData("IV size must be at least 12 bytes")
     }
-    
+
     // Delegate to crypto service for random bytes generation
-    let generateResult = try Task {
+    let generateResult=try Task {
       // Generate key with IV usage
-      let options = KeyGenerationOptions(
+      let options=KeyGenerationOptions(
         algorithm: "AES",
         keyUsage: "iv",
         metadata: ["size": "\(size)"]
       )
-      
-      let keyResult = await cryptoService.generateKey(length: size, options: options)
-      
+
+      let keyResult=await cryptoService.generateKey(length: size, options: options)
+
       switch keyResult {
-      case .success(let keyId):
-        let dataResult = await cryptoService.retrieveData(identifier: keyId)
-        return dataResult
-      case .failure(let error):
-        return Result<Data, SecurityStorageError>.failure(error)
+        case let .success(keyID):
+          let dataResult=await cryptoService.retrieveData(identifier: keyID)
+          return dataResult
+        case let .failure(error):
+          return Result<Data, SecurityStorageError>.failure(error)
       }
     }.value
-    
+
     switch generateResult {
-    case .success(let ivData):
-      return ivData
-    case .failure:
-      throw SecurityServiceError.providerError("Failed to generate IV")
+      case let .success(ivData):
+        return ivData
+      case .failure:
+        throw SecurityServiceError.providerError("Failed to generate IV")
     }
   }
 
@@ -1285,107 +1287,113 @@ private final class StandardSecurityProvider: EncryptionProviderProtocol {
     guard !data.isEmpty else {
       throw SecurityServiceError.invalidInputData("Data to hash cannot be empty")
     }
-    
+
     guard !algorithm.isEmpty else {
       throw SecurityServiceError.invalidInputData("Hash algorithm cannot be empty")
     }
-    
+
     // Store the data in secure storage
-    let dataId = UUID().uuidString
-    
+    let dataID=UUID().uuidString
+
     // Convert async operations to synchronous for compatibility
-    let dataStoreResult = try Task {
-      return await cryptoService.storeData(data: data, identifier: dataId)
+    let dataStoreResult=try Task {
+      await cryptoService.storeData(data: data, identifier: dataID)
     }.value
-    
-    guard case .success = dataStoreResult else {
+
+    guard case .success=dataStoreResult else {
       throw SecurityServiceError.providerError("Failed to store data for hashing")
     }
-    
+
     // Create hashing options
-    let options = HashingOptions(
+    let options=HashingOptions(
       algorithm: algorithm,
       metadata: nil
     )
-    
+
     // Perform the hashing operation
-    let hashResult = try Task {
-      return await cryptoService.hash(
-        dataIdentifier: dataId,
+    let hashResult=try Task {
+      await cryptoService.hash(
+        dataIdentifier: dataID,
         options: options
       )
     }.value
-    
+
     // Retrieve the hash result
     switch hashResult {
-    case .success(let hashId):
-      let retrieveResult = try Task {
-        return await cryptoService.retrieveData(identifier: hashId)
-      }.value
-      
-      switch retrieveResult {
-      case .success(let hashData):
-        return hashData
+      case let .success(hashID):
+        let retrieveResult=try Task {
+          await cryptoService.retrieveData(identifier: hashID)
+        }.value
+
+        switch retrieveResult {
+          case let .success(hashData):
+            return hashData
+          case .failure:
+            throw SecurityServiceError.providerError("Failed to retrieve hash data")
+        }
+
       case .failure:
-        throw SecurityServiceError.providerError("Failed to retrieve hash data")
-      }
-      
-    case .failure:
-      throw SecurityServiceError.providerError("Hashing operation failed")
+        throw SecurityServiceError.providerError("Hashing operation failed")
     }
   }
 }
 
 /**
  A simple in-memory secure storage implementation used by providers for temporary data.
- 
+
  This implementation is only intended for use during cryptographic operations within
  the provider functions, not for persistent storage.
  */
 private class TemporarySecureStorage: SecureStorageProtocol {
   private actor StorageActor {
-    private var storage: [String: Data] = [:]
-    
-    func store(_ data: Data, withIdentifier identifier: String) -> Result<Void, SecurityStorageError> {
-      storage[identifier] = data
+    private var storage: [String: Data]=[:]
+
+    func store(
+      _ data: Data,
+      withIdentifier identifier: String
+    ) -> Result<Void, SecurityStorageError> {
+      storage[identifier]=data
       return .success(())
     }
-    
+
     func retrieve(identifier: String) -> Result<Data, SecurityStorageError> {
-      guard let data = storage[identifier] else {
+      guard let data=storage[identifier] else {
         return .failure(.itemNotFound("Item with identifier \(identifier) not found"))
       }
       return .success(data)
     }
-    
+
     func delete(identifier: String) -> Result<Void, SecurityStorageError> {
       storage.removeValue(forKey: identifier)
       return .success(())
     }
-    
+
     func clear() -> Result<Void, SecurityStorageError> {
       storage.removeAll()
       return .success(())
     }
   }
-  
-  private let storageActor = StorageActor()
-  
+
+  private let storageActor=StorageActor()
+
   public init() {}
-  
-  public func store(_ data: Data, withIdentifier identifier: String) async -> Result<Void, SecurityStorageError> {
-    return await storageActor.store(data, withIdentifier: identifier)
+
+  public func store(
+    _ data: Data,
+    withIdentifier identifier: String
+  ) async -> Result<Void, SecurityStorageError> {
+    await storageActor.store(data, withIdentifier: identifier)
   }
-  
+
   public func retrieve(identifier: String) async -> Result<Data, SecurityStorageError> {
-    return await storageActor.retrieve(identifier: identifier)
+    await storageActor.retrieve(identifier: identifier)
   }
-  
+
   public func delete(identifier: String) async -> Result<Void, SecurityStorageError> {
-    return await storageActor.delete(identifier: identifier)
+    await storageActor.delete(identifier: identifier)
   }
-  
+
   public func clear() async -> Result<Void, SecurityStorageError> {
-    return await storageActor.clear()
+    await storageActor.clear()
   }
 }

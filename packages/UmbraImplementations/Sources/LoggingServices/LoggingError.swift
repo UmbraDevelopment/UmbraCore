@@ -16,22 +16,22 @@ public enum LoggingError: Error, Sendable {
 
   /// Failed to write to a log destination
   case writeError(destinationID: String, reason: String)
-  
+
   /// Destination configuration is invalid
   case invalidDestinationConfig(_ message: String)
-  
+
   /// Failed to write to a destination
   case writeFailure(_ message: String)
-  
+
   /// Failed to initialise a component
   case initialisationFailed(reason: String)
-  
+
   /// Specified destination not found
   case destinationNotFound(_ message: String)
-  
+
   /// Failed to serialise or deserialise log data
   case serialisationFailed(reason: String)
-  
+
   /// No log destinations were found
   case noDestinationsFound(_ message: String)
 }

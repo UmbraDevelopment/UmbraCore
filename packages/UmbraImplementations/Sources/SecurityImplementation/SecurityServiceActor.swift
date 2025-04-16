@@ -221,9 +221,6 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
   .SecurityResultDTO {
     try validateInitialisation()
 
-    // Create a UUID for operation tracking
-    let operationID=UUID().uuidString
-
     // Log operation start
     await secureLogger.info(
       "Starting encryption operation",
@@ -231,12 +228,8 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
         domainName: "SecurityImplementation",
         source: "SecurityServiceActor.encrypt",
         metadata: LogMetadataDTOCollection()
-          .withPublic(key: "operation", value: "encrypt")
-          .withPublic(
-            key: "encryptionAlgorithm",
-            value: config.encryptionAlgorithm.rawValue
-          )
-          .withPublic(key: "operationID", value: operationID)
+          .withPublic(key: "algorithm", value: config.encryptionAlgorithm.rawValue)
+          .withPublic(key: "providerType", value: config.providerType.rawValue)
       )
     )
 
@@ -265,11 +258,8 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
         domainName: "SecurityImplementation",
         source: "SecurityServiceActor.decrypt",
         metadata: LogMetadataDTOCollection()
-          .withPublic(key: "operation", value: "decrypt")
-          .withPublic(
-            key: "encryptionAlgorithm",
-            value: config.encryptionAlgorithm.rawValue
-          )
+          .withPublic(key: "algorithm", value: config.encryptionAlgorithm.rawValue)
+          .withPublic(key: "providerType", value: config.providerType.rawValue)
       )
     )
 
@@ -298,11 +288,8 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
         domainName: "SecurityImplementation",
         source: "SecurityServiceActor.hash",
         metadata: LogMetadataDTOCollection()
-          .withPublic(key: "operation", value: "hash")
-          .withPublic(
-            key: "hashAlgorithm",
-            value: config.hashAlgorithm.rawValue
-          )
+          .withPublic(key: "algorithm", value: config.hashAlgorithm.rawValue)
+          .withPublic(key: "providerType", value: config.providerType.rawValue)
       )
     )
 
@@ -331,11 +318,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
         domainName: "SecurityImplementation",
         source: "SecurityServiceActor.sign",
         metadata: LogMetadataDTOCollection()
-          .withPublic(key: "operation", value: "sign")
-          .withPublic(
-            key: "hashAlgorithm",
-            value: config.hashAlgorithm.rawValue
-          )
+          .withPublic(key: "providerType", value: config.providerType.rawValue)
       )
     )
 
@@ -364,11 +347,7 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
         domainName: "SecurityImplementation",
         source: "SecurityServiceActor.verify",
         metadata: LogMetadataDTOCollection()
-          .withPublic(key: "operation", value: "verify")
-          .withPublic(
-            key: "hashAlgorithm",
-            value: config.hashAlgorithm.rawValue
-          )
+          .withPublic(key: "providerType", value: config.providerType.rawValue)
       )
     )
 
@@ -390,50 +369,195 @@ public actor SecurityServiceActor: SecurityProviderProtocol, AsyncServiceInitial
     operation: CoreSecurityTypes.SecurityOperation,
     config: CoreSecurityTypes.SecurityConfigDTO
   ) async {
-    let operationID=UUID().uuidString
-
+    // Create metadata for logging
     let metadata=LogMetadataDTOCollection()
-      .withPublic(key: "operationId", value: operationID)
-      .withPublic(key: "operation", value: String(describing: operation))
-      .withPublic(key: "encryptionAlgorithm", value: config.encryptionAlgorithm.rawValue)
-      .withPublic(key: "hashAlgorithm", value: config.hashAlgorithm.rawValue)
+      .withPublic(key: "operationId", value: UUID().uuidString)
+      .withPublic(key: "operation", value: operation.rawValue)
+      .withPublic(key: "providerType", value: config.providerType.rawValue)
 
-    await logger.info(
-      "Starting security operation: \(operation)",
+    // Add algorithm details if applicable
+    let enhancedMetadata: LogMetadataDTOCollection=switch operation {
+      case .encrypt, .decrypt:
+        metadata
+          .withPublic(key: "algorithm", value: config.encryptionAlgorithm.rawValue)
+      case .hash:
+        metadata
+          .withPublic(key: "algorithm", value: config.hashAlgorithm.rawValue)
+      default:
+        metadata
+    }
+
+    // Log operation start
+    await secureLogger.info(
+      "Starting security operation: \(operation.rawValue)",
       context: LoggingTypes.BaseLogContextDTO(
         domainName: "SecurityImplementation",
         source: "SecurityServiceActor.performSecureOperation",
-        metadata: metadata
+        metadata: enhancedMetadata
       )
     )
+  }
+
+  /// Encrypt data with the given configuration
+  private func encrypt(
+    config: CoreSecurityTypes
+      .SecurityConfigDTO
+  ) async throws -> CoreSecurityTypes
+  .SecurityResultDTO {
+    try validateInitialisation()
+
+    // Log operation start
+    await secureLogger.info(
+      "Performing encryption operation",
+      context: LoggingTypes.BaseLogContextDTO(
+        domainName: "SecurityImplementation",
+        source: "SecurityServiceActor.encrypt",
+        metadata: LogMetadataDTOCollection()
+          .withPublic(key: "algorithm", value: config.encryptionAlgorithm.rawValue)
+          .withPublic(key: "providerType", value: config.providerType.rawValue)
+      )
+    )
+
+    // Placeholder implementation
+    throw CoreSecurityError.configurationError("Encryption not implemented yet")
+  }
+
+  /// Decrypt data with the given configuration
+  private func decrypt(
+    config: CoreSecurityTypes
+      .SecurityConfigDTO
+  ) async throws -> CoreSecurityTypes
+  .SecurityResultDTO {
+    try validateInitialisation()
+
+    // Log operation start
+    await secureLogger.info(
+      "Performing decryption operation",
+      context: LoggingTypes.BaseLogContextDTO(
+        domainName: "SecurityImplementation",
+        source: "SecurityServiceActor.decrypt",
+        metadata: LogMetadataDTOCollection()
+          .withPublic(key: "algorithm", value: config.encryptionAlgorithm.rawValue)
+          .withPublic(key: "providerType", value: config.providerType.rawValue)
+      )
+    )
+
+    // Placeholder implementation
+    throw CoreSecurityError.configurationError("Decryption not implemented yet")
+  }
+
+  /// Hash data with the given configuration
+  private func hash(config: CoreSecurityTypes.SecurityConfigDTO) async throws -> CoreSecurityTypes
+  .SecurityResultDTO {
+    try validateInitialisation()
+
+    // Log operation start
+    await secureLogger.info(
+      "Performing hash operation",
+      context: LoggingTypes.BaseLogContextDTO(
+        domainName: "SecurityImplementation",
+        source: "SecurityServiceActor.hash",
+        metadata: LogMetadataDTOCollection()
+          .withPublic(key: "algorithm", value: config.hashAlgorithm.rawValue)
+          .withPublic(key: "providerType", value: config.providerType.rawValue)
+      )
+    )
+
+    // Placeholder implementation
+    throw CoreSecurityError.configurationError("Hashing not implemented yet")
+  }
+
+  /// Sign data with the given configuration
+  private func sign(config: CoreSecurityTypes.SecurityConfigDTO) async throws -> CoreSecurityTypes
+  .SecurityResultDTO {
+    try validateInitialisation()
+
+    // Log operation start
+    await secureLogger.info(
+      "Performing signing operation",
+      context: LoggingTypes.BaseLogContextDTO(
+        domainName: "SecurityImplementation",
+        source: "SecurityServiceActor.sign",
+        metadata: LogMetadataDTOCollection()
+          .withPublic(key: "providerType", value: config.providerType.rawValue)
+      )
+    )
+
+    // Placeholder implementation
+    throw CoreSecurityError.configurationError("Signing not implemented yet")
+  }
+
+  /// Verify signature with the given configuration
+  private func verify(config: CoreSecurityTypes.SecurityConfigDTO) async throws -> CoreSecurityTypes
+  .SecurityResultDTO {
+    try validateInitialisation()
+
+    // Log operation start
+    await secureLogger.info(
+      "Performing signature verification",
+      context: LoggingTypes.BaseLogContextDTO(
+        domainName: "SecurityImplementation",
+        source: "SecurityServiceActor.verify",
+        metadata: LogMetadataDTOCollection()
+          .withPublic(key: "providerType", value: config.providerType.rawValue)
+      )
+    )
+
+    // Placeholder implementation
+    throw CoreSecurityError.configurationError("Signature verification not implemented yet")
   }
 }
 
 // MARK: - Extension for CryptoServiceProtocol
 
 extension CryptoServiceProtocol {
-  /// Stores data and returns the identifier
-  /// - Parameters:
-  ///   - data: The data to store
-  ///   - identifier: The identifier to use
-  /// - Returns: A result containing the identifier or an error
-  private func storeData(
-    data _: Data,
-    identifier: String
-  ) async -> Result<String, SecurityStorageError> {
-    // This is a placeholder implementation
-    // In a real implementation, this would store the data securely
-    .success(identifier)
-  }
+  /// Convenience function to perform encryption with the correct formatting
+  public func encrypt(
+    data: [UInt8],
+    keyIdentifier: String,
+    algorithm: CoreSecurityTypes.EncryptionAlgorithm
+  ) async throws -> Result<[UInt8], SecurityStorageError> {
+    // Create appropriate options based on algorithm
+    let options: CoreSecurityTypes.EncryptionOptions?=switch algorithm {
+      case .aes256GCM:
+        CoreSecurityTypes.EncryptionOptions(
+          algorithm: StandardEncryptionAlgorithm.aes256GCM.rawValue,
+          mode: StandardEncryptionMode.gcm.rawValue
+        )
+      case .aes256CBC:
+        CoreSecurityTypes.EncryptionOptions(
+          algorithm: StandardEncryptionAlgorithm.aes256CBC.rawValue,
+          mode: StandardEncryptionMode.cbc.rawValue
+        )
+      default:
+        nil
+    }
 
-  /// Retrieves data by identifier
-  /// - Parameter identifier: The identifier of the data to retrieve
-  /// - Returns: A result containing the data or an error
-  private func retrieveData(
-    identifier _: String
-  ) async -> Result<Data, SecurityStorageError> {
-    // This is a placeholder implementation
-    // In a real implementation, this would retrieve the data securely
-    .success(Data())
+    // Store data for encryption
+    let dataIdentifier=UUID().uuidString
+    let storeResult=await storeData(data, identifier: dataIdentifier)
+
+    guard case .success=storeResult else {
+      if case let .failure(error)=storeResult {
+        return .failure(error)
+      }
+      return .failure(.operationFailed("Failed to store data for encryption"))
+    }
+
+    // Perform the encryption
+    let result=await encrypt(
+      dataIdentifier: dataIdentifier,
+      keyIdentifier: keyIdentifier,
+      options: options
+    )
+
+    // Process the result
+    switch result {
+      case let .success(encryptedDataID):
+        // Export the encrypted data
+        return await exportData(identifier: encryptedDataID)
+      case let .failure(error):
+        return .failure(error)
+    }
   }
 }

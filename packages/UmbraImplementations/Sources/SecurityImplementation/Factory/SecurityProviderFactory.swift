@@ -1,3 +1,4 @@
+import BuildConfig
 import CoreSecurityTypes
 import CryptoInterfaces
 import CryptoServicesCore
@@ -9,7 +10,6 @@ import LoggingServices
 import LoggingTypes
 import SecurityCoreInterfaces
 import SecurityKeyManagement
-import BuildConfig
 
 /**
  Factory for creating security providers with different security configurations.
@@ -17,7 +17,7 @@ import BuildConfig
  This factory provides convenient methods for creating security providers with
  pre-configured security levels suitable for different use cases, and supports
  the UmbraCore backend strategies:
- 
+
  - Restic: Default integration with Restic's cryptographic approach
  - RingFFI: Ring cryptography library with Argon2id via FFI
  - AppleCK: Apple CryptoKit for sandboxed environments
@@ -27,12 +27,12 @@ import BuildConfig
  */
 public struct SecurityProviderFactory {
 
-  /// Shared singleton instance 
-  public static let shared = SecurityProviderFactory()
-  
+  /// Shared singleton instance
+  public static let shared=SecurityProviderFactory()
+
   /**
    Creates a security provider of the specified type with appropriate configuration.
-   
+
    - Parameters:
      - ofType: The type of security provider to create
      - logger: Optional logger for security events
@@ -42,96 +42,95 @@ public struct SecurityProviderFactory {
    */
   public func createProvider(
     ofType providerType: SecurityProviderType,
-    logger: LoggingInterfaces.LoggingProtocol? = nil,
-    backendStrategy: BackendStrategy? = nil,
-    environment: UmbraEnvironment? = nil
+    logger: LoggingInterfaces.LoggingProtocol?=nil,
+    backendStrategy: BackendStrategy?=nil,
+    environment: BuildConfig.UmbraEnvironment?=nil
   ) async -> SecurityProviderProtocol {
     // Use the provided values or fallback to BuildConfig defaults
-    let effectiveBackend = backendStrategy ?? BuildConfig.activeBackendStrategy
-    let effectiveEnvironment = environment ?? BuildConfig.activeEnvironment
-    
+    let effectiveBackend=backendStrategy ?? BuildConfig.activeBackendStrategy
+    let effectiveEnvironment=environment ?? BuildConfig.activeEnvironment
+
     // Determine the effective provider type based on backend strategy
-    let effectiveProviderType: SecurityProviderType
-    
-    switch effectiveBackend {
+    let effectiveProviderType: SecurityProviderType=switch effectiveBackend {
       case .restic:
         // Restic integration (default)
-        effectiveProviderType = providerType
+        providerType
       case .ringFFI:
         // Ring FFI with Argon2id
-        effectiveProviderType = .ring
+        .ring
       case .appleCK:
         // Apple CryptoKit for sandboxed environments
-        effectiveProviderType = .appleCryptoKit
+        .appleCryptoKit
     }
-    
+
     // Configure the logger based on environment
     let actualLogger: LoggingInterfaces.LoggingProtocol
-    if let logger = logger {
-      actualLogger = logger
+    if let logger {
+      actualLogger=logger
     } else {
       // Create environment-appropriate logger with suitable settings
-      let factory = LoggingServiceFactory.shared
-      
+      let factory=LoggingServiceFactory.shared
+
       switch effectiveEnvironment {
         case .debug, .development:
           // Enhanced logging for development environments
-          let developmentLogger = await factory.createDevelopmentLogger(
+          let developmentLogger=await factory.createDevelopmentLogger(
             minimumLevel: .debug,
             formatter: nil
           )
-          actualLogger = await SecurityLoggingUtilities.createLoggingWrapper(
+          actualLogger=await SecurityLoggingUtilities.createLoggingWrapper(
             logger: developmentLogger
           )
-          
+
         case .alpha, .beta:
           // Balanced logging for testing environments
-          let testingLogger = await factory.createSecureLogger(
+          let testingLogger=await factory.createSecureLogger(
             minimumLevel: .info,
             subsystem: "com.umbra.security",
             category: "Testing"
           )
-          actualLogger = await SecurityLoggingUtilities.createLoggingWrapper(
+          actualLogger=await SecurityLoggingUtilities.createLoggingWrapper(
             logger: testingLogger
           )
-          
+
         case .production:
           // Production logging with appropriate privacy controls
-          let productionLogger = await factory.createSecureLogger(
+          let productionLogger=await factory.createSecureLogger(
             minimumLevel: .warning,
             subsystem: "com.umbra.security",
             category: "Production"
           )
-          actualLogger = await SecurityLoggingUtilities.createLoggingWrapper(
+          actualLogger=await SecurityLoggingUtilities.createLoggingWrapper(
             logger: productionLogger
           )
       }
     }
-    
+
     // Create the appropriate crypto service
     let cryptoService: CryptoServiceProtocol
-    
-    // Select security level based on environment and backend
-    if effectiveEnvironment == .production || effectiveEnvironment == .beta {
+
+      // Select security level based on environment and backend
+      = if effectiveEnvironment == .production || effectiveEnvironment == .beta
+    {
       // High security for production and beta environments
-      cryptoService = await CryptoServiceRegistry.createService(
+      await CryptoServiceRegistry.createService(
         type: .crossPlatform,
         logger: actualLogger
       )
     } else if effectiveBackend == .ringFFI {
       // Maximum security for Ring FFI backend
-      cryptoService = await CryptoServiceRegistry.createService(
+      await CryptoServiceRegistry.createService(
         type: .crossPlatform,
         logger: actualLogger
       )
     } else {
       // Standard security for development environments
-      cryptoService = await CryptoServiceRegistry.createService(
+      await CryptoServiceRegistry.createService(
         type: .standard,
         logger: actualLogger
       )
     }
-    
+
     // Create and return the security provider with appropriate configuration
     return SecurityProviderCore(
       cryptoService: cryptoService,
@@ -154,9 +153,9 @@ public struct SecurityProviderFactory {
    - Returns: A configured SecurityProviderProtocol instance
    */
   public static func createStandardSecurityProvider(
-    logger: LoggingInterfaces.LoggingProtocol? = nil
+    logger: LoggingInterfaces.LoggingProtocol?=nil
   ) async -> SecurityProviderProtocol {
-    return await shared.createProvider(
+    await shared.createProvider(
       ofType: .basic,
       logger: logger,
       environment: .development
@@ -177,9 +176,9 @@ public struct SecurityProviderFactory {
    - Returns: A configured SecurityProviderProtocol instance
    */
   public static func createHighSecurityProvider(
-    logger: LoggingInterfaces.LoggingProtocol? = nil
+    logger: LoggingInterfaces.LoggingProtocol?=nil
   ) async -> SecurityProviderProtocol {
-    return await shared.createProvider(
+    await shared.createProvider(
       ofType: .platform,
       logger: logger,
       environment: .beta
@@ -201,9 +200,9 @@ public struct SecurityProviderFactory {
    - Returns: A configured SecurityProviderProtocol instance
    */
   public static func createMaximumSecurityProvider(
-    logger: LoggingInterfaces.LoggingProtocol? = nil
+    logger: LoggingInterfaces.LoggingProtocol?=nil
   ) async -> SecurityProviderProtocol {
-    return await shared.createProvider(
+    await shared.createProvider(
       ofType: .custom,
       logger: logger,
       backendStrategy: .ringFFI,

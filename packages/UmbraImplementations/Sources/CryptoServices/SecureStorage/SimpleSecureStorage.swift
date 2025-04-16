@@ -130,7 +130,7 @@ private struct SimpleLogContext: LogContextDTO {
 
   /// The operation being performed (required by protocol)
   public let operation: String
-  
+
   /// The category for the log entry (required by protocol)
   public let category: String
 
@@ -172,27 +172,27 @@ private struct SimpleLogContext: LogContextDTO {
 
   /**
    Creates a new log context with additional metadata merged with the existing metadata.
-   
+
    - Parameter additionalMetadata: Additional metadata to include
    - Returns: New context with merged metadata
    */
   public func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> Self {
-    var newMetadata = self.metadata
-     
+    var newMetadata=metadata
+
     for entry in additionalMetadata.entries {
-      newMetadata = newMetadata.with(
+      newMetadata=newMetadata.with(
         key: entry.key,
         value: entry.value,
         privacyLevel: entry.privacyLevel
       )
     }
-     
+
     return SimpleLogContext(
-      domainName: self.domainName,
-      operation: self.operation,
-      category: self.category,
-      source: self.source ?? "storage",
-      correlationID: self.correlationID,
+      domainName: domainName,
+      operation: operation,
+      category: category,
+      source: source ?? "storage",
+      correlationID: correlationID,
       metadata: newMetadata
     )
   }

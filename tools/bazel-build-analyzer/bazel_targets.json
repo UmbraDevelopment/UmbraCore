@@ -5,6 +5,10 @@
       "rule": "swift_library"
     },
     {
+      "name": "rule //packages/UmbraCoreTypes/Sources/BuildConfig:BuildConfig",
+      "rule": "swift_library"
+    },
+    {
       "name": "rule //packages/UmbraCoreTypes/Sources/ConfigInterfaces:ConfigInterfaces",
       "rule": "swift_library"
     },
@@ -186,6 +190,22 @@
     },
     {
       "name": "rule //packages/UmbraImplementations/Sources/CryptoServices/Logging:CryptoLogger",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/CryptoServicesApple:CryptoServicesApple",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/CryptoServicesCore:CryptoServicesCore",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/CryptoServicesStandard:CryptoServicesStandard",
+      "rule": "swift_library"
+    },
+    {
+      "name": "rule //packages/UmbraImplementations/Sources/CryptoServicesXfn:CryptoServicesXfn",
       "rule": "swift_library"
     },
     {

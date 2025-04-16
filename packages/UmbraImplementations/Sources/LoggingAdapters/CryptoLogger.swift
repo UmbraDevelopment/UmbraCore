@@ -340,25 +340,29 @@ public struct CryptoLogContext: LogContextDTO {
 
   /**
    Creates a new context with additional metadata.
-   
+
    - Parameter additionalMetadata: The metadata to add to the context
    - Returns: A new context with the combined metadata
    */
   public func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> CryptoLogContext {
-    var newMetadata = self.metadata
+    var newMetadata=metadata
     for entry in additionalMetadata.entries {
-      newMetadata = newMetadata.with(key: entry.key, value: entry.value, privacyLevel: entry.privacyLevel)
+      newMetadata=newMetadata.with(
+        key: entry.key,
+        value: entry.value,
+        privacyLevel: entry.privacyLevel
+      )
     }
-    
+
     return CryptoLogContext(
-      operation: self.operation,
-      algorithm: self.algorithm,
-      status: self.status,
-      keyID: self.keyID,
-      details: self.details,
-      error: self.error,
-      correlationID: self.correlationID,
-      category: self.category
+      operation: operation,
+      algorithm: algorithm,
+      status: status,
+      keyID: keyID,
+      details: details,
+      error: error,
+      correlationID: correlationID,
+      category: category
     )
   }
 

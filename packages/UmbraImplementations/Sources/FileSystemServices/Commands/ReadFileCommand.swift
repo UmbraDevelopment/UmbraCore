@@ -3,12 +3,10 @@ import Foundation
 import LoggingInterfaces
 import LoggingTypes
 
-/**
- Command for reading file contents.
-
- This command follows the Alpha Dot Five architecture principles with privacy-aware
- logging and strong error handling.
- */
+/// Command for reading file contents.
+///
+/// This command follows the Alpha Dot Five architecture principles with privacy-aware
+/// logging and strong error handling.
 public class ReadFileCommand: BaseFileSystemCommand, FileSystemCommand {
   /// The type of result returned by this command
   public typealias ResultType=[UInt8]
@@ -16,14 +14,12 @@ public class ReadFileCommand: BaseFileSystemCommand, FileSystemCommand {
   /// The path of the file to read
   private let filePath: String
 
-  /**
-   Initialises a new read file command.
-
-   - Parameters:
-      - filePath: Path to the file to read
-      - fileManager: File manager to use for operations
-      - logger: Optional logger for operation tracking
-   */
+  /// Initialises a new read file command.
+  ///
+  /// - Parameters:
+  ///   - filePath: Path to the file to read
+  ///   - fileManager: File manager to use for operations
+  ///   - logger: Optional logger for operation tracking
   public init(
     filePath: String,
     fileManager: FileManager = .default,
@@ -33,14 +29,12 @@ public class ReadFileCommand: BaseFileSystemCommand, FileSystemCommand {
     super.init(fileManager: fileManager, logger: logger)
   }
 
-  /**
-   Executes the file read operation.
-
-   - Parameters:
-      - context: Logging context for the operation
-      - operationID: Unique identifier for this operation instance
-   - Returns: The file contents as a byte array
-   */
+  /// Executes the file read operation.
+  ///
+  /// - Parameters:
+  ///   - context: Logging context for the operation
+  ///   - operationID: Unique identifier for this operation instance
+  /// - Returns: The file contents as a byte array
   public func execute(
     context _: LogContextDTO,
     operationID: String

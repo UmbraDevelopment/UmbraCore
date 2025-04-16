@@ -17,7 +17,7 @@ import SecurityCoreInterfaces
  */
 public class HashDataCommand: BaseCryptoCommand, CryptoCommand {
   /// The type of result returned by this command
-  public typealias ResultType = [UInt8]
+  public typealias ResultType=[UInt8]
 
   /// The data to hash
   private let data: [UInt8]
@@ -41,13 +41,13 @@ public class HashDataCommand: BaseCryptoCommand, CryptoCommand {
   public init(
     data: [UInt8],
     algorithm: HashAlgorithm = .sha256,
-    salt: [UInt8]? = nil,
+    salt: [UInt8]?=nil,
     secureStorage: SecureStorageProtocol,
-    logger: LoggingProtocol? = nil
+    logger: LoggingProtocol?=nil
   ) {
-    self.data = data
-    self.algorithm = algorithm
-    self.salt = salt
+    self.data=data
+    self.algorithm=algorithm
+    self.salt=salt
     super.init(secureStorage: secureStorage, logger: logger)
   }
 
@@ -60,11 +60,11 @@ public class HashDataCommand: BaseCryptoCommand, CryptoCommand {
    - Returns: The computed hash
    */
   public func execute(
-    context: LogContextDTO,
+    context _: LogContextDTO,
     operationID: String
   ) async -> Result<[UInt8], SecurityStorageError> {
     // Create an enhanced log context with proper privacy classification
-    let logContext = CryptoLogContext(
+    let logContext=CryptoLogContext(
       operation: "hash",
       algorithm: algorithm.rawValue,
       correlationID: operationID,
@@ -84,37 +84,37 @@ public class HashDataCommand: BaseCryptoCommand, CryptoCommand {
         case .sha256:
           // Apply salt if provided, otherwise use standard SHA-256
           if let salt, !salt.isEmpty {
-            hashResult = try computeHMACSHA256Hash(data: data, key: salt)
+            hashResult=try computeHMACSHA256Hash(data: data, key: salt)
           } else {
-            hashResult = try computeSHA256Hash(data: data, salt: nil)
+            hashResult=try computeSHA256Hash(data: data, salt: nil)
           }
 
         case .sha512:
           // Apply salt if provided, otherwise use standard SHA-512
           if let salt, !salt.isEmpty {
-            hashResult = try computeHMACSHA512Hash(data: data, key: salt)
+            hashResult=try computeHMACSHA512Hash(data: data, key: salt)
           } else {
-            hashResult = try computeSHA512Hash(data: data, salt: nil)
+            hashResult=try computeSHA512Hash(data: data, salt: nil)
           }
-          
+
         case .blake2b:
           // Blake2b can incorporate a key (salt) directly
-          hashResult = try computeBlake2bHash(data: data, key: salt)
-          
+          hashResult=try computeBlake2bHash(data: data, key: salt)
+
         @unknown default:
           // Fallback to SHA-256 for any future algorithms
           await logWarning(
             "Unsupported hash algorithm '\(algorithm.rawValue)'. Falling back to SHA-256",
             context: logContext
           )
-          hashResult = try computeSHA256Hash(data: data, salt: salt)
+          hashResult=try computeSHA256Hash(data: data, salt: salt)
       }
 
       // Generate a unique identifier for the hash result
-      let hashIdentifier = UUID().uuidString
+      let hashIdentifier=UUID().uuidString
 
       // Store the hash result in secure storage
-      let storeResult = await secureStorage.storeData(
+      let storeResult=await secureStorage.storeData(
         hashResult,
         withIdentifier: hashIdentifier
       )
@@ -161,7 +161,7 @@ public class HashDataCommand: BaseCryptoCommand, CryptoCommand {
    */
   private func computeSHA256Hash(data: [UInt8], salt: [UInt8]?) throws -> [UInt8] {
     // Create a mutable data object
-    var hashData = Data()
+    var hashData=Data()
 
     // Apply salt if provided (prepend to data)
     if let salt {
@@ -172,9 +172,9 @@ public class HashDataCommand: BaseCryptoCommand, CryptoCommand {
     hashData.append(contentsOf: data)
 
     // Compute SHA-256 hash
-    var hashBytes = [UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
+    var hashBytes=[UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
     hashData.withUnsafeBytes { dataBuffer in
-      _ = CC_SHA256(dataBuffer.baseAddress, CC_LONG(hashData.count), &hashBytes)
+      _=CC_SHA256(dataBuffer.baseAddress, CC_LONG(hashData.count), &hashBytes)
     }
 
     return hashBytes
@@ -191,7 +191,7 @@ public class HashDataCommand: BaseCryptoCommand, CryptoCommand {
    */
   private func computeSHA512Hash(data: [UInt8], salt: [UInt8]?) throws -> [UInt8] {
     // Create a mutable data object
-    var hashData = Data()
+    var hashData=Data()
 
     // Apply salt if provided (prepend to data)
     if let salt {
@@ -202,9 +202,9 @@ public class HashDataCommand: BaseCryptoCommand, CryptoCommand {
     hashData.append(contentsOf: data)
 
     // Compute SHA-512 hash
-    var hashBytes = [UInt8](repeating: 0, count: Int(CC_SHA512_DIGEST_LENGTH))
+    var hashBytes=[UInt8](repeating: 0, count: Int(CC_SHA512_DIGEST_LENGTH))
     hashData.withUnsafeBytes { dataBuffer in
-      _ = CC_SHA512(dataBuffer.baseAddress, CC_LONG(hashData.count), &hashBytes)
+      _=CC_SHA512(dataBuffer.baseAddress, CC_LONG(hashData.count), &hashBytes)
     }
 
     return hashBytes
@@ -220,8 +220,8 @@ public class HashDataCommand: BaseCryptoCommand, CryptoCommand {
    - Throws: Error if HMAC computation fails
    */
   private func computeHMACSHA256Hash(data: [UInt8], key: [UInt8]) throws -> [UInt8] {
-    var macOut = [UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
-    
+    var macOut=[UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
+
     // Compute HMAC-SHA256
     CCHmac(
       CCHmacAlgorithm(kCCHmacAlgSHA256),
@@ -229,7 +229,7 @@ public class HashDataCommand: BaseCryptoCommand, CryptoCommand {
       data, data.count,
       &macOut
     )
-    
+
     return macOut
   }
 
@@ -243,8 +243,8 @@ public class HashDataCommand: BaseCryptoCommand, CryptoCommand {
    - Throws: Error if HMAC computation fails
    */
   private func computeHMACSHA512Hash(data: [UInt8], key: [UInt8]) throws -> [UInt8] {
-    var macOut = [UInt8](repeating: 0, count: Int(CC_SHA512_DIGEST_LENGTH))
-    
+    var macOut=[UInt8](repeating: 0, count: Int(CC_SHA512_DIGEST_LENGTH))
+
     // Compute HMAC-SHA512
     CCHmac(
       CCHmacAlgorithm(kCCHmacAlgSHA512),
@@ -252,10 +252,10 @@ public class HashDataCommand: BaseCryptoCommand, CryptoCommand {
       data, data.count,
       &macOut
     )
-    
+
     return macOut
   }
-  
+
   /**
    Computes a BLAKE2b hash of the data.
 
@@ -268,14 +268,14 @@ public class HashDataCommand: BaseCryptoCommand, CryptoCommand {
   private func computeBlake2bHash(data: [UInt8], key: [UInt8]?) throws -> [UInt8] {
     // Note: This is a placeholder. BLAKE2b is not natively supported in CommonCrypto.
     // In a real implementation, you'd use a library like CryptoSwift or call to a C library.
-    
+
     // For now, simulate BLAKE2b with SHA-512 for the prototype
     if let key, !key.isEmpty {
-      return try computeHMACSHA512Hash(data: data, key: key)
+      try computeHMACSHA512Hash(data: data, key: key)
     } else {
-      return try computeSHA512Hash(data: data, salt: nil)
+      try computeSHA512Hash(data: data, salt: nil)
     }
-    
+
     // TODO: Replace with actual BLAKE2b implementation
   }
 }

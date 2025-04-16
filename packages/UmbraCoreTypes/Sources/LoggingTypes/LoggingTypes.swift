@@ -360,10 +360,10 @@ public struct LogContext: Sendable, Equatable, Hashable, LogContextDTO {
 
   /// Domain name identifying the log scope
   public let domainName: String
-  
+
   /// The operation being performed
   public let operation: String
-  
+
   /// The category for the log entry
   public let category: String
 
@@ -441,13 +441,13 @@ public struct LogContext: Sendable, Equatable, Hashable, LogContextDTO {
   public func getSource() -> String {
     source ?? "UnknownSource"
   }
-  
+
   /// Creates a new context with additional metadata merged with the existing metadata
   /// - Parameter additionalMetadata: Additional metadata to include
   /// - Returns: New context with merged metadata
   public func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> LogContext {
-    let combinedMetadata = metadataCollection?.merging(with: additionalMetadata) ?? additionalMetadata
-    
+    let combinedMetadata=metadataCollection?.merging(with: additionalMetadata) ?? additionalMetadata
+
     return LogContext(
       source: getSource(),
       metadata: combinedMetadata,
@@ -543,27 +543,27 @@ public struct PrivacyString: Sendable, Hashable {
 
   /// The content of the privacy string
   public var content: String {
-    return rawValue
+    rawValue
   }
-  
+
   /// The overall privacy level for the string
   public var privacy: LogPrivacyLevel {
     // Default to private if no annotations exist
     guard !privacyAnnotations.isEmpty else {
       return .private
     }
-    
+
     // Find the most restrictive privacy level
     return privacyAnnotations.values.reduce(.public) { result, level in
       switch (result, level) {
-      case (.sensitive, _), (_, .sensitive):
-        return .sensitive
-      case (.private, _), (_, .private):
-        return .private
-      case (.hash, _), (_, .hash):
-        return .hash
-      default:
-        return .public
+        case (.sensitive, _), (_, .sensitive):
+          .sensitive
+        case (.private, _), (_, .private):
+          .private
+        case (.hash, _), (_, .hash):
+          .hash
+        default:
+          .public
       }
     }
   }

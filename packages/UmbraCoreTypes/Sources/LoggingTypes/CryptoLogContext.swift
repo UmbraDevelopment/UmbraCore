@@ -17,7 +17,7 @@ public struct CryptoLogContext: LogContextDTO, Sendable, Equatable {
 
   /// The cryptographic operation being performed
   public let operation: String
-  
+
   /// The category for the log entry
   public let category: String
 
@@ -35,7 +35,7 @@ public struct CryptoLogContext: LogContextDTO, Sendable, Equatable {
   ///   - additionalContext: Optional additional context with privacy annotations
   public init(
     operation: String,
-    category: String = "Cryptography",
+    category: String="Cryptography",
     algorithm: String?=nil,
     correlationID: String?=nil,
     source: String?=nil,
@@ -60,18 +60,18 @@ public struct CryptoLogContext: LogContextDTO, Sendable, Equatable {
 
     metadata=contextMetadata
   }
-  
+
   /// Creates a new context with additional metadata merged with the existing metadata
   /// - Parameter additionalMetadata: Additional metadata to include
   /// - Returns: New context with merged metadata
   public func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> CryptoLogContext {
-    return CryptoLogContext(
+    CryptoLogContext(
       operation: operation,
       category: category,
       algorithm: algorithm,
       correlationID: correlationID,
       source: source,
-      additionalContext: self.metadata.merging(with: additionalMetadata)
+      additionalContext: metadata.merging(with: additionalMetadata)
     )
   }
 

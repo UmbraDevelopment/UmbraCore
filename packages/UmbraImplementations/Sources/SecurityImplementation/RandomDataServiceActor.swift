@@ -169,8 +169,7 @@ public actor RandomDataServiceActor: RandomDataServiceProtocol {
   /// - Parameter range: The range in which to generate the random integer
   /// - Returns: A random integer within the specified range
   public func generateRandomInteger<
-    T: FixedWidthInteger &
-      Sendable
+    T: FixedWidthInteger & Sendable
   >(in range: Range<T>) async throws -> T {
     try validateInitialisation()
 
@@ -199,24 +198,51 @@ public actor RandomDataServiceActor: RandomDataServiceProtocol {
     var result: T=0
     for (index, byte) in randomBytes.enumerated() {
       let shiftAmount=index * 8
-      result |= T(byte) << T(shiftAmount)
+      if shiftAmount < T.bitWidth {
+        result |= T(byte) << T(shiftAmount)
+      }
     }
 
-    // Map to the desired range
+    // Adjust to fit within range
     let rangeSize=range.upperBound - range.lowerBound
     if rangeSize > 0 {
-      result=range.lowerBound + (result % rangeSize)
+      result=(result % rangeSize) + range.lowerBound
     } else {
       result=range.lowerBound
     }
 
-    await logger.debug("Successfully generated random integer: \(result)", context: context)
+    await logger.debug("Generated random integer: \(result)", context: context)
 
     return result
   }
 
-  /// Generates a random double between 0.0 and 1.0
-  /// - Returns: A random double between 0.0 and 1.0
+  /// Generates a random boolean value
+  /// - Returns: A random boolean value
+  public func generateRandomBoolean() async throws -> Bool {
+    try validateInitialisation()
+
+    // Log operation with privacy controls
+    let context=RandomDataServiceContext(
+      operation: "generateRandomBoolean",
+      operationID: serviceIdentifier.uuidString,
+      entropySource: entropySource.rawValue,
+      source: "RandomDataServiceActor",
+      correlationID: UUID().uuidString
+    )
+
+    await logger.debug("Generating random boolean", context: context)
+
+    // Generate a single random byte and check if it's odd or even
+    let randomByte=try await generateRandomBytes(length: 1)[0]
+    let result=(randomByte % 2) == 1
+
+    await logger.debug("Generated random boolean: \(result)", context: context)
+
+    return result
+  }
+
+  /// Generates a random double value between 0.0 and 1.0
+  /// - Returns: A random double value in the range [0.0, 1.0)
   public func generateRandomDouble() async throws -> Double {
     try validateInitialisation()
 
@@ -224,26 +250,28 @@ public actor RandomDataServiceActor: RandomDataServiceProtocol {
     let context=RandomDataServiceContext(
       operation: "generateRandomDouble",
       operationID: serviceIdentifier.uuidString,
-      entropySource: entropySource.rawValue
+      entropySource: entropySource.rawValue,
+      source: "RandomDataServiceActor",
+      correlationID: UUID().uuidString
     )
 
     await logger.debug("Generating random double", context: context)
 
-    // Generate 8 random bytes (for a 64-bit double)
+    // Generate 8 random bytes for a 64-bit double
     let randomBytes=try await generateRandomBytes(length: 8)
 
-    // Convert to UInt64
+    // Convert to UInt64 first
     var value: UInt64=0
     for (index, byte) in randomBytes.enumerated() {
       let shiftAmount=index * 8
       value |= UInt64(byte) << UInt64(shiftAmount)
     }
 
-    // Convert to double between 0.0 and 1.0
-    // Using a technique that avoids modulo bias
+    // Convert to double in range [0.0, 1.0)
+    // Using the technique from the IEEE 754 standard to generate a uniform value
     let result=Double(value) / Double(UInt64.max)
 
-    await logger.debug("Successfully generated random double", context: context)
+    await logger.debug("Generated random double: \(result)", context: context)
 
     return result
   }

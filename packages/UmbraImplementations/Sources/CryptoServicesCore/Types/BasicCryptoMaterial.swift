@@ -3,10 +3,10 @@ import SecurityCoreInterfaces
 
 /**
  # Basic Crypto Material
- 
+
  A concrete implementation that contains cryptographic material such as keys,
  certificates, or other security-related data.
- 
+
  This implementation follows the Alpha Dot Five architecture principles,
  ensuring secure handling of sensitive cryptographic material with proper
  memory management and Sendable conformance for thread safety.
@@ -21,7 +21,7 @@ public struct BasicCryptoMaterial: Sendable {
    - Parameter bytes: The raw cryptographic material as an array of bytes
    */
   public init(bytes: [UInt8]) {
-    self.bytes = bytes
+    self.bytes=bytes
   }
 
   /**

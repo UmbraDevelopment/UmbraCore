@@ -9,7 +9,7 @@ public protocol LogContextDTO: Sendable {
 
   /// The operation being performed (e.g., "addDestination", "writeLog")
   var operation: String { get }
-  
+
   /// The category for the log entry (e.g., "LoggingSystem", "Security")
   var category: String { get }
 
@@ -21,7 +21,7 @@ public protocol LogContextDTO: Sendable {
 
   /// The metadata collection for this context
   var metadata: LogMetadataDTOCollection { get }
-  
+
   /// Creates a new context with additional metadata merged with the existing metadata
   /// - Parameter additionalMetadata: Additional metadata to include
   /// - Returns: New context with merged metadata
@@ -33,10 +33,10 @@ public protocol LogContextDTO: Sendable {
 public struct BaseLogContextDTO: LogContextDTO, Equatable {
   /// The domain name for this context
   public let domainName: String
-  
+
   /// The operation being performed (e.g., "addDestination", "writeLog")
   public let operation: String
-  
+
   /// The category for the log entry (e.g., "LoggingSystem", "Security")
   public let category: String
 
@@ -72,18 +72,18 @@ public struct BaseLogContextDTO: LogContextDTO, Equatable {
     self.correlationID=correlationID
     self.metadata=metadata
   }
-  
+
   /// Creates a new context with additional metadata merged with the existing metadata
   /// - Parameter additionalMetadata: Additional metadata to include
   /// - Returns: New context with merged metadata
   public func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> BaseLogContextDTO {
-    return BaseLogContextDTO(
-      domainName: self.domainName,
-      operation: self.operation,
-      category: self.category,
-      source: self.source,
-      metadata: self.metadata.merging(with: additionalMetadata),
-      correlationID: self.correlationID
+    BaseLogContextDTO(
+      domainName: domainName,
+      operation: operation,
+      category: category,
+      source: source,
+      metadata: metadata.merging(with: additionalMetadata),
+      correlationID: correlationID
     )
   }
 }

@@ -982,8 +982,8 @@ public actor CompositeFileSystemServiceImpl: CompositeFileSystemServiceProtocol 
     // Implement basic checksum calculation
     do {
       // Read the file data and use it in calculation (in real implementation)
-      _ = try await secureReadFile(at: path, options: nil)
-      
+      _=try await secureReadFile(at: path, options: nil)
+
       // In a real implementation, we would use the data for checksum calculation
       // Calculate checksum (placeholder implementation)
       let checksum=switch algorithm {

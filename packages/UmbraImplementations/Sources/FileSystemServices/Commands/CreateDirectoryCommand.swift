@@ -3,12 +3,10 @@ import Foundation
 import LoggingInterfaces
 import LoggingTypes
 
-/**
- Command for creating a directory.
-
- This command follows the Alpha Dot Five architecture principles with privacy-aware
- logging and strong error handling.
- */
+/// Command for creating a directory.
+///
+/// This command follows the Alpha Dot Five architecture principles with privacy-aware
+/// logging and strong error handling.
 public class CreateDirectoryCommand: BaseFileSystemCommand, FileSystemCommand {
   /// The type of result returned by this command
   public typealias ResultType=Void
@@ -22,16 +20,14 @@ public class CreateDirectoryCommand: BaseFileSystemCommand, FileSystemCommand {
   /// Directory attributes to set
   private let attributes: [FileAttributeKey: Any]?
 
-  /**
-   Initialises a new create directory command.
-
-   - Parameters:
-      - directoryPath: Path to the directory to create
-      - createIntermediates: Whether to create intermediate directories
-      - attributes: Optional attributes to set on the directory
-      - fileManager: File manager to use for operations
-      - logger: Optional logger for operation tracking
-   */
+  /// Initialises a new create directory command.
+  ///
+  /// - Parameters:
+  ///   - directoryPath: Path to the directory to create
+  ///   - createIntermediates: Whether to create intermediate directories
+  ///   - attributes: Optional attributes to set on the directory
+  ///   - fileManager: File manager to use for operations
+  ///   - logger: Optional logger for operation tracking
   public init(
     directoryPath: String,
     createIntermediates: Bool=true,
@@ -45,14 +41,12 @@ public class CreateDirectoryCommand: BaseFileSystemCommand, FileSystemCommand {
     super.init(fileManager: fileManager, logger: logger)
   }
 
-  /**
-   Executes the directory creation operation.
-
-   - Parameters:
-      - context: Logging context for the operation
-      - operationID: Unique identifier for this operation instance
-   - Returns: Void if successful, error otherwise
-   */
+  /// Executes the directory creation operation.
+  ///
+  /// - Parameters:
+  ///   - context: Logging context for the operation
+  ///   - operationID: Unique identifier for this operation instance
+  /// - Returns: Void if successful, error otherwise
   public func execute(
     context _: LogContextDTO,
     operationID: String

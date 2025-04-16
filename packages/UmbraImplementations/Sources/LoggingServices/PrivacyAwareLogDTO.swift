@@ -72,10 +72,10 @@ public struct PrivacyAwareLogDTO: LogContextDTO, Sendable {
 
   /// Domain name for the log context
   public let domainName: String
-  
+
   /// Operation name for the log context
   public let operation: String
-  
+
   /// Category name for the log context
   public let category: String
 
@@ -209,33 +209,33 @@ public struct PrivacyAwareLogDTO: LogContextDTO, Sendable {
    */
   public func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> Self {
     // Create a new metadata collection
-    var mergedMetadata = LogMetadataDTOCollection()
-    
+    var mergedMetadata=LogMetadataDTOCollection()
+
     // Copy existing metadata
-    for key in self.metadata.getKeys() {
-      if let value = self.metadata.getString(key: key) {
+    for key in metadata.getKeys() {
+      if let value=metadata.getString(key: key) {
         // Store the result of the set operation
-        mergedMetadata = mergedMetadata.set(key: key, value: value)
+        mergedMetadata=mergedMetadata.set(key: key, value: value)
       }
     }
-    
+
     // Add all entries from the additional metadata
     for key in additionalMetadata.getKeys() {
-      if let value = additionalMetadata.getString(key: key) {
-        // Store the result of the set operation 
-        mergedMetadata = mergedMetadata.set(key: key, value: value)
+      if let value=additionalMetadata.getString(key: key) {
+        // Store the result of the set operation
+        mergedMetadata=mergedMetadata.set(key: key, value: value)
       }
     }
-    
+
     // Convert the metadata to the legacy format required by the initializer
-    var legacyMetadata: [String: (value: Any, privacy: LogPrivacyLevel)] = [:]
+    var legacyMetadata: [String: (value: Any, privacy: LogPrivacyLevel)]=[:]
     for key in mergedMetadata.getKeys() {
-      if let value = mergedMetadata.getString(key: key) {
+      if let value=mergedMetadata.getString(key: key) {
         // Assume a default privacy level of private for compatibility
-        legacyMetadata[key] = (value as Any, .private)
+        legacyMetadata[key]=(value as Any, .private)
       }
     }
-    
+
     // Use the type's initializer to create a new instance with the merged metadata
     return Self(
       source: source,

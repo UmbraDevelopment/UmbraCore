@@ -3,12 +3,10 @@ import Foundation
 import LoggingInterfaces
 import LoggingTypes
 
-/**
- Command for deleting a file.
-
- This command follows the Alpha Dot Five architecture principles with privacy-aware
- logging and strong error handling.
- */
+/// Command for deleting a file.
+///
+/// This command follows the Alpha Dot Five architecture principles with privacy-aware
+/// logging and strong error handling.
 public class DeleteFileCommand: BaseFileSystemCommand, FileSystemCommand {
   /// The type of result returned by this command
   public typealias ResultType=Void
@@ -19,15 +17,13 @@ public class DeleteFileCommand: BaseFileSystemCommand, FileSystemCommand {
   /// Whether to secure delete the file
   private let secureDelete: Bool
 
-  /**
-   Initialises a new delete file command.
-
-   - Parameters:
-      - filePath: Path to the file to delete
-      - secureDelete: Whether to perform a secure deletion (overwrite with zeros)
-      - fileManager: File manager to use for operations
-      - logger: Optional logger for operation tracking
-   */
+  /// Initialises a new delete file command.
+  ///
+  /// - Parameters:
+  ///   - filePath: Path to the file to delete
+  ///   - secureDelete: Whether to perform a secure deletion (overwrite with zeros)
+  ///   - fileManager: File manager to use for operations
+  ///   - logger: Optional logger for operation tracking
   public init(
     filePath: String,
     secureDelete: Bool=false,
@@ -39,14 +35,12 @@ public class DeleteFileCommand: BaseFileSystemCommand, FileSystemCommand {
     super.init(fileManager: fileManager, logger: logger)
   }
 
-  /**
-   Executes the file deletion operation.
-
-   - Parameters:
-      - context: Logging context for the operation
-      - operationID: Unique identifier for this operation instance
-   - Returns: Void if successful, error otherwise
-   */
+  /// Executes the file deletion operation.
+  ///
+  /// - Parameters:
+  ///   - context: Logging context for the operation
+  ///   - operationID: Unique identifier for this operation instance
+  /// - Returns: Void if successful, error otherwise
   public func execute(
     context _: LogContextDTO,
     operationID: String

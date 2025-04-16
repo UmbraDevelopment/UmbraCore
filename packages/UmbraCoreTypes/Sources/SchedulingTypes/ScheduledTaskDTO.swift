@@ -99,25 +99,25 @@ public struct ScheduledTaskDTO: Sendable, Equatable {
     taskType: TaskType,
     status: TaskStatus = .pending,
     createdAt: UInt64,
-    startedAt: UInt64? = nil,
-    endedAt: UInt64? = nil,
-    executionTime: Double? = nil,
-    errorMessage: String? = nil,
+    startedAt: UInt64?=nil,
+    endedAt: UInt64?=nil,
+    executionTime: Double?=nil,
+    errorMessage: String?=nil,
     configData: String,
-    metadata: [String: String] = [:]
+    metadata: [String: String]=[:]
   ) {
-    self.id = id
-    self.scheduleID = scheduleID
-    self.name = name
-    self.taskType = taskType
-    self.status = status
-    self.createdAt = createdAt
-    self.startedAt = startedAt
-    self.endedAt = endedAt
-    self.executionTime = executionTime
-    self.errorMessage = errorMessage
-    self.configData = configData
-    self.metadata = metadata
+    self.id=id
+    self.scheduleID=scheduleID
+    self.name=name
+    self.taskType=taskType
+    self.status=status
+    self.createdAt=createdAt
+    self.startedAt=startedAt
+    self.endedAt=endedAt
+    self.executionTime=executionTime
+    self.errorMessage=errorMessage
+    self.configData=configData
+    self.metadata=metadata
   }
 
   // MARK: - Factory Methods
@@ -131,11 +131,11 @@ public struct ScheduledTaskDTO: Sendable, Equatable {
   ///   - metadata: Additional metadata for the task
   /// - Returns: A new backup task
   public static func backupTask(
-    id: String = UUID().uuidString,
+    id: String=UUID().uuidString,
     scheduleID: String,
     name: String,
     configData: String,
-    metadata: [String: String] = [:]
+    metadata: [String: String]=[:]
   ) -> ScheduledTaskDTO {
     ScheduledTaskDTO(
       id: id,
@@ -157,11 +157,11 @@ public struct ScheduledTaskDTO: Sendable, Equatable {
   ///   - metadata: Additional metadata for the task
   /// - Returns: A new security task
   public static func securityTask(
-    id: String = UUID().uuidString,
+    id: String=UUID().uuidString,
     scheduleID: String,
     name: String,
     configData: String,
-    metadata: [String: String] = [:]
+    metadata: [String: String]=[:]
   ) -> ScheduledTaskDTO {
     ScheduledTaskDTO(
       id: id,
@@ -185,12 +185,12 @@ public struct ScheduledTaskDTO: Sendable, Equatable {
   ///   - errorMessage: New error message
   /// - Returns: A new task with the updated properties
   public func with(
-    status: TaskStatus? = nil,
-    startedAt: UInt64? = nil,
-    endedAt: UInt64? = nil,
-    executionTime: Double? = nil,
-    errorMessage: String? = nil,
-    metadata: [String: String]? = nil
+    status: TaskStatus?=nil,
+    startedAt: UInt64?=nil,
+    endedAt: UInt64?=nil,
+    executionTime: Double?=nil,
+    errorMessage: String?=nil,
+    metadata: [String: String]?=nil
   ) -> ScheduledTaskDTO {
     ScheduledTaskDTO(
       id: id,
@@ -211,15 +211,17 @@ public struct ScheduledTaskDTO: Sendable, Equatable {
   /// Mark this task as started
   /// - Parameter timestamp: When the task started, defaults to now
   /// - Returns: A new task marked as running
-  public func markStarted(at timestamp: UInt64 = UInt64(Date().timeIntervalSince1970)) -> ScheduledTaskDTO {
+  public func markStarted(at timestamp: UInt64=UInt64(Date().timeIntervalSince1970))
+  -> ScheduledTaskDTO {
     with(status: .running, startedAt: timestamp)
   }
 
   /// Mark this task as completed
   /// - Parameter timestamp: When the task completed, defaults to now
   /// - Returns: A new task marked as completed
-  public func markCompleted(at timestamp: UInt64 = UInt64(Date().timeIntervalSince1970)) -> ScheduledTaskDTO {
-    let time = startedAt != nil ? Double(timestamp) - Double(startedAt!) : nil
+  public func markCompleted(at timestamp: UInt64=UInt64(Date().timeIntervalSince1970))
+  -> ScheduledTaskDTO {
+    let time=startedAt != nil ? Double(timestamp) - Double(startedAt!) : nil
     return with(status: .completed, endedAt: timestamp, executionTime: time)
   }
 
@@ -228,16 +230,20 @@ public struct ScheduledTaskDTO: Sendable, Equatable {
   ///   - error: The error message
   ///   - timestamp: When the task failed, defaults to now
   /// - Returns: A new task marked as failed
-  public func markFailed(error: String, at timestamp: UInt64 = UInt64(Date().timeIntervalSince1970)) -> ScheduledTaskDTO {
-    let time = startedAt != nil ? Double(timestamp) - Double(startedAt!) : nil
+  public func markFailed(
+    error: String,
+    at timestamp: UInt64=UInt64(Date().timeIntervalSince1970)
+  ) -> ScheduledTaskDTO {
+    let time=startedAt != nil ? Double(timestamp) - Double(startedAt!) : nil
     return with(status: .failed, endedAt: timestamp, executionTime: time, errorMessage: error)
   }
 
   /// Mark this task as cancelled
   /// - Parameter timestamp: When the task was cancelled, defaults to now
   /// - Returns: A new task marked as cancelled
-  public func markCancelled(at timestamp: UInt64 = UInt64(Date().timeIntervalSince1970)) -> ScheduledTaskDTO {
-    let time = startedAt != nil ? Double(timestamp) - Double(startedAt!) : nil
+  public func markCancelled(at timestamp: UInt64=UInt64(Date().timeIntervalSince1970))
+  -> ScheduledTaskDTO {
+    let time=startedAt != nil ? Double(timestamp) - Double(startedAt!) : nil
     return with(status: .cancelled, endedAt: timestamp, executionTime: time)
   }
 }

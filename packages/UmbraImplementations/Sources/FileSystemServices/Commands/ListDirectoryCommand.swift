@@ -3,12 +3,10 @@ import Foundation
 import LoggingInterfaces
 import LoggingTypes
 
-/**
- Command for listing the contents of a directory.
-
- This command follows the Alpha Dot Five architecture principles with privacy-aware
- logging and strong error handling.
- */
+/// Command for listing the contents of a directory.
+///
+/// This command follows the Alpha Dot Five architecture principles with privacy-aware
+/// logging and strong error handling.
 public class ListDirectoryCommand: BaseFileSystemCommand, FileSystemCommand {
   /// The type of result returned by this command
   public typealias ResultType=[FileSystemItem]
@@ -25,17 +23,15 @@ public class ListDirectoryCommand: BaseFileSystemCommand, FileSystemCommand {
   /// Optional file extension filter
   private let extensionFilter: String?
 
-  /**
-   Initialises a new list directory command.
-
-   - Parameters:
-      - directoryPath: Path to the directory to list
-      - includeHidden: Whether to include hidden files
-      - recursive: Whether to recursively list subdirectories
-      - extensionFilter: Optional file extension filter
-      - fileManager: File manager to use for operations
-      - logger: Optional logger for operation tracking
-   */
+  /// Initialises a new list directory command.
+  ///
+  /// - Parameters:
+  ///   - directoryPath: Path to the directory to list
+  ///   - includeHidden: Whether to include hidden files
+  ///   - recursive: Whether to recursively list subdirectories
+  ///   - extensionFilter: Optional file extension filter
+  ///   - fileManager: File manager to use for operations
+  ///   - logger: Optional logger for operation tracking
   public init(
     directoryPath: String,
     includeHidden: Bool=false,
@@ -51,14 +47,12 @@ public class ListDirectoryCommand: BaseFileSystemCommand, FileSystemCommand {
     super.init(fileManager: fileManager, logger: logger)
   }
 
-  /**
-   Executes the directory listing operation.
-
-   - Parameters:
-      - context: Logging context for the operation
-      - operationID: Unique identifier for this operation instance
-   - Returns: Array of file system items if successful, error otherwise
-   */
+  /// Executes the directory listing operation.
+  ///
+  /// - Parameters:
+  ///   - context: Logging context for the operation
+  ///   - operationID: Unique identifier for this operation instance
+  /// - Returns: Array of file system items if successful, error otherwise
   public func execute(
     context _: LogContextDTO,
     operationID: String
@@ -127,17 +121,15 @@ public class ListDirectoryCommand: BaseFileSystemCommand, FileSystemCommand {
     }
   }
 
-  /**
-   Lists directory contents with the specified options.
-
-   - Parameters:
-      - path: The directory path to list
-      - includeHidden: Whether to include hidden files
-      - recursive: Whether to recursively list subdirectories
-      - extensionFilter: Optional file extension filter
-   - Returns: Array of file system items
-   - Throws: Error if listing fails
-   */
+  /// Lists directory contents with the specified options.
+  ///
+  /// - Parameters:
+  ///   - path: The directory path to list
+  ///   - includeHidden: Whether to include hidden files
+  ///   - recursive: Whether to recursively list subdirectories
+  ///   - extensionFilter: Optional file extension filter
+  /// - Returns: Array of file system items
+  /// - Throws: Error if listing fails
   private func listItems(
     at path: String,
     includeHidden: Bool,

@@ -28,9 +28,9 @@ import LoggingTypes
 public struct KeychainLogContext: LogContextDTO {
   /// The domain name for the log
   public let domainName: String
-  
+
   /// The category for the log entry
-  public let category: String = "Security"
+  public let category: String="Security"
 
   /// The source of the log entry
   public let source: String?
@@ -245,23 +245,27 @@ public struct KeychainLogContext: LogContextDTO {
 
   /**
    Creates a new context with additional metadata merged with existing metadata.
-   
+
    - Parameter additionalMetadata: Additional metadata to include
    - Returns: New context with merged metadata
    */
   public func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> Self {
-    var updatedMetadata = self.metadata
+    var updatedMetadata=metadata
     for entry in additionalMetadata.entries {
-      updatedMetadata = updatedMetadata.with(key: entry.key, value: entry.value, privacyLevel: entry.privacyLevel)
+      updatedMetadata=updatedMetadata.with(
+        key: entry.key,
+        value: entry.value,
+        privacyLevel: entry.privacyLevel
+      )
     }
-    
+
     return KeychainLogContext(
-      account: self.account,
-      operation: self.operation,
-      status: self.status,
-      source: self.source,
-      domainName: self.domainName,
-      correlationID: self.correlationID,
+      account: account,
+      operation: operation,
+      status: status,
+      source: source,
+      domainName: domainName,
+      correlationID: correlationID,
       metadata: updatedMetadata
     )
   }

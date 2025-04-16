@@ -47,32 +47,32 @@ public struct BookmarkLogContext: LogContextDTO {
    */
   public init(
     domainName: String,
-    category: String = "Bookmarks",
-    source: String? = nil,
-    correlationID: String? = nil,
-    metadata: LogMetadataDTOCollection = LogMetadataDTOCollection(),
+    category: String="Bookmarks",
+    source: String?=nil,
+    correlationID: String?=nil,
+    metadata: LogMetadataDTOCollection=LogMetadataDTOCollection(),
     operation: String,
-    identifier: String? = nil,
+    identifier: String?=nil,
     status: String
   ) {
-    self.domainName = domainName
-    self.category = category
-    self.source = source
-    self.correlationID = correlationID
-    self.operation = operation
-    self.identifier = identifier
-    self.status = status
+    self.domainName=domainName
+    self.category=category
+    self.source=source
+    self.correlationID=correlationID
+    self.operation=operation
+    self.identifier=identifier
+    self.status=status
 
     // Create a new metadata collection with bookmark-specific fields
-    var enhancedMetadata = metadata
-    enhancedMetadata = enhancedMetadata.withPublic(key: "operation", value: operation)
-    enhancedMetadata = enhancedMetadata.withPublic(key: "status", value: status)
+    var enhancedMetadata=metadata
+    enhancedMetadata=enhancedMetadata.withPublic(key: "operation", value: operation)
+    enhancedMetadata=enhancedMetadata.withPublic(key: "status", value: status)
 
     if let identifier {
-      enhancedMetadata = enhancedMetadata.withPrivate(key: "identifier", value: identifier)
+      enhancedMetadata=enhancedMetadata.withPrivate(key: "identifier", value: identifier)
     }
 
-    self.metadata = enhancedMetadata
+    self.metadata=enhancedMetadata
   }
 
   /**
@@ -101,7 +101,7 @@ public struct BookmarkLogContext: LogContextDTO {
    * - Returns: A new context with merged metadata
    */
   public func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> Self {
-    return withUpdatedMetadata(metadata.merging(with: additionalMetadata))
+    withUpdatedMetadata(metadata.merging(with: additionalMetadata))
   }
 
   /**
@@ -122,19 +122,19 @@ public struct BookmarkLogContext: LogContextDTO {
    * - Returns: A LogMetadataDTOCollection with appropriate privacy annotations
    */
   public func createMetadataCollection() -> LogMetadataDTOCollection {
-    var collection = metadata
+    var collection=metadata
 
     // Add standard fields with appropriate privacy levels
-    collection = collection.withPublic(key: "operation", value: operation)
-    collection = collection.withPublic(key: "status", value: status)
-    collection = collection.withPublic(key: "domain", value: domainName)
+    collection=collection.withPublic(key: "operation", value: operation)
+    collection=collection.withPublic(key: "status", value: status)
+    collection=collection.withPublic(key: "domain", value: domainName)
 
     if let identifier {
-      collection = collection.withPrivate(key: "identifier", value: identifier)
+      collection=collection.withPrivate(key: "identifier", value: identifier)
     }
 
     if let correlationID {
-      collection = collection.withPublic(key: "correlationId", value: correlationID)
+      collection=collection.withPublic(key: "correlationId", value: correlationID)
     }
 
     return collection
@@ -148,7 +148,7 @@ public struct BookmarkLogContext: LogContextDTO {
    */
   public func withAdditionalMetadata(_ additionalMetadata: LogMetadataDTOCollection)
   -> BookmarkLogContext {
-    let combinedMetadata = metadata.merging(with: additionalMetadata)
+    let combinedMetadata=metadata.merging(with: additionalMetadata)
 
     return BookmarkLogContext(
       domainName: domainName,

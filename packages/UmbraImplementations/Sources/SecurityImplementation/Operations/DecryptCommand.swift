@@ -5,24 +5,21 @@ import Foundation
 import LoggingInterfaces
 import LoggingTypes
 
-/**
- Command that executes decryption operations.
-
- This command encapsulates the decryption logic in accordance with
- the command pattern, providing clean separation of concerns.
- */
+/// Command that executes decryption operations.
+///
+/// This command encapsulates the decryption logic, separating it from
+/// the core SecurityProvider implementation while maintaining the same
+/// functionality and standards.
 public class DecryptCommand: BaseSecurityCommand, SecurityOperationCommand {
   /// The crypto service for performing the decryption
   private let cryptoService: CryptoServiceProtocol
 
-  /**
-   Initialises a new decrypt command.
-
-   - Parameters:
-      - config: Security configuration for the decryption
-      - cryptoService: The service to perform the decryption
-      - logger: Logger for operation tracking and auditing
-   */
+  /// Initialises a new decrypt command.
+  ///
+  /// - Parameters:
+  ///   - config: Security configuration for the decryption
+  ///   - cryptoService: The service to perform the decryption
+  ///   - logger: Logger for operation tracking and auditing
   public init(
     config: SecurityConfigDTO,
     cryptoService: CryptoServiceProtocol,
@@ -32,15 +29,13 @@ public class DecryptCommand: BaseSecurityCommand, SecurityOperationCommand {
     super.init(config: config, logger: logger)
   }
 
-  /**
-   Executes the decryption operation.
-
-   - Parameters:
-      - context: Logging context for the operation
-      - operationID: Unique identifier for this operation instance
-   - Returns: The decryption result
-   - Throws: SecurityError if decryption fails
-   */
+  /// Executes the decryption operation.
+  ///
+  /// - Parameters:
+  ///   - context: Logging context for the operation
+  ///   - operationID: Unique identifier for this operation instance
+  /// - Returns: The decryption result
+  /// - Throws: SecurityError if decryption fails
   public func execute(
     context: LogContextDTO,
     operationID: String
@@ -53,7 +48,7 @@ public class DecryptCommand: BaseSecurityCommand, SecurityOperationCommand {
     do {
       // Extract encrypted data
       let encryptedData=try extractor.requiredData(
-        forKey: "inputData",
+        forKey: "encryptedData",
         errorMessage: "Encrypted data is required for decryption"
       )
 
@@ -102,39 +97,69 @@ public class DecryptCommand: BaseSecurityCommand, SecurityOperationCommand {
             )
           )
 
-          // Create result metadata
-          let resultMetadata: [String: String]=[
-            "encryptedSize": "\(encryptedData.count)",
-            "decryptedSize": "\(decryptedData.count)",
-            "algorithm": config.encryptionAlgorithm.rawValue,
-            "operationID": operationID
-          ]
+          // Create result metadata with the decrypted data
+          let resultMetadata=MetadataCollection()
+            .with(key: "decryptedData", value: decryptedData)
+            .with(key: "operationID", value: operationID)
+            .with(key: "algorithm", value: config.encryptionAlgorithm.rawValue)
+            .with(key: "timestamp", value: Date())
 
           // Return successful result
-          return createSuccessResult(
-            data: decryptedData,
-            duration: 0, // Duration will be calculated by the operation handler
-            metadata: resultMetadata
+          return SecurityResultDTO(
+            success: true,
+            metadata: resultMetadata,
+            errorCode: nil,
+            errorMessage: nil
           )
 
         case let .failure(error):
-          throw error
+          // Log decryption failure
+          await logError(
+            "Decryption failed: \(error.localizedDescription)",
+            context: enhancedContext
+          )
+
+          // Return failure result
+          return SecurityResultDTO(
+            success: false,
+            metadata: MetadataCollection()
+              .with(key: "operationID", value: operationID)
+              .with(key: "errorType", value: String(describing: type(of: error))),
+            errorCode: error.errorCode,
+            errorMessage: error.localizedDescription
+          )
       }
-    } catch let securityError as SecurityStorageError {
-      // Log specific decryption errors
+    } catch let error as MetadataExtractionError {
+      // Log extraction failure
       await logError(
-        "Decryption failed due to storage error: \(securityError)",
+        "Failed to extract required decryption parameters: \(error.localizedDescription)",
         context: context
       )
-      throw securityError
+
+      // Return extraction failure result
+      return SecurityResultDTO(
+        success: false,
+        metadata: MetadataCollection()
+          .with(key: "operationID", value: operationID)
+          .with(key: "errorType", value: String(describing: type(of: error))),
+        errorCode: SecurityError.invalidInputData.errorCode,
+        errorMessage: error.localizedDescription
+      )
     } catch {
-      // Log unexpected errors
+      // Log unexpected failure
       await logError(
-        "Decryption failed with unexpected error: \(error.localizedDescription)",
+        "Unexpected error during decryption: \(error.localizedDescription)",
         context: context
       )
-      throw CoreSecurityTypes.SecurityError.decryptionFailed(
-        reason: "Decryption operation failed: \(error.localizedDescription)"
+
+      // Return unexpected failure result
+      return SecurityResultDTO(
+        success: false,
+        metadata: MetadataCollection()
+          .with(key: "operationID", value: operationID)
+          .with(key: "errorType", value: String(describing: type(of: error))),
+        errorCode: SecurityError.operationFailed.errorCode,
+        errorMessage: error.localizedDescription
       )
     }
   }

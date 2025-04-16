@@ -19,31 +19,31 @@ import Foundation
 public enum SecurityProviderType: String, Sendable, Codable, Equatable, CaseIterable {
   /// Apple CryptoKit provider for native performance and integration on Apple platforms (macOS,
   /// iOS, etc.).
-  case cryptoKit = "CryptoKit"
-  
+  case cryptoKit="CryptoKit"
+
   /// Alias for cryptoKit to align with BuildConfig naming
-  case appleCryptoKit = "AppleCryptoKit"
+  case appleCryptoKit="AppleCryptoKit"
 
   /// Ring Crypto provider using Rust FFI for cross-platform cryptographic compatibility.
-  case ring = "Ring"
+  case ring="Ring"
 
   /// Basic AES implementation, potentially for fallback or environments where other providers are
   /// unavailable.
-  case basic = "Basic"
+  case basic="Basic"
 
   /// System-provided security services (e.g., Keychain access where applicable). Specific
   /// functionality depends on the OS.
-  case system = "System"
+  case system="System"
 
   /// Hardware Security Module (HSM) provider, intended for interaction with dedicated hardware
   /// security devices.
-  case hsm = "HSM"
-  
+  case hsm="HSM"
+
   /// Platform-specific optimised provider
-  case platform = "Platform"
-  
+  case platform="Platform"
+
   /// Custom provider implementation
-  case custom = "Custom"
+  case custom="Custom"
 
   /// Returns a human-readable description of the provider
   public var localizedDescription: String {
@@ -95,7 +95,7 @@ public enum SecurityProviderType: String, Sendable, Codable, Equatable, CaseIter
         return true
     }
   }
-  
+
   /// Whether this provider supports operation in a sandboxed environment
   public var supportsSandbox: Bool {
     switch self {
@@ -111,26 +111,26 @@ public enum SecurityProviderType: String, Sendable, Codable, Equatable, CaseIter
         return false
     }
   }
-  
+
   /// Whether this provider has cross-platform compatibility
   public var isCrossPlatform: Bool {
     switch self {
       case .ring, .basic:
-        return true
+        true
       case .cryptoKit, .appleCryptoKit, .system, .hsm, .platform, .custom:
-        return false
+        false
     }
   }
-  
+
   /// Maps this provider type to the corresponding backend strategy
   public var correspondingBackendStrategy: String {
     switch self {
       case .cryptoKit, .appleCryptoKit:
-        return "appleCK"
+        "appleCK"
       case .ring:
-        return "ringFFI"
+        "ringFFI"
       case .basic, .system, .platform, .custom, .hsm:
-        return "restic"
+        "restic"
     }
   }
 }

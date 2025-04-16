@@ -5,24 +5,21 @@ import Foundation
 import LoggingInterfaces
 import LoggingTypes
 
-/**
- Command that executes key derivation operations.
-
- This command encapsulates the cryptographic key derivation logic in accordance
- with the command pattern, providing clean separation of concerns.
- */
+/// Command that executes key derivation operations.
+///
+/// This command encapsulates the key derivation logic, separating it from
+/// the core SecurityProvider implementation while maintaining the same
+/// functionality and standards.
 public class DeriveKeyCommand: BaseSecurityCommand, SecurityOperationCommand {
   /// The crypto service for performing the key derivation
   private let cryptoService: CryptoServiceProtocol
 
-  /**
-   Initialises a new key derivation command.
-
-   - Parameters:
-      - config: Security configuration for the key derivation
-      - cryptoService: The service to perform the key derivation
-      - logger: Logger for operation tracking and auditing
-   */
+  /// Initialises a new key derivation command.
+  ///
+  /// - Parameters:
+  ///   - config: Security configuration for the key derivation
+  ///   - cryptoService: The service to perform the key derivation
+  ///   - logger: Logger for operation tracking and auditing
   public init(
     config: SecurityConfigDTO,
     cryptoService: CryptoServiceProtocol,
@@ -32,119 +29,163 @@ public class DeriveKeyCommand: BaseSecurityCommand, SecurityOperationCommand {
     super.init(config: config, logger: logger)
   }
 
-  /**
-   Executes the key derivation operation.
-
-   - Parameters:
-      - context: Logging context for the operation
-      - operationID: Unique identifier for this operation instance
-   - Returns: The key derivation result
-   - Throws: SecurityError if key derivation fails
-   */
+  /// Executes the key derivation operation.
+  ///
+  /// - Parameters:
+  ///   - context: Logging context for the operation
+  ///   - operationID: Unique identifier for this operation instance
+  /// - Returns: The key derivation result
+  /// - Throws: SecurityError if key derivation fails
   public func execute(
     context: LogContextDTO,
     operationID: String
   ) async throws -> SecurityResultDTO {
-    await logDebug("Preparing to derive cryptographic key", context: context)
+    await logDebug("Preparing to derive key", context: context)
 
     // Extract required data from configuration
     let extractor=metadataExtractor()
 
     do {
-      // Extract source key identifier
-      let sourceKeyIdentifier=try extractor.requiredIdentifier(
-        forKey: "sourceKeyIdentifier",
-        errorMessage: "Source key identifier is required for key derivation"
+      // Extract base key material
+      let baseKeyData=try extractor.requiredData(
+        forKey: "baseKeyMaterial",
+        errorMessage: "Base key material is required for key derivation"
       )
 
-      // Extract salt if provided
-      let salt=extractor.optionalData(forKey: "salt")
+      // Extract salt (if provided)
+      let salt=try extractor.optionalData(forKey: "salt") ?? Data()
 
-      // Extract info if provided
-      let info=extractor.optionalData(forKey: "info")
+      // Extract info (if provided)
+      let info=try extractor.optionalData(forKey: "info") ?? Data()
 
-      // Extract key type
-      let keyTypeString=try extractor.requiredString(
-        forKey: "keyType",
-        errorMessage: "Key type is required for key derivation"
-      )
+      // Extract key length (defaults to 32 bytes for AES-256)
+      let keyLength=try extractor.optionalInteger(forKey: "keyLength") ?? 32
 
-      guard let keyType=KeyType(rawValue: keyTypeString) else {
-        throw CoreSecurityTypes.SecurityError.invalidInput(
-          reason: "Invalid key type: \(keyTypeString)"
-        )
-      }
-
-      // Extract target key identifier if provided (for overwriting an existing key)
-      let targetKeyIdentifier=extractor.optionalString(forKey: "targetKeyIdentifier")
-
-      // Prepare enhanced context for logging
+      // Log key derivation details
       let enhancedContext=context
-        .adding(key: "keyType", value: keyType.rawValue, privacyLevel: .public)
-        .adding(key: "sourceKeyIdentifier", value: sourceKeyIdentifier, privacyLevel: .private)
+        .adding(key: "baseKeySize", value: "\(baseKeyData.count) bytes", privacyLevel: .public)
+        .adding(key: "saltSize", value: "\(salt.count) bytes", privacyLevel: .public)
+        .adding(key: "infoSize", value: "\(info.count) bytes", privacyLevel: .public)
+        .adding(key: "targetKeyLength", value: "\(keyLength) bytes", privacyLevel: .public)
+        .adding(
+          key: "algorithm",
+          value: config.keyDerivationAlgorithm.rawValue,
+          privacyLevel: .public
+        )
 
       await logDebug(
-        "Deriving \(keyType.rawValue) key from source key",
+        "Deriving key using \(config.keyDerivationAlgorithm.rawValue)",
         context: enhancedContext
       )
 
+      // Create key derivation options
+      let options=KeyDerivationOptions(
+        algorithm: config.keyDerivationAlgorithm.rawValue,
+        salt: [UInt8](salt),
+        info: [UInt8](info),
+        iterations: extractor.optionalInteger(forKey: "iterations") ?? 10000,
+        keyLength: keyLength
+      )
+
+      // Prepare storage identifiers
+      let baseKeyID=UUID().uuidString
+      let storeResult=await cryptoService.storeData([UInt8](baseKeyData), identifier: baseKeyID)
+
+      guard case .success=storeResult else {
+        if case let .failure(error)=storeResult {
+          throw error
+        }
+        throw SecurityStorageError.operationFailed("Failed to store base key material")
+      }
+
       // Perform the key derivation
-      let result=try await cryptoService.deriveKey(
-        fromKey: sourceKeyIdentifier,
-        salt: salt != nil ? [UInt8](salt!) : nil,
-        info: info != nil ? [UInt8](info!) : nil,
-        keyType: keyType,
-        targetIdentifier: targetKeyIdentifier
+      let result=await cryptoService.deriveKey(
+        baseKeyIdentifier: baseKeyID,
+        options: options
       )
 
       // Process the result
       switch result {
-        case let .success(derivedKey):
-          // Record successful key derivation
-          let resultContext=enhancedContext.adding(
-            key: "keyIdentifier",
-            value: derivedKey.identifier,
-            privacyLevel: .private
-          )
+        case let .success(derivedKeyID):
+          // Export the derived key safely
+          let keyDataResult=await cryptoService.exportData(identifier: derivedKeyID)
 
-          await logInfo(
-            "Successfully derived \(keyType.rawValue) key",
-            context: resultContext
-          )
+          switch keyDataResult {
+            case let .success(keyBytes):
+              // Create result metadata with the key identifier
+              let resultMetadata=MetadataCollection()
+                .with(key: "derivedKeyIdentifier", value: derivedKeyID)
+                .with(key: "derivedKeyLength", value: keyBytes.count)
+                .with(key: "operationID", value: operationID)
+                .with(key: "algorithm", value: config.keyDerivationAlgorithm.rawValue)
+                .with(key: "timestamp", value: Date())
 
-          // Create result metadata
-          let resultMetadata: [String: String]=[
-            "keyType": keyType.rawValue,
-            "keyIdentifier": derivedKey.identifier,
-            "sourceKeyIdentifier": sourceKeyIdentifier,
-            "operationID": operationID
-          ]
+              // Record successful key derivation
+              await logInfo(
+                "Successfully derived key of \(keyBytes.count) bytes",
+                context: enhancedContext
+              )
 
-          // Return result with derived key identifier
-          return createSuccessResult(
-            data: Data(derivedKey.identifier.utf8),
-            duration: 0, // Duration will be calculated by the operation handler
-            metadata: resultMetadata
-          )
+              // Return successful result
+              return SecurityResultDTO(
+                success: true,
+                metadata: resultMetadata,
+                errorCode: nil,
+                errorMessage: nil
+              )
+
+            case let .failure(exportError):
+              throw exportError
+          }
 
         case let .failure(error):
-          throw error
+          // Log key derivation failure
+          await logError(
+            "Key derivation failed: \(error.localizedDescription)",
+            context: enhancedContext
+          )
+
+          // Return failure result
+          return SecurityResultDTO(
+            success: false,
+            metadata: MetadataCollection()
+              .with(key: "operationID", value: operationID)
+              .with(key: "errorType", value: String(describing: type(of: error))),
+            errorCode: error.errorCode,
+            errorMessage: error.localizedDescription
+          )
       }
-    } catch let securityError as SecurityStorageError {
-      // Log specific key derivation errors
+    } catch let error as MetadataExtractionError {
+      // Log extraction failure
       await logError(
-        "Key derivation failed due to storage error: \(securityError)",
+        "Failed to extract required key derivation parameters: \(error.localizedDescription)",
         context: context
       )
-      throw securityError
+
+      // Return extraction failure result
+      return SecurityResultDTO(
+        success: false,
+        metadata: MetadataCollection()
+          .with(key: "operationID", value: operationID)
+          .with(key: "errorType", value: String(describing: type(of: error))),
+        errorCode: SecurityError.invalidInputData.errorCode,
+        errorMessage: error.localizedDescription
+      )
     } catch {
-      // Log unexpected errors
+      // Log unexpected failure
       await logError(
-        "Key derivation failed with unexpected error: \(error.localizedDescription)",
+        "Unexpected error during key derivation: \(error.localizedDescription)",
         context: context
       )
-      throw CoreSecurityTypes.SecurityError.keyDerivationFailed(
-        reason: "Key derivation operation failed: \(error.localizedDescription)"
+
+      // Return unexpected failure result
+      return SecurityResultDTO(
+        success: false,
+        metadata: MetadataCollection()
+          .with(key: "operationID", value: operationID)
+          .with(key: "errorType", value: String(describing: type(of: error))),
+        errorCode: SecurityError.operationFailed.errorCode,
+        errorMessage: error.localizedDescription
       )
     }
   }

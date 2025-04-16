@@ -17,7 +17,7 @@ public struct FileSystemLogContext: LogContextDTO, Sendable, Equatable {
 
   /// The file system operation being performed
   public let operation: String
-  
+
   /// The category for the log entry
   public let category: String
 
@@ -35,7 +35,7 @@ public struct FileSystemLogContext: LogContextDTO, Sendable, Equatable {
   ///   - additionalContext: Optional additional context with privacy annotations
   public init(
     operation: String,
-    category: String = "FileSystem",
+    category: String="FileSystem",
     path: String?=nil,
     correlationID: String?=nil,
     source: String?=nil,
@@ -52,7 +52,7 @@ public struct FileSystemLogContext: LogContextDTO, Sendable, Equatable {
 
     // Add operation as public metadata
     contextMetadata=contextMetadata.withPublic(key: "operation", value: operation)
-    
+
     // Add category as public metadata
     contextMetadata=contextMetadata.withPublic(key: "category", value: category)
 
@@ -72,18 +72,18 @@ public struct FileSystemLogContext: LogContextDTO, Sendable, Equatable {
 
     metadata=contextMetadata
   }
-  
+
   /// Creates a new context with additional metadata merged with the existing metadata
   /// - Parameter additionalMetadata: Additional metadata to include
   /// - Returns: New context with merged metadata
   public func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> FileSystemLogContext {
-    return FileSystemLogContext(
+    FileSystemLogContext(
       operation: operation,
       category: category,
       path: path,
       correlationID: correlationID,
       source: source,
-      additionalContext: self.metadata.merging(with: additionalMetadata)
+      additionalContext: metadata.merging(with: additionalMetadata)
     )
   }
 

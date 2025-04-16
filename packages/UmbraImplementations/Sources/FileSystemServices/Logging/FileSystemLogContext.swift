@@ -27,9 +27,9 @@ import LoggingTypes
 public struct FileSystemLogContext: LogContextDTO {
   /// The operation being performed
   public let operation: String
-  
+
   /// The category for the log entry
-  public let category: String = "FileSystem"
+  public let category: String="FileSystem"
 
   /// The source of the log entry
   public let source: String?
@@ -249,23 +249,27 @@ public struct FileSystemLogContext: LogContextDTO {
 
   /**
    Creates a new context with additional metadata merged with existing metadata.
-   
+
    - Parameter additionalMetadata: Additional metadata to include
    - Returns: New context with merged metadata
    */
   public func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> Self {
-    var updatedMetadata = self.metadata
+    var updatedMetadata=metadata
     for entry in additionalMetadata.entries {
-      updatedMetadata = updatedMetadata.with(key: entry.key, value: entry.value, privacyLevel: entry.privacyLevel)
+      updatedMetadata=updatedMetadata.with(
+        key: entry.key,
+        value: entry.value,
+        privacyLevel: entry.privacyLevel
+      )
     }
-    
+
     return FileSystemLogContext(
-      operation: self.operation,
-      path: self.metadata.getString(key: "path"),
-      source: self.source,
+      operation: operation,
+      path: metadata.getString(key: "path"),
+      source: source,
       metadata: updatedMetadata,
-      correlationID: self.correlationID,
-      isSecureOperation: self.metadata.getString(key: "isSecureOperation") == "true"
+      correlationID: correlationID,
+      isSecureOperation: metadata.getString(key: "isSecureOperation") == "true"
     )
   }
 }

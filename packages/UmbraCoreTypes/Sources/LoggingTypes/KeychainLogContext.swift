@@ -20,7 +20,7 @@ public struct KeychainLogContext: LogContextDTO, Sendable {
 
   /// The operation being performed
   public let operation: String
-  
+
   /// The category for the log entry
   public let category: String
 
@@ -36,7 +36,7 @@ public struct KeychainLogContext: LogContextDTO, Sendable {
   public init(
     account: String,
     operation: String,
-    category: String = "Security",
+    category: String="Security",
     correlationID: String?=nil,
     source: String?=nil,
     additionalContext: LogMetadataDTOCollection=LogMetadataDTOCollection()
@@ -55,24 +55,24 @@ public struct KeychainLogContext: LogContextDTO, Sendable {
 
     // Add operation as public metadata
     contextMetadata=contextMetadata.withPublic(key: "operation", value: operation)
-    
+
     // Add category as public metadata
     contextMetadata=contextMetadata.withPublic(key: "category", value: category)
 
     metadata=contextMetadata
   }
-  
+
   /// Creates a new context with additional metadata merged with the existing metadata
   /// - Parameter additionalMetadata: Additional metadata to include
   /// - Returns: New context with merged metadata
   public func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> KeychainLogContext {
-    return KeychainLogContext(
+    KeychainLogContext(
       account: account,
       operation: operation,
       category: category,
       correlationID: correlationID,
       source: source,
-      additionalContext: self.metadata.merging(with: additionalMetadata)
+      additionalContext: metadata.merging(with: additionalMetadata)
     )
   }
 

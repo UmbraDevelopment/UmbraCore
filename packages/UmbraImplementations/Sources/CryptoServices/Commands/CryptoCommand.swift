@@ -39,10 +39,10 @@ public protocol CryptoCommand<ResultType> {
  */
 public class BaseCryptoCommand {
   /// The secure storage to use for cryptographic materials
-  internal let secureStorage: SecureStorageProtocol
+  let secureStorage: SecureStorageProtocol
 
   /// Logger for operations
-  internal let logger: LoggingProtocol?
+  let logger: LoggingProtocol?
 
   /**
    Initialises a new base crypto command.
@@ -66,7 +66,7 @@ public class BaseCryptoCommand {
       - additionalMetadata: Additional metadata to include in the context
    - Returns: A configured log context
    */
-  internal func createLogContext(
+  func createLogContext(
     operation: String,
     algorithm: String?=nil,
     correlationID: String?=nil,
@@ -98,7 +98,7 @@ public class BaseCryptoCommand {
       - message: The log message
       - context: The logging context
    */
-  internal func logDebug(_ message: String, context: LogContextDTO) async {
+  func logDebug(_ message: String, context: LogContextDTO) async {
     await logger?.debug(message, context: context)
   }
 
@@ -109,7 +109,7 @@ public class BaseCryptoCommand {
       - message: The log message
       - context: The logging context
    */
-  internal func logInfo(_ message: String, context: LogContextDTO) async {
+  func logInfo(_ message: String, context: LogContextDTO) async {
     await logger?.info(message, context: context)
   }
 
@@ -120,7 +120,7 @@ public class BaseCryptoCommand {
       - message: The log message
       - context: The logging context
    */
-  internal func logWarning(_ message: String, context: LogContextDTO) async {
+  func logWarning(_ message: String, context: LogContextDTO) async {
     await logger?.warning(message, context: context)
   }
 
@@ -131,7 +131,7 @@ public class BaseCryptoCommand {
       - message: The log message
       - context: The logging context
    */
-  internal func logError(_ message: String, context: LogContextDTO) async {
+  func logError(_ message: String, context: LogContextDTO) async {
     await logger?.error(message, context: context)
   }
 }

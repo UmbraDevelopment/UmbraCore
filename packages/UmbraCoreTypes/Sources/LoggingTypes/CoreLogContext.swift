@@ -7,10 +7,10 @@ import SecurityInterfacesTypes
 public struct CoreLogContext: LogContextDTO, Equatable {
   /// The domain name for this context
   public let domainName: String="CoreFramework"
-  
+
   /// The operation being performed (e.g., "initialise", "configure")
   public let operation: String
-  
+
   /// The category for the log entry (e.g., "System", "Configuration")
   public let category: String
 
@@ -41,7 +41,7 @@ public struct CoreLogContext: LogContextDTO, Equatable {
   ///   - component: Specific component within the framework
   public init(
     operation: String,
-    category: String = "Core",
+    category: String="Core",
     source: String?=nil,
     correlationID: String?=nil,
     metadata: LogMetadataDTOCollection=LogMetadataDTOCollection(),
@@ -59,27 +59,27 @@ public struct CoreLogContext: LogContextDTO, Equatable {
       processedMetadata=processedMetadata.withPublic(key: "component", value: component)
     }
 
-    self.operation = operation
-    self.category = category
+    self.operation=operation
+    self.category=category
     self.source=source
     self.correlationID=correlationID
     self.metadata=processedMetadata
     self.operationalState=operationalState
     self.component=component
   }
-  
+
   /// Creates a new context with additional metadata merged with the existing metadata
   /// - Parameter additionalMetadata: Additional metadata to include
   /// - Returns: New context with merged metadata
   public func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> CoreLogContext {
-    return CoreLogContext(
-      operation: self.operation,
-      category: self.category,
-      source: self.source,
-      correlationID: self.correlationID,
-      metadata: self.metadata.merging(with: additionalMetadata),
-      operationalState: self.operationalState,
-      component: self.component
+    CoreLogContext(
+      operation: operation,
+      category: category,
+      source: source,
+      correlationID: correlationID,
+      metadata: metadata.merging(with: additionalMetadata),
+      operationalState: operationalState,
+      component: component
     )
   }
 

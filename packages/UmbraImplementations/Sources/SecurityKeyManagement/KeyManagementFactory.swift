@@ -339,7 +339,7 @@ private struct BaseLogContextDTO: LogContextDTO {
    * - Returns: A new context with merged metadata
    */
   func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> Self {
-    let mergedMetadata = metadata.merging(with: additionalMetadata)
+    let mergedMetadata=metadata.merging(with: additionalMetadata)
     return BaseLogContextDTO(
       domainName: domainName,
       operation: operation,

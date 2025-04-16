@@ -399,17 +399,21 @@ private struct BaseLogContextDTO: LogContextDTO {
 
   // Required by LogContextDTO protocol - implement withMetadata method
   func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> Self {
-    var updatedMetadata = self.metadataCollection
+    var updatedMetadata=metadataCollection
     for entry in additionalMetadata.entries {
-      updatedMetadata = updatedMetadata.with(key: entry.key, value: entry.value, privacyLevel: entry.privacyLevel)
+      updatedMetadata=updatedMetadata.with(
+        key: entry.key,
+        value: entry.value,
+        privacyLevel: entry.privacyLevel
+      )
     }
-    
+
     return BaseLogContextDTO(
-      domainName: self.domainName,
-      operation: self.operation,
-      category: self.category,
-      source: self.source,
-      correlationID: self.correlationID,
+      domainName: domainName,
+      operation: operation,
+      category: category,
+      source: source,
+      correlationID: correlationID,
       metadataCollection: updatedMetadata
     )
   }

@@ -78,7 +78,7 @@ public actor CryptoXPCServiceActor {
     // Create a new service if we can
     guard let provider=cryptoProvider else {
       let context=BaseLogContextDTO(
-        domainName: "CryptoXPC", 
+        domainName: "CryptoXPC",
         operation: "getCryptoService",
         category: "ServiceManagement",
         source: "getCryptoService"
@@ -107,7 +107,7 @@ public actor CryptoXPCServiceActor {
     options _: CryptoOperationOptionsDTO?
   ) async -> Result<String, UmbraErrorsDTOs.ErrorDTO> {
     let context=BaseLogContextDTO(
-      domainName: "CryptoXPC", 
+      domainName: "CryptoXPC",
       operation: "encrypt",
       category: "CryptoOperation",
       source: "encrypt"
@@ -183,7 +183,7 @@ public actor CryptoXPCServiceActor {
     options _: CryptoOperationOptionsDTO?
   ) async -> Result<String, UmbraErrorsDTOs.ErrorDTO> {
     let context=BaseLogContextDTO(
-      domainName: "CryptoXPC", 
+      domainName: "CryptoXPC",
       operation: "decrypt",
       category: "CryptoOperation",
       source: "decrypt"
@@ -257,7 +257,7 @@ public actor CryptoXPCServiceActor {
     options _: CoreSecurityTypes.RandomizationOptionsDTO?
   ) async -> Result<String, UmbraErrorsDTOs.ErrorDTO> {
     let context=BaseLogContextDTO(
-      domainName: "CryptoXPC", 
+      domainName: "CryptoXPC",
       operation: "generateRandomBytes",
       category: "CryptoOperation",
       source: "generateRandomBytes"
@@ -357,7 +357,7 @@ public actor CryptoXPCServiceActor {
     options _: CryptoOperationOptionsDTO?
   ) async -> Result<String, UmbraErrorsDTOs.ErrorDTO> {
     let context=BaseLogContextDTO(
-      domainName: "CryptoXPC", 
+      domainName: "CryptoXPC",
       operation: "hash",
       category: "CryptoOperation",
       source: "hash"

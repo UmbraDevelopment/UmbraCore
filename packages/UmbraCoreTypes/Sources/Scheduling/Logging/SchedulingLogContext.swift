@@ -22,7 +22,7 @@ public struct SchedulingLogContext: LogContextDTO {
 
   /// The operation being performed
   public let operation: String
-  
+
   /// The category for the log entry
   public let category: String
 
@@ -187,7 +187,7 @@ public struct SchedulingLogContext: LogContextDTO {
   /// - Parameter additionalMetadata: Additional metadata to include
   /// - Returns: New context with merged metadata
   public func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> Self {
-    let mergedMetadata = metadata.merging(with: additionalMetadata)
+    let mergedMetadata=metadata.merging(with: additionalMetadata)
     return SchedulingLogContext(
       operation: operation,
       source: source,

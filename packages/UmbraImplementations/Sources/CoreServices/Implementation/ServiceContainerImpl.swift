@@ -182,8 +182,8 @@ public final class ServiceContainerImpl: ServiceContainerProtocol {
 
       await self.logger.debug("Creating crypto service adapter", context: context)
 
-      let cryptoService = await CryptoServiceRegistry.createService(
-          type: .standard
+      let cryptoService=await CryptoServiceRegistry.createService(
+        type: .standard
       )
       return CryptoServiceAdapter(cryptoService: cryptoService)
     }

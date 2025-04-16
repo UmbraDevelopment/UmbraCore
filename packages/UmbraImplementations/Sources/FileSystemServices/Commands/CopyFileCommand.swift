@@ -3,12 +3,10 @@ import Foundation
 import LoggingInterfaces
 import LoggingTypes
 
-/**
- Command for copying a file from one location to another.
-
- This command follows the Alpha Dot Five architecture principles with privacy-aware
- logging and strong error handling.
- */
+/// Command for copying a file from one location to another.
+///
+/// This command follows the Alpha Dot Five architecture principles with privacy-aware
+/// logging and strong error handling.
 public class CopyFileCommand: BaseFileSystemCommand, FileSystemCommand {
   /// The type of result returned by this command
   public typealias ResultType=Void
@@ -25,17 +23,15 @@ public class CopyFileCommand: BaseFileSystemCommand, FileSystemCommand {
   /// Whether to create parent directories for the destination if they don't exist
   private let createParentDirectories: Bool
 
-  /**
-   Initialises a new copy file command.
-
-   - Parameters:
-      - sourcePath: Path to the source file
-      - destinationPath: Path to the destination file
-      - overwrite: Whether to overwrite the destination if it exists
-      - createParentDirectories: Whether to create parent directories for the destination
-      - fileManager: File manager to use for operations
-      - logger: Optional logger for operation tracking
-   */
+  /// Initialises a new copy file command.
+  ///
+  /// - Parameters:
+  ///   - sourcePath: Path to the source file
+  ///   - destinationPath: Path to the destination file
+  ///   - overwrite: Whether to overwrite the destination if it exists
+  ///   - createParentDirectories: Whether to create parent directories for the destination
+  ///   - fileManager: File manager to use for operations
+  ///   - logger: Optional logger for operation tracking
   public init(
     sourcePath: String,
     destinationPath: String,
@@ -51,14 +47,12 @@ public class CopyFileCommand: BaseFileSystemCommand, FileSystemCommand {
     super.init(fileManager: fileManager, logger: logger)
   }
 
-  /**
-   Executes the file copy operation.
-
-   - Parameters:
-      - context: Logging context for the operation
-      - operationID: Unique identifier for this operation instance
-   - Returns: Void if successful, error otherwise
-   */
+  /// Executes the file copy operation.
+  ///
+  /// - Parameters:
+  ///   - context: Logging context for the operation
+  ///   - operationID: Unique identifier for this operation instance
+  /// - Returns: Void if successful, error otherwise
   public func execute(
     context _: LogContextDTO,
     operationID: String

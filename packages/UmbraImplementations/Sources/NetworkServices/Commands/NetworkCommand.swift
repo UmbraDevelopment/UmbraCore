@@ -34,19 +34,19 @@ public protocol NetworkCommand: Sendable {
  */
 public class BaseNetworkCommand: @unchecked Sendable {
   /// The URLSession for making network requests
-  internal let session: URLSession
+  let session: URLSession
 
   /// Default timeout interval for requests
-  internal let defaultTimeoutInterval: Double
+  let defaultTimeoutInterval: Double
 
   /// Default cache policy for requests
-  internal let defaultCachePolicy: CachePolicy
+  let defaultCachePolicy: CachePolicy
 
   /// Logging instance for network operations
-  internal let logger: PrivacyAwareLoggingProtocol
+  let logger: PrivacyAwareLoggingProtocol
 
   /// Statistics provider for collecting network metrics
-  internal let statisticsProvider: NetworkStatisticsProvider?
+  let statisticsProvider: NetworkStatisticsProvider?
 
   /**
    Initialises a new base network command.
@@ -80,7 +80,7 @@ public class BaseNetworkCommand: @unchecked Sendable {
       - additionalMetadata: Additional metadata for the log context
    - Returns: A configured network log context
    */
-  internal func createLogContext(
+  func createLogContext(
     operation: String,
     additionalMetadata: [String: (value: String, privacyLevel: PrivacyLevel)]=[:]
   ) -> NetworkLogContext {
@@ -94,14 +94,14 @@ public class BaseNetworkCommand: @unchecked Sendable {
     for (key, value) in additionalMetadata {
       switch value.privacyLevel {
         case .public:
-          context = context.withPublic(key: key, value: value.value)
+          context=context.withPublic(key: key, value: value.value)
         case .protected:
-          context = context.withProtected(key: key, value: value.value)
+          context=context.withProtected(key: key, value: value.value)
         case .private:
-          context = context.withPrivate(key: key, value: value.value)
+          context=context.withPrivate(key: key, value: value.value)
         case .sensitive, .hash, .never, .auto:
           // For other privacy levels, default to private
-          context = context.withPrivate(key: key, value: value.value)
+          context=context.withPrivate(key: key, value: value.value)
       }
     }
 
@@ -114,7 +114,7 @@ public class BaseNetworkCommand: @unchecked Sendable {
    - Parameter request: The network request
    - Returns: Constructed URL with query parameters, or nil if URL is invalid
    */
-  internal func constructURL(from request: NetworkRequestProtocol) -> URL? {
+  func constructURL(from request: NetworkRequestProtocol) -> URL? {
     guard var urlComponents=URLComponents(string: request.urlString) else {
       return nil
     }
@@ -136,7 +136,7 @@ public class BaseNetworkCommand: @unchecked Sendable {
    - Returns: The result of the operation
    - Throws: NetworkError if URL construction fails
    */
-  internal func createURLRequest(from request: NetworkRequestProtocol) throws -> URLRequest {
+  func createURLRequest(from request: NetworkRequestProtocol) throws -> URLRequest {
     guard let url=constructURL(from: request) else {
       throw NetworkError.invalidURL(request.urlString)
     }
@@ -144,7 +144,8 @@ public class BaseNetworkCommand: @unchecked Sendable {
     // Create and configure the URLRequest
     var urlRequest=URLRequest(
       url: url,
-      cachePolicy: URLRequest.CachePolicy(rawValue: UInt(request.cachePolicy.hashValue)) ?? .useProtocolCachePolicy,
+      cachePolicy: URLRequest
+        .CachePolicy(rawValue: UInt(request.cachePolicy.hashValue)) ?? .useProtocolCachePolicy,
       timeoutInterval: request.timeoutInterval
     )
 
@@ -172,7 +173,7 @@ public class BaseNetworkCommand: @unchecked Sendable {
       - urlRequest: URLRequest to modify
    - Throws: NetworkError if body preparation fails
    */
-  internal func setRequestBody(_ body: RequestBody, for urlRequest: inout URLRequest) throws {
+  func setRequestBody(_ body: RequestBody, for urlRequest: inout URLRequest) throws {
     switch body {
       case let .json(encodable):
         let encoder=JSONEncoder()
@@ -189,7 +190,7 @@ public class BaseNetworkCommand: @unchecked Sendable {
         components.queryItems=parameters.map { key, value in
           URLQueryItem(name: key, value: value)
         }
-        
+
         if let encodedData=components.query?.data(using: .utf8) {
           urlRequest.httpBody=encodedData
           urlRequest.setValue(
@@ -210,7 +211,7 @@ public class BaseNetworkCommand: @unchecked Sendable {
           "multipart/form-data; boundary=\(boundary)",
           forHTTPHeaderField: "Content-Type"
         )
-        
+
       case .empty:
         // No body to set
         break
@@ -225,34 +226,34 @@ public class BaseNetworkCommand: @unchecked Sendable {
       - boundary: The boundary string to use for separating form parts
    - Returns: Data containing the complete multipart form body
    */
-  internal func createMultipartBody(items: [MultipartFormData], boundary: String) -> Data {
+  func createMultipartBody(items: [MultipartFormData], boundary: String) -> Data {
     var body=Data()
 
     for item in items {
       // Add boundary
       body.append("--\(boundary)\r\n".data(using: .utf8)!)
-      
+
       // Add Content-Disposition header
-      var header = "Content-Disposition: form-data; name=\"\(item.name)\""
-      if let filename = item.filename {
+      var header="Content-Disposition: form-data; name=\"\(item.name)\""
+      if let filename=item.filename {
         header += "; filename=\"\(filename)\""
       }
       header += "\r\n"
       body.append(header.data(using: .utf8)!)
-      
+
       // Add Content-Type header
       body.append("Content-Type: \(item.contentType)\r\n\r\n".data(using: .utf8)!)
-      
+
       // Add data
       body.append(Data(item.data))
-      
+
       // Add line break
       body.append("\r\n".data(using: .utf8)!)
     }
-    
+
     // Add closing boundary
     body.append("--\(boundary)--\r\n".data(using: .utf8)!)
-    
+
     return body
   }
 
@@ -262,7 +263,7 @@ public class BaseNetworkCommand: @unchecked Sendable {
    - Parameter request: URLRequest to estimate
    - Returns: Estimated size in bytes
    */
-  internal func estimateRequestSize(_ request: URLRequest) -> Int {
+  func estimateRequestSize(_ request: URLRequest) -> Int {
     var size=0
 
     // Method line: GET /path HTTP/1.1

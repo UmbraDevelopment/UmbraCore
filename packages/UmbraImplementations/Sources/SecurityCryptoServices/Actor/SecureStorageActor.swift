@@ -1,12 +1,12 @@
 import CoreSecurityTypes
+import CryptoServicesApple
+import CryptoServicesCore
+import CryptoServicesStandard
+import CryptoServicesXfn
 import DomainSecurityTypes
 import Foundation
 import LoggingInterfaces
 import LoggingServices
-import CryptoServicesCore
-import CryptoServicesStandard
-import CryptoServicesXfn
-import CryptoServicesApple
 
 /**
  # SecureStorageActor
@@ -121,19 +121,18 @@ public actor SecureStorageActor: SecureStorageProtocol {
     )
 
     // Create the crypto service with the specified provider type
-    let serviceType: CryptoServiceType
-    switch providerType {
+    let serviceType: CryptoServiceType=switch providerType {
       case .basic:
-        serviceType = .standard
+        .standard
       case .ring:
-        serviceType = .crossPlatform
+        .crossPlatform
       case .appleCryptoKit:
-        serviceType = .applePlatform
+        .applePlatform
       default:
-        serviceType = .standard
+        .standard
     }
-    
-    cryptoService = await CryptoServiceRegistry.createService(
+
+    cryptoService=await CryptoServiceRegistry.createService(
       type: serviceType,
       logger: logger
     )

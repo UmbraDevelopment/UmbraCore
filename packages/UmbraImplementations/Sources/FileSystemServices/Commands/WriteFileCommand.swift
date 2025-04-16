@@ -3,12 +3,10 @@ import Foundation
 import LoggingInterfaces
 import LoggingTypes
 
-/**
- Command for writing data to a file.
-
- This command follows the Alpha Dot Five architecture principles with privacy-aware
- logging and strong error handling.
- */
+/// Command for writing data to a file.
+///
+/// This command follows the Alpha Dot Five architecture principles with privacy-aware
+/// logging and strong error handling.
 public class WriteFileCommand: BaseFileSystemCommand, FileSystemCommand {
   /// The type of result returned by this command
   public typealias ResultType=Void
@@ -25,17 +23,15 @@ public class WriteFileCommand: BaseFileSystemCommand, FileSystemCommand {
   /// Whether to overwrite the file if it already exists
   private let overwrite: Bool
 
-  /**
-   Initialises a new write file command.
-
-   - Parameters:
-      - filePath: Path to the file to write
-      - data: Data to write to the file
-      - createParentDirectories: Whether to create parent directories if they don't exist
-      - overwrite: Whether to overwrite the file if it already exists
-      - fileManager: File manager to use for operations
-      - logger: Optional logger for operation tracking
-   */
+  /// Initialises a new write file command.
+  ///
+  /// - Parameters:
+  ///   - filePath: Path to the file to write
+  ///   - data: Data to write to the file
+  ///   - createParentDirectories: Whether to create parent directories if they don't exist
+  ///   - overwrite: Whether to overwrite the file if it already exists
+  ///   - fileManager: File manager to use for operations
+  ///   - logger: Optional logger for operation tracking
   public init(
     filePath: String,
     data: [UInt8],
@@ -51,14 +47,12 @@ public class WriteFileCommand: BaseFileSystemCommand, FileSystemCommand {
     super.init(fileManager: fileManager, logger: logger)
   }
 
-  /**
-   Executes the file write operation.
-
-   - Parameters:
-      - context: Logging context for the operation
-      - operationID: Unique identifier for this operation instance
-   - Returns: Void if successful, error otherwise
-   */
+  /// Executes the file write operation.
+  ///
+  /// - Parameters:
+  ///   - context: Logging context for the operation
+  ///   - operationID: Unique identifier for this operation instance
+  /// - Returns: Void if successful, error otherwise
   public func execute(
     context _: LogContextDTO,
     operationID: String

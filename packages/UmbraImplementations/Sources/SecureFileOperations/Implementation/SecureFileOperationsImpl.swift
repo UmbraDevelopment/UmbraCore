@@ -489,7 +489,7 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
     let resourceValues=try fileManager.attributesOfItem(atPath: path.path)
 
     // Handle different deletion approaches for files vs directories
-    let isDirectory = (resourceValues[FileAttributeKey.type] as? String) == "NSFileTypeDirectory"
+    let isDirectory=(resourceValues[FileAttributeKey.type] as? String) == "NSFileTypeDirectory"
     if isDirectory {
       // For directories, recursively delete contents securely
       if let contents=try? fileManager.contentsOfDirectory(atPath: path.path) {
@@ -643,7 +643,7 @@ public actor SecureFileOperationsImpl: SecureFileOperationsProtocol {
 
   /**
    Creates a log context with the given key-value pairs for secure file operations.
-   
+
    @param metadata Dictionary of metadata key-value pairs
    @return A log context DTO with the metadata included as public fields
    */

@@ -169,7 +169,9 @@ public class DecryptDataCommand: BaseCryptoCommand, CryptoCommand {
               if let securityError=error as? SecurityStorageError {
                 return .failure(securityError)
               } else {
-                return .failure(.operationFailed("Decryption failed: \(error.localizedDescription)"))
+                return .failure(
+                  .operationFailed("Decryption failed: \(error.localizedDescription)")
+                )
               }
             }
 
@@ -202,22 +204,26 @@ public class DecryptDataCommand: BaseCryptoCommand, CryptoCommand {
    - Returns: The decrypted data
    - Throws: Error if decryption fails
    */
-  private func decryptData(data: [UInt8], key: [UInt8], algorithm: EncryptionAlgorithm) throws -> [UInt8] {
+  private func decryptData(
+    data: [UInt8],
+    key: [UInt8],
+    algorithm: EncryptionAlgorithm
+  ) throws -> [UInt8] {
     switch algorithm {
       case .aes256GCM:
-        return try aesGCMDecrypt(data: data, key: key, iv: [UInt8]())
+        try aesGCMDecrypt(data: data, key: key, iv: [UInt8]())
 
       case .aes256CBC:
-        return try aesCBCDecrypt(data: data, key: key, iv: [UInt8]())
+        try aesCBCDecrypt(data: data, key: key, iv: [UInt8]())
 
       case .chacha20Poly1305:
-        return try chaCha20Poly1305Decrypt(data: data, key: key, nonce: [UInt8]())
+        try chaCha20Poly1305Decrypt(data: data, key: key, nonce: [UInt8]())
     }
   }
 
   /**
    Decrypts data using AES-GCM algorithm.
-   
+
    - Parameters:
      - data: Encrypted data
      - key: Decryption key
@@ -225,14 +231,14 @@ public class DecryptDataCommand: BaseCryptoCommand, CryptoCommand {
    - Returns: Decrypted data
    - Throws: Error if decryption fails
    */
-  private func aesGCMDecrypt(data: [UInt8], key: [UInt8], iv: [UInt8]) throws -> [UInt8] {
+  private func aesGCMDecrypt(data _: [UInt8], key _: [UInt8], iv _: [UInt8]) throws -> [UInt8] {
     // For now, we'll throw an error to indicate this needs implementation
     throw SecurityStorageError.operationFailed("AES-GCM decryption not implemented")
   }
 
   /**
    Decrypts data using AES-CBC algorithm.
-   
+
    - Parameters:
      - data: Encrypted data
      - key: Decryption key
@@ -275,7 +281,7 @@ public class DecryptDataCommand: BaseCryptoCommand, CryptoCommand {
 
   /**
    Decrypts data using ChaCha20-Poly1305 algorithm.
-   
+
    - Parameters:
      - data: Encrypted data
      - key: Decryption key
@@ -283,7 +289,11 @@ public class DecryptDataCommand: BaseCryptoCommand, CryptoCommand {
    - Returns: Decrypted data
    - Throws: Error if decryption fails
    */
-  private func chaCha20Poly1305Decrypt(data: [UInt8], key: [UInt8], nonce: [UInt8]) throws -> [UInt8] {
+  private func chaCha20Poly1305Decrypt(
+    data _: [UInt8],
+    key _: [UInt8],
+    nonce _: [UInt8]
+  ) throws -> [UInt8] {
     // For now, we'll throw an error to indicate this needs implementation
     throw SecurityStorageError.operationFailed("ChaCha20-Poly1305 decryption not implemented")
   }

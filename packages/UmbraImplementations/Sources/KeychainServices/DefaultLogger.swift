@@ -350,7 +350,7 @@ private struct BaseLogContextDTO: LogContextDTO {
   let source: String?
   let correlationID: String?
   let metadataCollection: LogMetadataDTOCollection?
-  
+
   // Required by LogContextDTO protocol
   var metadata: LogMetadataDTOCollection {
     metadataCollection ?? LogMetadataDTOCollection()
@@ -358,18 +358,18 @@ private struct BaseLogContextDTO: LogContextDTO {
 
   init(
     domainName: String,
-    operation: String = "general",
-    category: String = "Keychain",
-    source: String? = nil,
-    correlationID: String? = nil,
-    metadataCollection: LogMetadataDTOCollection? = nil
+    operation: String="general",
+    category: String="Keychain",
+    source: String?=nil,
+    correlationID: String?=nil,
+    metadataCollection: LogMetadataDTOCollection?=nil
   ) {
-    self.domainName = domainName
-    self.operation = operation
-    self.category = category
-    self.source = source
-    self.correlationID = correlationID
-    self.metadataCollection = metadataCollection
+    self.domainName=domainName
+    self.operation=operation
+    self.category=category
+    self.source=source
+    self.correlationID=correlationID
+    self.metadataCollection=metadataCollection
   }
 
   func getDomain() -> String {
@@ -382,17 +382,17 @@ private struct BaseLogContextDTO: LogContextDTO {
    * - Returns: A LogMetadataDTOCollection with context metadata
    */
   func createMetadataCollection() -> LogMetadataDTOCollection {
-    var collection = metadataCollection ?? LogMetadataDTOCollection()
-    collection = collection.withPublic(key: "domain", value: domainName)
-    collection = collection.withPublic(key: "operation", value: operation)
-    collection = collection.withPublic(key: "category", value: category)
+    var collection=metadataCollection ?? LogMetadataDTOCollection()
+    collection=collection.withPublic(key: "domain", value: domainName)
+    collection=collection.withPublic(key: "operation", value: operation)
+    collection=collection.withPublic(key: "category", value: category)
 
     if let source {
-      collection = collection.withPublic(key: "source", value: source)
+      collection=collection.withPublic(key: "source", value: source)
     }
 
     if let correlationID {
-      collection = collection.withPublic(key: "correlationId", value: correlationID)
+      collection=collection.withPublic(key: "correlationId", value: correlationID)
     }
 
     return collection
@@ -405,8 +405,8 @@ private struct BaseLogContextDTO: LogContextDTO {
    * - Returns: A new context with merged metadata
    */
   func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> Self {
-    let existingMetadata = metadataCollection ?? LogMetadataDTOCollection()
-    let mergedMetadata = existingMetadata.merging(with: additionalMetadata)
+    let existingMetadata=metadataCollection ?? LogMetadataDTOCollection()
+    let mergedMetadata=existingMetadata.merging(with: additionalMetadata)
 
     return BaseLogContextDTO(
       domainName: domainName,

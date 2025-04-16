@@ -197,8 +197,8 @@ public actor BaseDomainLogger: DomainLoggerProtocol {
  */
 struct BasicLogContext: LogContextDTO {
   let domainName: String="Default"
-  let operation: String = "GenericOperation"
-  let category: String = "General"
+  let operation: String="GenericOperation"
+  let category: String="General"
   let correlationID: String?=LogIdentifier(value: UUID().uuidString).description
   let source: String?
   var metadata: LogMetadataDTOCollection = .init()
@@ -206,25 +206,33 @@ struct BasicLogContext: LogContextDTO {
   init(source: String?=nil) {
     self.source=source
   }
-  
+
   func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> BasicLogContext {
-    var newMetadata = self.metadata
+    var newMetadata=metadata
     for entry in additionalMetadata.entries {
-      newMetadata = newMetadata.with(key: entry.key, value: entry.value, privacyLevel: entry.privacyLevel)
+      newMetadata=newMetadata.with(
+        key: entry.key,
+        value: entry.value,
+        privacyLevel: entry.privacyLevel
+      )
     }
-    
+
     // Create a new instance with the updated metadata
-    var result = self
-    result.metadata = newMetadata
+    var result=self
+    result.metadata=newMetadata
     return result
   }
 
   func withUpdatedMetadata(_ updatedMetadata: LogMetadataDTOCollection) -> Self {
     // This method exists for compatibility with the LogContextDTO protocol
     // We need to modify self since we can't create a new instance due to type constraints
-    var result = self
+    var result=self
     for entry in updatedMetadata.entries {
-      result.metadata = result.metadata.with(key: entry.key, value: entry.value, privacyLevel: entry.privacyLevel)
+      result.metadata=result.metadata.with(
+        key: entry.key,
+        value: entry.value,
+        privacyLevel: entry.privacyLevel
+      )
     }
     return result
   }

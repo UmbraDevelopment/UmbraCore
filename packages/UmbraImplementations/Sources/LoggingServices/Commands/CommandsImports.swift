@@ -1,6 +1,6 @@
 import Foundation
-import LoggingTypes
 import LoggingInterfaces
+import LoggingTypes
 import SchedulingTypes
 
 // Typealias for commonly used types to simplify command code

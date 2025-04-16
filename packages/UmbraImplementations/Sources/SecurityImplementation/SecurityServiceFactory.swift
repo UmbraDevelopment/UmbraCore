@@ -1,7 +1,6 @@
 import CoreSecurityTypes
 import CryptoInterfaces
 import CryptoServicesCore
-import CryptoServicesCore.Testing
 import CryptoServicesStandard
 import Foundation
 import LoggingInterfaces
@@ -37,9 +36,9 @@ public enum SecurityServiceFactory {
 
     // Create default configuration
     let configuration=CoreSecurityTypes.SecurityConfigDTO(
-      encryptionAlgorithm: CoreSecurityTypes.EncryptionAlgorithm.aes256GCM,
-      hashAlgorithm: CoreSecurityTypes.HashAlgorithm.sha256,
-      providerType: CoreSecurityTypes.SecurityProviderType.cryptoKit
+      encryptionAlgorithm: .aes256GCM,
+      hashAlgorithm: .sha256,
+      providerType: .cryptoKit
     )
 
     // Create the security service with secure logging
@@ -71,9 +70,9 @@ public enum SecurityServiceFactory {
     configuration: CoreSecurityTypes.SecurityConfigDTO?=nil
   ) async -> SecurityProviderProtocol {
     // Create dependencies
-    let cryptoService = await CryptoServiceRegistry.createService(
-        type: .standard,
-        logger: logger
+    let cryptoService=await CryptoServiceRegistry.createService(
+      type: .standard,
+      logger: logger
     )
 
     // Create a secure logger if one wasn't provided
@@ -88,9 +87,9 @@ public enum SecurityServiceFactory {
       config
     } else {
       CoreSecurityTypes.SecurityConfigDTO(
-        encryptionAlgorithm: CoreSecurityTypes.EncryptionAlgorithm.aes256GCM,
-        hashAlgorithm: CoreSecurityTypes.HashAlgorithm.sha256,
-        providerType: CoreSecurityTypes.SecurityProviderType.cryptoKit
+        encryptionAlgorithm: .aes256GCM,
+        hashAlgorithm: .sha256,
+        providerType: .cryptoKit
       )
     }
 
@@ -103,21 +102,19 @@ public enum SecurityServiceFactory {
     )
   }
 
-  /**
-   Creates a mock security service for testing.
-   
-   - Returns: A security provider that provides mock implementations for testing
-   */
+  /// Creates a mock security service for testing.
+  ///
+  /// - Returns: A security provider that provides mock implementations for testing
   public static func createForTesting() async -> SecurityProviderProtocol {
-    let baseLogger = NoOpLoggerImpl()
-    let logger = await SecurityLoggingUtilities.createLoggingWrapper(logger: baseLogger)
-    
+    let baseLogger=NoOpLoggerImpl()
+    let logger=await SecurityLoggingUtilities.createLoggingWrapper(logger: baseLogger)
+
     // Use the standardised MockCryptoService from CryptoServicesCore.Testing
-    let cryptoService = MockCryptoService(
-      secureStorage: MockSecureStorage(), 
-      mockBehaviour: MockCryptoService.MockBehaviour(logOperations: true)
+    let cryptoService=MockCryptoService(
+      secureStorage: MockSecureStorage(),
+      mockBehaviour: .init(logOperations: true)
     )
-    
+
     return SecurityProviderImpl(
       cryptoService: cryptoService,
       keyManager: TestKeyManager(),
@@ -137,9 +134,9 @@ public enum SecurityServiceFactory {
 
     // Create default configuration
     let configuration=CoreSecurityTypes.SecurityConfigDTO(
-      encryptionAlgorithm: CoreSecurityTypes.EncryptionAlgorithm.aes256GCM,
-      hashAlgorithm: CoreSecurityTypes.HashAlgorithm.sha256,
-      providerType: CoreSecurityTypes.SecurityProviderType.cryptoKit
+      encryptionAlgorithm: .aes256GCM,
+      hashAlgorithm: .sha256,
+      providerType: .cryptoKit
     )
 
     // Create the security service with verbose logging
@@ -161,9 +158,9 @@ public enum SecurityServiceFactory {
 
     // Create default configuration
     let configuration=CoreSecurityTypes.SecurityConfigDTO(
-      encryptionAlgorithm: CoreSecurityTypes.EncryptionAlgorithm.aes256GCM,
-      hashAlgorithm: CoreSecurityTypes.HashAlgorithm.sha256,
-      providerType: CoreSecurityTypes.SecurityProviderType.cryptoKit
+      encryptionAlgorithm: .aes256GCM,
+      hashAlgorithm: .sha256,
+      providerType: .cryptoKit
     )
 
     // Create the security service with production logging
@@ -203,19 +200,35 @@ private func createMetadataDictionary(_: LogMetadataDTOCollection) -> [String: S
   [:]
 }
 
-/**
- A simple key manager for testing purposes.
- */
+/// A simple key manager for testing purposes.
 private final class TestKeyManager: KeyManagementProtocol {
-  public func storeKey(_ key: [UInt8], withIdentifier identifier: String) async -> Result<Void, KeyManagementError> {
-    return .success(())
+  public func storeKey(
+    _: [UInt8],
+    withIdentifier _: String
+  ) async -> Result<Void, KeyManagementError> {
+    .success(())
   }
-  
-  public func retrieveKey(withIdentifier identifier: String) async -> Result<[UInt8], KeyManagementError> {
-    return .success([0, 1, 2, 3, 4, 5])
+
+  public func retrieveKey(withIdentifier _: String) async -> Result<[UInt8], KeyManagementError> {
+    .success([0, 1, 2, 3, 4, 5])
   }
-  
-  public func deleteKey(withIdentifier identifier: String) async -> Result<Void, KeyManagementError> {
-    return .success(())
+
+  public func deleteKey(withIdentifier _: String) async -> Result<Void, KeyManagementError> {
+    .success(())
+  }
+}
+
+/// Utilities for creating and configuring security-related loggers
+private enum SecurityLoggingUtilities {
+  /// Creates a logging wrapper for the specified logger
+  /// - Parameter logger: The logger to wrap
+  /// - Returns: A wrapper that conforms to LoggingProtocol
+  static func createLoggingWrapper(logger: any LoggerType) async -> LoggingInterfaces
+  .LoggingProtocol {
+    // Create a standard logging wrapper around the logger
+    let wrapper=LoggingWrapper(logger: logger)
+
+    // Return the wrapper as a LoggingProtocol
+    return wrapper
   }
 }

@@ -24,7 +24,7 @@ public struct FileCreationOptions: Sendable {
     attributes: [FileAttributeKey: Any]?=nil,
     shouldOverwrite: Bool=false
   ) {
-    self.attributes = attributes != nil ? SendableFileAttributes(attributes: attributes) : nil
+    self.attributes=attributes != nil ? SendableFileAttributes(attributes: attributes) : nil
     self.shouldOverwrite=shouldOverwrite
   }
 }
@@ -88,7 +88,7 @@ public struct FileWriteOptions: Sendable {
     self.createIntermediateDirectories=createIntermediateDirectories
     self.append=append
     self.atomicWrite=atomicWrite
-    self.attributes = attributes != nil ? SendableFileAttributes(attributes: attributes) : nil
+    self.attributes=attributes != nil ? SendableFileAttributes(attributes: attributes) : nil
   }
 }
 
@@ -157,7 +157,7 @@ public struct DirectoryCreationOptions: Sendable {
     self.posixPermissions=posixPermissions
     self.ownerAccountID=ownerAccountID
     self.groupOwnerAccountID=groupOwnerAccountID
-    self.attributes = attributes != nil ? SendableFileAttributes(attributes: attributes) : nil
+    self.attributes=attributes != nil ? SendableFileAttributes(attributes: attributes) : nil
   }
 }
 

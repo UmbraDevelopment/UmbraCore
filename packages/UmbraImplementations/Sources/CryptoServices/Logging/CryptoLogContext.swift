@@ -40,7 +40,7 @@ public struct CryptoLogContext: LogContextDTO, Sendable {
 
   /// The type of cryptographic operation being performed
   public let operation: String
-  
+
   /// The category for the log entry
   public let category: String
 
@@ -144,12 +144,12 @@ public struct CryptoLogContext: LogContextDTO, Sendable {
 
   /**
    Creates a new context with additional metadata merged with the existing metadata
-   
+
    - Parameter additionalMetadata: Additional metadata to include
    - Returns: New context with merged metadata
    */
   public func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> Self {
-    let mergedMetadata = metadata.merging(with: additionalMetadata)
+    let mergedMetadata=metadata.merging(with: additionalMetadata)
     return CryptoLogContext(
       operation: operation,
       identifier: identifier,
@@ -407,7 +407,10 @@ public struct CryptoLogContext: LogContextDTO, Sendable {
   public func withErrorDetails(_ error: Error) -> Self {
     var mergedMetadata=metadata
     mergedMetadata=mergedMetadata.withPublic(key: "errorType", value: "\(type(of: error))")
-    mergedMetadata=mergedMetadata.withPrivate(key: "errorMessage", value: error.localizedDescription)
+    mergedMetadata=mergedMetadata.withPrivate(
+      key: "errorMessage",
+      value: error.localizedDescription
+    )
 
     return CryptoLogContext(
       operation: operation,

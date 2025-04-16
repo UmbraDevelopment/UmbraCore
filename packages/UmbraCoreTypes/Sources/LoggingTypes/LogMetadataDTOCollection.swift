@@ -110,7 +110,7 @@ public struct LogMetadataDTOCollection: Sendable, Equatable, Hashable {
   ///   - value: The metadata value
   /// - Returns: The updated collection
   public func set(key: String, value: String) -> LogMetadataDTOCollection {
-    return withAuto(key: key, value: value)
+    withAuto(key: key, value: value)
   }
 
   /// Adds a metadata entry with "protected" privacy level to the collection
@@ -121,7 +121,7 @@ public struct LogMetadataDTOCollection: Sendable, Equatable, Hashable {
   ///   - value: The metadata value
   /// - Returns: The updated collection
   public func withProtected(key: String, value: String) -> LogMetadataDTOCollection {
-    return withPrivate(key: key, value: value)
+    withPrivate(key: key, value: value)
   }
 
   /// Combines this collection with another collection
@@ -129,7 +129,7 @@ public struct LogMetadataDTOCollection: Sendable, Equatable, Hashable {
   /// - Parameter other: The collection to combine with
   /// - Returns: A new collection containing entries from both collections
   public func merging(with other: LogMetadataDTOCollection) -> LogMetadataDTOCollection {
-    var result = self
+    var result=self
     result.entries.append(contentsOf: other.entries)
     return result
   }
@@ -138,21 +138,21 @@ public struct LogMetadataDTOCollection: Sendable, Equatable, Hashable {
   ///
   /// - Returns: Array of keys
   public func getKeys() -> [String] {
-    return entries.map { $0.key }
+    entries.map(\.key)
   }
-  
+
   /// Gets a string value for a specific key
   ///
   /// - Parameter key: The key to lookup
   /// - Returns: The value if found, nil otherwise
   public func getString(key: String) -> String? {
-    return entries.first(where: { $0.key == key })?.value
+    entries.first(where: { $0.key == key })?.value
   }
-  
+
   /// Static property that returns an empty collection
   /// This is a convenience for compatibility with existing code
   public static var empty: LogMetadataDTOCollection {
-    return LogMetadataDTOCollection()
+    LogMetadataDTOCollection()
   }
 
   /// Indicates whether the collection has no entries

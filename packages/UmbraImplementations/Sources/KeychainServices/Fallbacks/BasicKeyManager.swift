@@ -84,7 +84,7 @@ public actor BasicKeyManager: KeyManagementProtocol {
   -> Result<[UInt8], SecurityProtocolError> {
     if let key=keyStore[identifier] {
       let context=BaseLogContextDTO(
-        domainName: "KeyManagement", 
+        domainName: "KeyManagement",
         operation: "retrieveKey",
         category: "Security",
         source: "BasicKeyManager"
@@ -98,7 +98,11 @@ public actor BasicKeyManager: KeyManagementProtocol {
         operation: "retrieveKey",
         category: "Security",
         source: "BasicKeyManager",
-        metadata: LogMetadataDTOCollection().with(key: "identifier", value: identifier, privacyLevel: .private)
+        metadata: LogMetadataDTOCollection().with(
+          key: "identifier",
+          value: identifier,
+          privacyLevel: .private
+        )
       )
       await logger.warning("Key not found with identifier: \(identifier)", context: context)
       return .failure(.operationFailed(reason: "Key not found: \(identifier)"))
@@ -130,7 +134,7 @@ public actor BasicKeyManager: KeyManagementProtocol {
     keyStore[identifier]=key
 
     let context=BaseLogContextDTO(
-      domainName: "KeyManagement", 
+      domainName: "KeyManagement",
       operation: "storeKey",
       category: "Security",
       source: "BasicKeyManager"
@@ -149,7 +153,7 @@ public actor BasicKeyManager: KeyManagementProtocol {
   -> Result<Void, SecurityProtocolError> {
     if keyStore.removeValue(forKey: identifier) != nil {
       let context=BaseLogContextDTO(
-        domainName: "KeyManagement", 
+        domainName: "KeyManagement",
         operation: "deleteKey",
         category: "Security",
         source: "BasicKeyManager"
@@ -158,7 +162,7 @@ public actor BasicKeyManager: KeyManagementProtocol {
       return .success(())
     } else {
       let context=BaseLogContextDTO(
-        domainName: "KeyManagement", 
+        domainName: "KeyManagement",
         operation: "deleteKey",
         category: "Security",
         source: "BasicKeyManager"
@@ -203,7 +207,7 @@ public actor BasicKeyManager: KeyManagementProtocol {
     }
 
     let context=BaseLogContextDTO(
-      domainName: "KeyManagement", 
+      domainName: "KeyManagement",
       operation: "rotateKey",
       category: "Security",
       source: "BasicKeyManager"
@@ -219,7 +223,7 @@ public actor BasicKeyManager: KeyManagementProtocol {
    */
   public func listKeyIdentifiers() async -> Result<[String], SecurityProtocolError> {
     let context=BaseLogContextDTO(
-      domainName: "KeyManagement", 
+      domainName: "KeyManagement",
       operation: "listKeyIdentifiers",
       category: "Security",
       source: "BasicKeyManager"
@@ -241,7 +245,7 @@ public actor BasicKeyManager: KeyManagementProtocol {
 
     guard result == errSecSuccess else {
       let context=BaseLogContextDTO(
-        domainName: "KeyManagement", 
+        domainName: "KeyManagement",
         operation: "generateRandomBytes",
         category: "Security",
         source: "BasicKeyManager"

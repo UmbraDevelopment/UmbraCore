@@ -61,7 +61,7 @@ public actor CryptoServiceMonitor {
    */
   public func startMonitoring() async -> Bool {
     let context=BaseLogContextDTO(
-      domainName: "CryptoService", 
+      domainName: "CryptoService",
       operation: "startMonitoring",
       category: "ServiceMonitoring",
       source: "CryptoServiceMonitor"
@@ -83,7 +83,7 @@ public actor CryptoServiceMonitor {
    */
   public func stopMonitoring() async -> Bool {
     let context=BaseLogContextDTO(
-      domainName: "CryptoService", 
+      domainName: "CryptoService",
       operation: "stopMonitoring",
       category: "ServiceMonitoring",
       source: "CryptoServiceMonitor"
@@ -181,7 +181,7 @@ public actor CryptoServiceMonitor {
    */
   public func clearEvents() async -> Bool {
     let context=BaseLogContextDTO(
-      domainName: "CryptoService", 
+      domainName: "CryptoService",
       operation: "clearEvents",
       category: "EventManagement",
       source: "CryptoServiceMonitor"

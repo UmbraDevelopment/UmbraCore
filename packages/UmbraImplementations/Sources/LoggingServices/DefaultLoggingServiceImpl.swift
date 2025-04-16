@@ -192,10 +192,10 @@ public actor DefaultLoggingServiceImpl: LoggingProtocol {
       source: "PrivacyLogger",
       metadata: LogMetadataDTOCollection()
     )
-    
+
     await log(.info, message.rawValue, context: context)
   }
-  
+
   public func logRestrictedData(_ message: PrivacyString) async {
     let context=BaseLogContextDTO(
       domainName: "PrivacyLogging",
@@ -204,10 +204,10 @@ public actor DefaultLoggingServiceImpl: LoggingProtocol {
       source: "PrivacyLogger",
       metadata: LogMetadataDTOCollection()
     )
-    
+
     await log(.info, message.rawValue, context: context)
   }
-  
+
   public func logPublicData(_ message: PrivacyString) async {
     let context=BaseLogContextDTO(
       domainName: "PrivacyLogging",
@@ -216,7 +216,7 @@ public actor DefaultLoggingServiceImpl: LoggingProtocol {
       source: "PrivacyLogger",
       metadata: LogMetadataDTOCollection()
     )
-    
+
     await log(.info, message.rawValue, context: context)
   }
 }

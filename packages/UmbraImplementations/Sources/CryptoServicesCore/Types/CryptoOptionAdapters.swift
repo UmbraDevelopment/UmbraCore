@@ -9,15 +9,15 @@ extension CoreSecurityTypes.EncryptionOptions {
   /// Convert to SecurityConfigDTO for use with SecurityProvider
   public func toSecurityConfigDTO(withMetadata metadata: [String: String]?=nil)
   -> SecurityConfigDTO {
-    var configOptions = SecurityConfigOptions()
+    var configOptions=SecurityConfigOptions()
 
-    var metadataDict = metadata ?? [:]
+    var metadataDict=metadata ?? [:]
     if let additionalAuthenticatedData {
-      metadataDict["authenticatedData"] = Data(additionalAuthenticatedData).base64EncodedString()
+      metadataDict["authenticatedData"]=Data(additionalAuthenticatedData).base64EncodedString()
     }
 
     if !metadataDict.isEmpty {
-      configOptions.metadata = metadataDict
+      configOptions.metadata=metadataDict
     }
 
     return SecurityConfigDTO(
@@ -34,19 +34,19 @@ extension CoreSecurityTypes.EncryptionOptions {
 /// Extension to adapt between various key generation options types
 extension CoreSecurityTypes.KeyGenerationOptions {
   /// Convert to SecurityConfigDTO for use with SecurityProvider
-  public func toSecurityConfigDTO(withMetadata additionalMetadata: [String: String]? = nil)
+  public func toSecurityConfigDTO(withMetadata additionalMetadata: [String: String]?=nil)
   -> SecurityConfigDTO {
-    var configOptions = SecurityConfigOptions()
+    var configOptions=SecurityConfigOptions()
 
     // Create metadata
-    var metadataDict = additionalMetadata ?? [:]
-    metadataDict["keySize"] = String(keySizeInBits)
-    metadataDict["keyType"] = keyType.rawValue
-    metadataDict["extractable"] = isExtractable ? "true" : "false"
-    metadataDict["useSecureEnclave"] = useSecureEnclave ? "true" : "false"
+    var metadataDict=additionalMetadata ?? [:]
+    metadataDict["keySize"]=String(keySizeInBits)
+    metadataDict["keyType"]=keyType.rawValue
+    metadataDict["extractable"]=isExtractable ? "true" : "false"
+    metadataDict["useSecureEnclave"]=useSecureEnclave ? "true" : "false"
 
     if !metadataDict.isEmpty {
-      configOptions.metadata = metadataDict
+      configOptions.metadata=metadataDict
     }
 
     return SecurityConfigDTO(
@@ -63,16 +63,16 @@ extension CoreSecurityTypes.KeyGenerationOptions {
 /// Extension to adapt between various hashing options types
 extension CoreSecurityTypes.HashingOptions {
   /// Convert to SecurityConfigDTO for use with SecurityProvider
-  public func toSecurityConfigDTO(withMetadata additionalMetadata: [String: String]? = nil)
+  public func toSecurityConfigDTO(withMetadata additionalMetadata: [String: String]?=nil)
   -> SecurityConfigDTO {
-    var configOptions = SecurityConfigOptions()
+    var configOptions=SecurityConfigOptions()
 
     // Create metadata
-    var metadataDict = additionalMetadata ?? [:]
-    metadataDict["algorithm"] = algorithm.rawValue
-    
+    var metadataDict=additionalMetadata ?? [:]
+    metadataDict["algorithm"]=algorithm.rawValue
+
     if !metadataDict.isEmpty {
-      configOptions.metadata = metadataDict
+      configOptions.metadata=metadataDict
     }
 
     return SecurityConfigDTO(
@@ -88,19 +88,19 @@ extension CoreSecurityTypes.HashingOptions {
 
 /// Utility to determine if two hash dictionaries are equivalent
 func areHashesEquivalent(_ lhs: [String: String]?, _ rhs: [String: String]?) -> Bool {
-  guard let lhs = lhs, let rhs = rhs else {
+  guard let lhs, let rhs else {
     return lhs == nil && rhs == nil
   }
-  
+
   guard lhs.count == rhs.count else {
     return false
   }
-  
+
   for (key, value) in lhs {
-    guard let rhsValue = rhs[key], rhsValue == value else {
+    guard let rhsValue=rhs[key], rhsValue == value else {
       return false
     }
   }
-  
+
   return true
 }

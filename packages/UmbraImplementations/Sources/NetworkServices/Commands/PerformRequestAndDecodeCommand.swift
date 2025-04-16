@@ -10,7 +10,7 @@ import NetworkInterfaces
  decoding the response data into a specific type, following the command pattern architecture.
  */
 public class PerformRequestAndDecodeCommand<T: Decodable & Sendable>: BaseNetworkCommand,
-  NetworkCommand, @unchecked Sendable {
+NetworkCommand, @unchecked Sendable {
   /// The result type for this command
   public typealias ResultType=T
 
@@ -134,7 +134,7 @@ public class PerformRequestAndDecodeCommand<T: Decodable & Sendable>: BaseNetwor
           dataPreview="[Binary data, \(response.data.count) bytes]"
         }
 
-        let dataContext = errorContext.withPrivate(key: "responsePreview", value: dataPreview)
+        let dataContext=errorContext.withPrivate(key: "responsePreview", value: dataPreview)
         await logger.log(.debug, "Response data preview", context: dataContext)
       }
 

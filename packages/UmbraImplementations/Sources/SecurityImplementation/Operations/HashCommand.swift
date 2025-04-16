@@ -5,24 +5,21 @@ import Foundation
 import LoggingInterfaces
 import LoggingTypes
 
-/**
- Command that executes hashing operations.
-
- This command encapsulates the cryptographic hashing logic in accordance with
- the command pattern, providing clean separation of concerns.
- */
+/// Command that executes cryptographic hash operations.
+///
+/// This command encapsulates the hashing logic, separating it from
+/// the core SecurityProvider implementation while maintaining the same
+/// functionality and standards.
 public class HashCommand: BaseSecurityCommand, SecurityOperationCommand {
   /// The crypto service for performing the hashing
   private let cryptoService: CryptoServiceProtocol
 
-  /**
-   Initialises a new hash command.
-
-   - Parameters:
-      - config: Security configuration for the hashing
-      - cryptoService: The service to perform the hashing
-      - logger: Logger for operation tracking and auditing
-   */
+  /// Initialises a new hash command.
+  ///
+  /// - Parameters:
+  ///   - config: Security configuration for the hashing operation
+  ///   - cryptoService: The service to perform the hash
+  ///   - logger: Logger for operation tracking and auditing
   public init(
     config: SecurityConfigDTO,
     cryptoService: CryptoServiceProtocol,
@@ -32,15 +29,13 @@ public class HashCommand: BaseSecurityCommand, SecurityOperationCommand {
     super.init(config: config, logger: logger)
   }
 
-  /**
-   Executes the hashing operation.
-
-   - Parameters:
-      - context: Logging context for the operation
-      - operationID: Unique identifier for this operation instance
-   - Returns: The hashing result
-   - Throws: SecurityError if hashing fails
-   */
+  /// Executes the hash operation.
+  ///
+  /// - Parameters:
+  ///   - context: Logging context for the operation
+  ///   - operationID: Unique identifier for this operation instance
+  /// - Returns: The hash result
+  /// - Throws: SecurityError if hashing fails
   public func execute(
     context: LogContextDTO,
     operationID: String
@@ -57,7 +52,7 @@ public class HashCommand: BaseSecurityCommand, SecurityOperationCommand {
         errorMessage: "Input data is required for hashing"
       )
 
-      // Log hashing details
+      // Log hash operation details
       let enhancedContext=context.adding(
         key: "dataSize",
         value: "\(inputData.count) bytes",
@@ -73,7 +68,7 @@ public class HashCommand: BaseSecurityCommand, SecurityOperationCommand {
         context: enhancedContext
       )
 
-      // Perform the hashing
+      // Perform the hash operation
       let result=try await cryptoService.hash(
         data: [UInt8](inputData),
         algorithm: config.hashAlgorithm
@@ -82,52 +77,84 @@ public class HashCommand: BaseSecurityCommand, SecurityOperationCommand {
       // Process the result
       switch result {
         case let .success(hashBytes):
-          // Convert result to Data
+          // Convert result to Data and hexadecimal string for display
           let hashData=Data(hashBytes)
+          let hashHex=hashBytes.hexString
 
-          // Record successful hashing
+          // Record successful hash
           await logInfo(
             "Successfully hashed \(inputData.count) bytes of data",
             context: enhancedContext.adding(
-              key: "resultSize",
+              key: "hashSize",
               value: "\(hashData.count) bytes",
               privacyLevel: .public
             )
           )
 
-          // Create result metadata
-          let resultMetadata: [String: String]=[
-            "inputSize": "\(inputData.count)",
-            "hashSize": "\(hashData.count)",
-            "algorithm": config.hashAlgorithm.rawValue,
-            "operationID": operationID
-          ]
+          // Create result metadata with the hash value
+          let resultMetadata=MetadataCollection()
+            .with(key: "hashValue", value: hashData)
+            .with(key: "hashHex", value: hashHex)
+            .with(key: "operationID", value: operationID)
+            .with(key: "algorithm", value: config.hashAlgorithm.rawValue)
+            .with(key: "timestamp", value: Date())
 
           // Return successful result
-          return createSuccessResult(
-            data: hashData,
-            duration: 0, // Duration will be calculated by the operation handler
-            metadata: resultMetadata
+          return SecurityResultDTO(
+            success: true,
+            metadata: resultMetadata,
+            errorCode: nil,
+            errorMessage: nil
           )
 
         case let .failure(error):
-          throw error
+          // Log hash failure
+          await logError(
+            "Hash operation failed: \(error.localizedDescription)",
+            context: enhancedContext
+          )
+
+          // Return failure result
+          return SecurityResultDTO(
+            success: false,
+            metadata: MetadataCollection()
+              .with(key: "operationID", value: operationID)
+              .with(key: "errorType", value: String(describing: type(of: error))),
+            errorCode: error.errorCode,
+            errorMessage: error.localizedDescription
+          )
       }
-    } catch let securityError as SecurityStorageError {
-      // Log specific hashing errors
+    } catch let error as MetadataExtractionError {
+      // Log extraction failure
       await logError(
-        "Hashing failed due to storage error: \(securityError)",
+        "Failed to extract required hash parameters: \(error.localizedDescription)",
         context: context
       )
-      throw securityError
+
+      // Return extraction failure result
+      return SecurityResultDTO(
+        success: false,
+        metadata: MetadataCollection()
+          .with(key: "operationID", value: operationID)
+          .with(key: "errorType", value: String(describing: type(of: error))),
+        errorCode: SecurityError.invalidInputData.errorCode,
+        errorMessage: error.localizedDescription
+      )
     } catch {
-      // Log unexpected errors
+      // Log unexpected failure
       await logError(
-        "Hashing failed with unexpected error: \(error.localizedDescription)",
+        "Unexpected error during hash operation: \(error.localizedDescription)",
         context: context
       )
-      throw CoreSecurityTypes.SecurityError.hashingFailed(
-        reason: "Hashing operation failed: \(error.localizedDescription)"
+
+      // Return unexpected failure result
+      return SecurityResultDTO(
+        success: false,
+        metadata: MetadataCollection()
+          .with(key: "operationID", value: operationID)
+          .with(key: "errorType", value: String(describing: type(of: error))),
+        errorCode: SecurityError.operationFailed.errorCode,
+        errorMessage: error.localizedDescription
       )
     }
   }

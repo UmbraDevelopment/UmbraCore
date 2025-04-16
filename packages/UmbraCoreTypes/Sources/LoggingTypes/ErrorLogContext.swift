@@ -7,10 +7,10 @@ import Foundation
 public struct ErrorLogContext: LogContextDTO, Sendable {
   /// The name of the domain this context belongs to
   public let domainName: String
-  
+
   /// The operation being performed when the error occurred
   public let operation: String
-  
+
   /// The category for the log entry
   public let category: String
 
@@ -73,7 +73,7 @@ public struct ErrorLogContext: LogContextDTO, Sendable {
 
     metadata=contextMetadata
   }
-  
+
   /// Creates a new context with additional metadata merged with the existing metadata
   /// - Parameter additionalMetadata: Additional metadata to include
   /// - Returns: New context with merged metadata
@@ -85,7 +85,7 @@ public struct ErrorLogContext: LogContextDTO, Sendable {
       category: category,
       correlationID: correlationID,
       source: source,
-      additionalContext: self.metadata.merging(with: additionalMetadata)
+      additionalContext: metadata.merging(with: additionalMetadata)
     )
   }
 
@@ -114,7 +114,7 @@ public struct ErrorLogContext: LogContextDTO, Sendable {
       error: error,
       domain: domainName,
       operation: operation,
-      category: category, 
+      category: category,
       correlationID: correlationID,
       source: source,
       additionalContext: metadata
@@ -136,7 +136,7 @@ public struct ErrorLogContext: LogContextDTO, Sendable {
       additionalContext: metadata
     )
   }
-  
+
   /// Creates a new instance of this context with updated operation
   ///
   /// - Parameter operation: The new operation name
@@ -152,7 +152,7 @@ public struct ErrorLogContext: LogContextDTO, Sendable {
       additionalContext: metadata
     )
   }
-  
+
   /// Creates a new instance of this context with updated category
   ///
   /// - Parameter category: The new category
@@ -186,18 +186,18 @@ public struct ErrorLogContext: LogContextDTO, Sendable {
     source: String?=nil
   ) -> ErrorLogContext {
     var collection=LogMetadataDTOCollection()
-    
+
     // Add error code if available
     collection=collection.withPublic(key: "errorCode", value: String(nsError.code))
     collection=collection.withPublic(key: "errorDomain", value: nsError.domain)
-      
+
     // Add userInfo if available
-    if nsError.userInfo.count > 0 {
+    if !nsError.userInfo.isEmpty {
       for (key, value) in nsError.userInfo {
         collection=collection.withProtected(key: "userInfo.\(key)", value: "\(value)")
       }
     }
-    
+
     return ErrorLogContext(
       error: nsError,
       domain: domain,

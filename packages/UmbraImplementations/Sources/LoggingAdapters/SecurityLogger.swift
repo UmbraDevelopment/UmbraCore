@@ -613,24 +613,28 @@ private struct SecurityLogContext: LogContextDTO {
 
   /**
    Creates a new context with additional metadata following Alpha Dot Five's functional approach.
-   
+
    - Parameter additionalMetadata: The additional metadata to include
    - Returns: A new SecurityLogContext with the combined metadata
    */
   func withMetadata(_ additionalMetadata: LogMetadataDTOCollection) -> SecurityLogContext {
-    var newMetadata = self.metadata
+    var newMetadata=metadata
     for entry in additionalMetadata.entries {
-      newMetadata = newMetadata.with(key: entry.key, value: entry.value, privacyLevel: entry.privacyLevel)
+      newMetadata=newMetadata.with(
+        key: entry.key,
+        value: entry.value,
+        privacyLevel: entry.privacyLevel
+      )
     }
-    
+
     return SecurityLogContext(
-      operation: self.operation,
-      resource: self.resource,
-      status: self.status,
-      error: self.error,
-      details: self.details,
-      correlationID: self.correlationID,
-      category: self.category
+      operation: operation,
+      resource: resource,
+      status: status,
+      error: error,
+      details: details,
+      correlationID: correlationID,
+      category: category
     )
   }
 }

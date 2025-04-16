@@ -18,7 +18,7 @@ public struct DirectoryEnumerationOptions: OptionSet, Sendable {
   public static let skipsSubdirectoryDescendants=DirectoryEnumerationOptions(rawValue: 1 << 2)
 
   /// Default options (no customisations)
-  public static let none: DirectoryEnumerationOptions = []
+  public static let none: DirectoryEnumerationOptions=[]
 
   /// Maps to Foundation's FileManager.DirectoryEnumerationOptions
   public var toFoundationOptions: FileManager.DirectoryEnumerationOptions {
